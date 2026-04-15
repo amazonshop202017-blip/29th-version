@@ -112,6 +112,9 @@ const ProfilePage = () => {
               {firstName} {lastName}
             </h2>
             <p className="text-sm text-muted-foreground mt-1 relative z-10">@{username}</p>
+            <p className="text-xs font-mono text-muted-foreground/70 mt-0.5 relative z-10">
+              User ID: {user?.userId || '—'}
+            </p>
 
             <Separator className="my-4 sm:my-5 w-full relative z-10" />
 

@@ -45,6 +45,7 @@ export type ChallengeStatus = 'active' | 'breached';
 
 export interface Challenge {
   challengeId: string;
+  userId: string;
   nickname: string;
   firm: string;
   balanceAmount: number;
