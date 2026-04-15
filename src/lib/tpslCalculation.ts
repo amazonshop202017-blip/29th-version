@@ -2,14 +2,19 @@ import { TpSlRule } from '@/components/settings/TpSlSettings';
 
 const STORAGE_KEY = 'trading-journal-tpsl-rules';
 
-/** Migrate legacy single-account rule to multi-account */
+/** Migrate legacy rules */
 const migrateRule = (raw: any): TpSlRule => {
-  if (raw.accountIds && raw.accountNames) return raw as TpSlRule;
-  return {
+  const rule: TpSlRule = {
     ...raw,
-    accountIds: raw.accountId ? [raw.accountId] : [],
-    accountNames: raw.accountName ? [raw.accountName] : [],
+    accountIds: raw.accountIds || [],
   };
+  if (rule.accountIds.length === 0 && raw.accountId) {
+    rule.accountIds = [raw.accountId];
+  }
+  // Remove deprecated fields
+  delete (rule as any).accountName;
+  delete (rule as any).accountNames;
+  return rule;
 };
 
 export function loadTpSlRules(): TpSlRule[] {
@@ -24,15 +29,14 @@ export function loadTpSlRules(): TpSlRule[] {
 
 export function findMatchingTpSlRule(
   rules: TpSlRule[],
-  accountName: string,
+  accountId: string,
   symbol: string
 ): TpSlRule | null {
-  return rules.find(r => r.accountNames.includes(accountName) && r.symbol === symbol) || null;
+  return rules.find(r => r.accountIds.includes(accountId) && r.symbol === symbol) || null;
 }
 
 /**
  * Compute automatic TP/SL prices from a rule, entry price, direction, and tick size.
- * This is the single source of truth used by both TradeModal placeholders and Apply-To.
  */
 export function computeAutoTpSl(
   rule: TpSlRule,
