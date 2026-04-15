@@ -132,6 +132,7 @@ export const useTrades = () => {
     const newTrade: Trade = {
       ...data,
       id: crypto.randomUUID(),
+      userId: getCurrentUserId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -141,9 +142,11 @@ export const useTrades = () => {
 
   const bulkAddTrades = useCallback((tradesData: TradeFormData[]): Trade[] => {
     const now = new Date().toISOString();
+    const userId = getCurrentUserId();
     const newTrades: Trade[] = tradesData.map(data => ({
       ...data,
       id: crypto.randomUUID(),
+      userId,
       createdAt: now,
       updatedAt: now,
     }));
