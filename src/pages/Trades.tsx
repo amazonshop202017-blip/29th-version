@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
+import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useTradeModal } from '@/contexts/TradeModalContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
@@ -342,6 +343,7 @@ const formatDurationMinutes = (duration: string): string => {
 const Trades = () => {
   const { filteredTrades, deleteTrades, bulkAddTrades, stats } = useFilteredTrades();
   const { openModal } = useTradeModal();
+  const { accounts } = useAccountsContext();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
