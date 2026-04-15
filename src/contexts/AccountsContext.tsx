@@ -3,16 +3,9 @@ import { useTradesContext } from './TradesContext';
 import { calculateTradeMetrics } from '@/types/trade';
 
 export type AccountMode = 'normal' | 'propfirm';
-export type PropFirmStep = 'step1' | 'step2' | 'instant';
-export type DrawdownType = 'static' | 'live' | 'eod';
-
-export interface PropFirmSettings {
-  step: PropFirmStep;
-  targetPercent: number;
-  totalDrawdownPercent: number;
-  dailyDrawdownPercent: number;
-  drawdownType: DrawdownType;
-}
+export type PropFirmPhase = 'evaluation' | 'funded';
+export type PropFirmStatus = 'active' | 'breached';
+export type PropFirmStepType = '1' | '2' | 'funded';
 
 export interface Account {
   id: string;
@@ -22,7 +15,11 @@ export interface Account {
   createdAt: string;
   isArchived?: boolean;
   accountMode: AccountMode;
-  propFirmSettings?: PropFirmSettings;
+  // Propfirm-specific fields (only set when created from PropFirm flow)
+  challengeId?: string;
+  step?: PropFirmStepType;
+  phase?: PropFirmPhase;
+  status?: PropFirmStatus;
 }
 
 export interface Transaction {
@@ -43,9 +40,9 @@ export interface AccountWithStats extends Account {
 interface AccountsContextType {
   accounts: Account[];
   transactions: Transaction[];
-  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmSettings?: PropFirmSettings) => Account;
+  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => Account;
   removeAccount: (id: string) => void;
-  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode, propFirmSettings?: PropFirmSettings) => void;
+  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode) => void;
   getAccountById: (id: string) => Account | undefined;
   getAccountWithStats: (id: string) => AccountWithStats | undefined;
   getAllAccountsWithStats: () => AccountWithStats[];
@@ -105,7 +102,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     return id;
   }, [accounts]);
 
-  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmSettings?: PropFirmSettings) => {
+  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
       accountId: generateUniqueAccountId(),
@@ -114,7 +111,12 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       createdAt: new Date().toISOString(),
       isArchived: false,
       accountMode,
-      ...(propFirmSettings && { propFirmSettings }),
+      ...(accountMode === 'propfirm' && propFirmFields ? {
+        challengeId: propFirmFields.challengeId,
+        step: propFirmFields.step,
+        phase: propFirmFields.phase,
+        status: propFirmFields.status,
+      } : {}),
     };
     saveAccounts([...accounts, newAccount]);
     return newAccount;
@@ -126,9 +128,9 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     saveTransactions(transactions.filter(t => t.accountId !== id));
   }, [accounts, transactions, saveAccounts, saveTransactions]);
 
-  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode, propFirmSettings?: PropFirmSettings) => {
+  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode) => {
     saveAccounts(accounts.map(a => 
-      a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }), propFirmSettings: accountMode === 'propfirm' ? propFirmSettings : undefined } : a
+      a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }) } : a
     ));
   }, [accounts, saveAccounts]);
 

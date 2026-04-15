@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Search, ChevronDown, ChevronUp, CalendarDays, Settings, ArrowRight, Check } from "lucide-react";
 import { useStrategiesContext } from "@/contexts/StrategiesContext";
+import { useAccountsContext } from "@/contexts/AccountsContext";
 import { toast } from "sonner";
 
 type TrackAccountModalProps = { open: boolean; onClose: () => void };
@@ -334,6 +335,7 @@ function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
 // ─── Main Modal ──────────────────────────────────────────────────
 
 export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
+  const { addAccount } = useAccountsContext();
   const [nickname, setNickname] = useState("");
   const [fundingFirm, setFundingFirm] = useState("");
   const [strategyIds, setStrategyIds] = useState<string[]>([]);
@@ -376,6 +378,22 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
     };
 
     saveChallenge(challenge);
+
+    // Also create a propfirm account in the accounts system
+    const stepValue = isFunded ? 'funded' as const : (steps === '2 Steps' ? '2' as const : '1' as const);
+    const phaseValue = isFunded ? 'funded' as const : 'evaluation' as const;
+    addAccount(
+      challenge.nickname,
+      parseFloat(rules.balanceAmount) || 0,
+      'propfirm',
+      {
+        challengeId: challenge.challengeId,
+        step: stepValue,
+        phase: phaseValue,
+        status: status.toLowerCase() as 'active' | 'breached',
+      }
+    );
+
     toast.success(`Challenge "${challenge.nickname}" created (ID: ${challenge.challengeId})`);
     // Reset
     setNickname(""); setFundingFirm(""); setStrategyIds([]); setEvaluationFee("0");
