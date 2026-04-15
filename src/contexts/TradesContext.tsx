@@ -61,7 +61,6 @@ interface TradesContextType {
   deleteTrade: (id: string) => void;
   deleteTrades: (ids: string[]) => void;
   deleteTradesByAccountId: (accountId: string) => void;
-  deleteTradesByAccountName: (accountName: string) => void;
   getTradeById: (id: string) => Trade | undefined;
 }
 
@@ -92,7 +91,6 @@ export const useTradesContext = (): TradesContextType => {
   return {
     ...context,
     deleteTradesByAccountId: context.deleteTradesByAccountId || (() => {}),
-    deleteTradesByAccountName: context.deleteTradesByAccountName || (() => {}),
     deleteTrades: context.deleteTrades || ((ids: string[]) => ids.forEach(context.deleteTrade)),
   };
 };
@@ -109,9 +107,9 @@ const dayIndexToFilter: Record<number, DayFilter> = {
 };
 
 // Hook to get filtered trades and stats (must be used inside GlobalFiltersProvider)
-// NOTE: activeAccountNames is passed as a parameter to avoid circular dependency with AccountsContext
-export const useFilteredTradesContext = (activeAccountNames?: string[]) => {
-  const { trades, addTrade, bulkAddTrades, updateTrade, bulkUpdateTrades, deleteTrade, deleteTrades, deleteTradesByAccountId, deleteTradesByAccountName, getTradeById } = useTradesContext();
+// NOTE: activeAccountIds is passed as a parameter to avoid circular dependency with AccountsContext
+export const useFilteredTradesContext = (activeAccountIds?: string[]) => {
+  const { trades, addTrade, bulkAddTrades, updateTrade, bulkUpdateTrades, deleteTrade, deleteTrades, deleteTradesByAccountId, getTradeById } = useTradesContext();
   const { 
     dateRange, 
     selectedAccounts,
@@ -131,26 +129,24 @@ export const useFilteredTradesContext = (activeAccountNames?: string[]) => {
     classifyTradeOutcome,
   } = useGlobalFilters();
 
-  // Use provided activeAccountNames or default to empty (show all if not provided)
-  const accountNames = activeAccountNames || [];
+  // Use provided activeAccountIds or default to empty (show all if not provided)
+  const accountIds = activeAccountIds || [];
 
   const filteredTrades = useMemo(() => {
     let filtered = trades;
 
     // When "All Accounts" is selected (selectedAccounts is empty), 
     // filter to only include trades from ACTIVE (non-archived) accounts
-    // If accountNames is empty, show all trades (for backward compatibility)
     if (selectedAccounts.length === 0) {
-      if (accountNames.length > 0) {
+      if (accountIds.length > 0) {
         filtered = filtered.filter(trade => 
-          accountNames.includes(trade.accountName)
+          accountIds.includes(trade.accountId)
         );
       }
-      // If accountNames is empty, show all trades
     } else {
-      // Filter by specifically selected accounts
+      // Filter by specifically selected accounts (UUIDs)
       filtered = filtered.filter(trade => 
-        selectedAccounts.includes(trade.accountName)
+        selectedAccounts.includes(trade.accountId)
       );
     }
 
@@ -313,7 +309,7 @@ export const useFilteredTradesContext = (activeAccountNames?: string[]) => {
     }
 
     return filtered;
-  }, [trades, dateRange, selectedAccounts, accountNames, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
@@ -414,7 +410,6 @@ export const useFilteredTradesContext = (activeAccountNames?: string[]) => {
     deleteTrade,
     deleteTrades,
     deleteTradesByAccountId,
-    deleteTradesByAccountName,
     getTradeById,
   };
 };
