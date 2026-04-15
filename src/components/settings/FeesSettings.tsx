@@ -29,12 +29,7 @@ import { toast } from 'sonner';
 
 export interface FeeRule {
   id: string;
-  /** @deprecated Use accountIds */
-  accountId?: string;
-  /** @deprecated Use accountNames */
-  accountName?: string;
   accountIds: string[];
-  accountNames: string[];
   instrument: string;
   symbol: string;
   mode: 'per-contract' | 'per-execution';
@@ -46,12 +41,20 @@ export interface FeeRule {
 const STORAGE_KEY = 'trading-journal-fee-rules';
 
 const migrateRule = (raw: any): FeeRule => {
-  if (raw.accountIds && raw.accountNames) return raw as FeeRule;
-  return {
-    ...raw,
-    accountIds: raw.accountId ? [raw.accountId] : [],
-    accountNames: raw.accountName ? [raw.accountName] : [],
+  const rule: FeeRule = {
+    id: raw.id,
+    accountIds: raw.accountIds || [],
+    instrument: raw.instrument || '—',
+    symbol: raw.symbol,
+    mode: raw.mode,
+    apply: raw.apply,
+    feeValue: raw.feeValue,
+    createdAt: raw.createdAt,
   };
+  if (rule.accountIds.length === 0 && raw.accountId) {
+    rule.accountIds = [raw.accountId];
+  }
+  return rule;
 };
 
 const loadRules = (): FeeRule[] => {
@@ -104,7 +107,7 @@ export const FeesSettings = () => {
 
     const rule = applyingRule;
     const matchingTrades = trades.filter(
-      t => rule.accountNames.includes(t.accountName) && t.symbol === rule.symbol
+      t => rule.accountIds.includes(t.accountId) && t.symbol === rule.symbol
     );
 
     const updates = new Map<string, Partial<import('@/types/trade').TradeFormData>>();
@@ -143,13 +146,10 @@ export const FeesSettings = () => {
   useEffect(() => {
     if (showModal && !editingRuleId) {
       if (!isAllAccountsSelected && selectedAccounts.length > 0) {
-        const ids = selectedAccounts
-          .map(name => accounts.find(a => a.name === name)?.id)
-          .filter(Boolean) as string[];
-        setFormAccountIds(ids);
+        setFormAccountIds([...selectedAccounts]);
       }
     }
-  }, [showModal, isAllAccountsSelected, selectedAccounts, editingRuleId, accounts]);
+  }, [showModal, isAllAccountsSelected, selectedAccounts, editingRuleId]);
 
   const resetForm = () => {
     setFormAccountIds([]);
@@ -162,11 +162,6 @@ export const FeesSettings = () => {
   const handleSave = () => {
     if (formAccountIds.length === 0 || !formSymbol) return;
 
-    const resolvedNames = formAccountIds
-      .map(id => accounts.find(a => a.id === id)?.name)
-      .filter(Boolean) as string[];
-    if (resolvedNames.length === 0) return;
-
     if (!tradedSymbols.includes(formSymbol)) {
       setTickSize(formSymbol, 0.01);
     }
@@ -177,7 +172,6 @@ export const FeesSettings = () => {
           ? {
               ...r,
               accountIds: formAccountIds,
-              accountNames: resolvedNames,
               symbol: formSymbol,
               mode: formMode,
               apply: formApply,
@@ -191,7 +185,6 @@ export const FeesSettings = () => {
       const newRule: FeeRule = {
         id: crypto.randomUUID(),
         accountIds: formAccountIds,
-        accountNames: resolvedNames,
         instrument: '—',
         symbol: formSymbol,
         mode: formMode,
@@ -295,9 +288,10 @@ export const FeesSettings = () => {
                   <TableRow key={rule.id} className="border-border">
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {rule.accountNames.map((name) => (
-                          <Badge key={name} variant="secondary" className="text-xs">{name}</Badge>
-                        ))}
+                        {rule.accountIds.map((id) => {
+                          const acc = accounts.find(a => a.id === id);
+                          return <Badge key={id} variant="secondary" className="text-xs">{acc?.name ?? 'Unknown'}</Badge>;
+                        })}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{rule.instrument}</TableCell>

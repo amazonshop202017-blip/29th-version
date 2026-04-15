@@ -27,12 +27,7 @@ import { calculateTradeMetrics, TradeFormData } from '@/types/trade';
 
 export interface TpSlRule {
   id: string;
-  /** @deprecated Use accountIds */
-  accountId?: string;
-  /** @deprecated Use accountNames */
-  accountName?: string;
   accountIds: string[];
-  accountNames: string[];
   instrument: string;
   symbol: string;
   type: string;
@@ -46,12 +41,22 @@ export interface TpSlRule {
 const STORAGE_KEY = 'trading-journal-tpsl-rules';
 
 const migrateRule = (raw: any): TpSlRule => {
-  if (raw.accountIds && raw.accountNames) return raw as TpSlRule;
-  return {
-    ...raw,
-    accountIds: raw.accountId ? [raw.accountId] : [],
-    accountNames: raw.accountName ? [raw.accountName] : [],
+  const rule: TpSlRule = {
+    id: raw.id,
+    accountIds: raw.accountIds || [],
+    instrument: raw.instrument || '—',
+    symbol: raw.symbol,
+    type: raw.type || 'Standard',
+    profitTargetUnit: raw.profitTargetUnit,
+    profitTargetValue: raw.profitTargetValue,
+    stopLossUnit: raw.stopLossUnit,
+    stopLossValue: raw.stopLossValue,
+    createdAt: raw.createdAt,
   };
+  if (rule.accountIds.length === 0 && raw.accountId) {
+    rule.accountIds = [raw.accountId];
+  }
+  return rule;
 };
 
 const loadRules = (): TpSlRule[] => {
@@ -97,7 +102,7 @@ export const TpSlSettings = () => {
 
     const rule = applyingRule;
     const matchingTrades = trades.filter(
-      t => rule.accountNames.includes(t.accountName) && t.symbol === rule.symbol
+      t => rule.accountIds.includes(t.accountId) && t.symbol === rule.symbol
     );
 
     const updates = new Map<string, Partial<TradeFormData>>();
@@ -106,7 +111,7 @@ export const TpSlSettings = () => {
       const metrics = calculateTradeMetrics(trade);
       if (metrics.avgEntryPrice <= 0) continue;
 
-      const tickSize = getTickSizeForAccountSymbol(trade.accountName, trade.symbol);
+      const tickSize = getTickSizeForAccountSymbol(trade.accountId, trade.symbol);
       if (!tickSize || tickSize <= 0) continue;
 
       const { tp, sl } = computeAutoTpSl(rule, metrics.avgEntryPrice, trade.side, tickSize);
@@ -173,13 +178,10 @@ export const TpSlSettings = () => {
   useEffect(() => {
     if (showAddModal && !editingRuleId) {
       if (!isAllAccountsSelected && selectedAccounts.length > 0) {
-        const ids = selectedAccounts
-          .map(name => accounts.find(a => a.name === name)?.id)
-          .filter(Boolean) as string[];
-        setFormAccountIds(ids);
+        setFormAccountIds([...selectedAccounts]);
       }
     }
-  }, [showAddModal, isAllAccountsSelected, selectedAccounts, editingRuleId, accounts]);
+  }, [showAddModal, isAllAccountsSelected, selectedAccounts, editingRuleId]);
 
   const resetForm = () => {
     setFormAccountIds([]);
@@ -193,11 +195,6 @@ export const TpSlSettings = () => {
   const handleSave = () => {
     if (formAccountIds.length === 0 || !formSymbol) return;
 
-    const resolvedNames = formAccountIds
-      .map(id => accounts.find(a => a.id === id)?.name)
-      .filter(Boolean) as string[];
-    if (resolvedNames.length === 0) return;
-
     // Register new symbol in tick-size registry with default value
     if (!tradedSymbols.includes(formSymbol)) {
       setTickSize(formSymbol, 0.01);
@@ -209,7 +206,6 @@ export const TpSlSettings = () => {
           ? {
               ...r,
               accountIds: formAccountIds,
-              accountNames: resolvedNames,
               symbol: formSymbol,
               profitTargetUnit: formPtUnit,
               profitTargetValue: parseFloat(formPtValue) || 0,
@@ -224,7 +220,6 @@ export const TpSlSettings = () => {
       const newRule: TpSlRule = {
         id: crypto.randomUUID(),
         accountIds: formAccountIds,
-        accountNames: resolvedNames,
         instrument: '—',
         symbol: formSymbol,
         type: 'Standard',
@@ -335,9 +330,10 @@ export const TpSlSettings = () => {
                   <TableRow key={rule.id} className="border-border">
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {rule.accountNames.map((name) => (
-                          <Badge key={name} variant="secondary" className="text-xs">{name}</Badge>
-                        ))}
+                        {rule.accountIds.map((id) => {
+                          const acc = accounts.find(a => a.id === id);
+                          return <Badge key={id} variant="secondary" className="text-xs">{acc?.name ?? 'Unknown'}</Badge>;
+                        })}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{rule.instrument}</TableCell>

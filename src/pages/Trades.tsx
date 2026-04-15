@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
+import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useTradeModal } from '@/contexts/TradeModalContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
@@ -75,6 +76,7 @@ interface TableWithStickyHorizontalScrollProps {
   isPrivacyMode: boolean;
   maskCurrency: (value: number, formatter: (v: number) => string) => string;
   formatCurrency: (v: number) => string;
+  accounts: { id: string; name: string }[];
 }
 
 const TableWithStickyHorizontalScroll = ({
@@ -88,6 +90,7 @@ const TableWithStickyHorizontalScroll = ({
   isPrivacyMode,
   maskCurrency,
   formatCurrency,
+  accounts,
 }: TableWithStickyHorizontalScrollProps) => {
   if (paginatedTrades.length === 0) {
     return (
@@ -220,7 +223,9 @@ const TableWithStickyHorizontalScroll = ({
                   )}
 
                   {isColumnVisible('accountName') && (
-                    <TableCell className="text-muted-foreground px-2 py-1">{trade.accountName || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground px-2 py-1">
+                      {trade.accountId ? (accounts.find(a => a.id === trade.accountId)?.name ?? '—') : '—'}
+                    </TableCell>
                   )}
 
                   {isColumnVisible('openDateTime') && (
@@ -340,6 +345,7 @@ const formatDurationMinutes = (duration: string): string => {
 const Trades = () => {
   const { filteredTrades, deleteTrades, bulkAddTrades, stats } = useFilteredTrades();
   const { openModal } = useTradeModal();
+  const { accounts } = useAccountsContext();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
@@ -620,6 +626,7 @@ const Trades = () => {
           isPrivacyMode={isPrivacyMode}
           maskCurrency={maskCurrency}
           formatCurrency={formatCurrency}
+          accounts={accounts}
         />
 
         {/* Pagination Footer */}

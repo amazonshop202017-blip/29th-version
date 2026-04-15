@@ -133,7 +133,6 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       
       const result = await importMT5Trades(
         selectedFile,
-        account.name,
         selectedAccountId,
         accountBalanceSnapshot,
         bulkAddTrades,

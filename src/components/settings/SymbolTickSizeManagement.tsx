@@ -43,11 +43,7 @@ export const SymbolTickSizeManagement = () => {
   useEffect(() => {
     if (showModal && !editingRuleId) {
       if (!isAllAccountsSelected && selectedAccounts.length > 0) {
-        // selectedAccounts contains account names, map to IDs
-        const ids = selectedAccounts
-          .map(name => accounts.find(a => a.name === name)?.id)
-          .filter(Boolean) as string[];
-        setFormAccountIds(ids);
+        setFormAccountIds([...selectedAccounts]);
       }
     }
   }, [showModal, isAllAccountsSelected, selectedAccounts, editingRuleId, accounts]);
@@ -74,11 +70,7 @@ export const SymbolTickSizeManagement = () => {
       return;
     }
 
-    const resolvedNames = formAccountIds
-      .map(id => accounts.find(a => a.id === id)?.name)
-      .filter(Boolean) as string[];
-
-    if (resolvedNames.length === 0) return;
+    if (formAccountIds.length === 0) return;
 
     // Register new symbol in tick-size registry with default value
     if (!tradedSymbols.includes(formSymbol.trim())) {
