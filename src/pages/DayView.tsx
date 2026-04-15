@@ -18,26 +18,23 @@ const DayView = () => {
   const { filteredTrades } = useFilteredTrades();
   const { trades: allTrades } = useTradesContext();
   const { selectedAccounts, setDateRange, setDatePreset } = useGlobalFilters();
-  const { getActiveAccountNames } = useAccountsContext();
+  const { getActiveAccountIds } = useAccountsContext();
   
   // Calendar month state
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Get active account names for filtering
-  const activeAccountNames = useMemo(() => getActiveAccountNames(), [getActiveAccountNames]);
+  const activeAccountIds = useMemo(() => getActiveAccountIds(), [getActiveAccountIds]);
 
   // Filter trades by account (but NOT by date) for the calendar
-  // This ensures calendar highlights update when account filter changes
   const accountFilteredTrades = useMemo(() => {
     if (selectedAccounts.length === 0) {
-      // "All Accounts" selected - filter to only active accounts
-      return allTrades.filter(trade => activeAccountNames.includes(trade.accountName));
+      return allTrades.filter(trade => activeAccountIds.includes(trade.accountId));
     } else {
-      // Specific accounts selected
-      return allTrades.filter(trade => selectedAccounts.includes(trade.accountName));
+      return allTrades.filter(trade => selectedAccounts.includes(trade.accountId));
     }
-  }, [allTrades, selectedAccounts, activeAccountNames]);
+  }, [allTrades, selectedAccounts, activeAccountIds]);
 
   // Group filtered trades by date
   const dayGroups = useMemo(() => {

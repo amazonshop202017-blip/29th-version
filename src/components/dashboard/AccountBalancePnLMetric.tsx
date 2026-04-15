@@ -8,14 +8,14 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const AccountBalancePnLMetric = () => {
-  const { accounts, transactions, getActiveAccountNames } = useAccountsContext();
+  const { accounts, transactions, getActiveAccountIds } = useAccountsContext();
   const { filteredTrades, stats } = useFilteredTrades();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
 
   const { accountBalance, pnl, closedTradesCount } = useMemo(() => {
-    const activeNames = getActiveAccountNames();
-    const activeAccounts = accounts.filter(a => activeNames.includes(a.name));
+    const activeIds = getActiveAccountIds();
+    const activeAccounts = accounts.filter(a => activeIds.includes(a.id));
 
     // Calculate total balance across active accounts (starting + deposits - withdrawals)
     let totalBaseBalance = 0;
@@ -35,7 +35,7 @@ export const AccountBalancePnLMetric = () => {
       pnl: closedPnl,
       closedTradesCount: closedTrades.length,
     };
-  }, [accounts, transactions, filteredTrades, getActiveAccountNames]);
+  }, [accounts, transactions, filteredTrades, getActiveAccountIds]);
 
   return (
     <div className="h-full flex flex-col">
