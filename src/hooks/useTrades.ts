@@ -51,6 +51,14 @@ export const useTrades = () => {
             };
           }
           
+          // Migration: Backfill userId from current session for pre-existing trades
+          if (!updated.userId) {
+            const currentUserId = getCurrentUserId();
+            if (currentUserId) {
+              updated = { ...updated, userId: currentUserId };
+            }
+          }
+          
           // Migration: Normalize mfeTickPip/maeTickPip — ensure they are number|null, never undefined
           if (updated.mfeTickPip === undefined) {
             updated = { ...updated, mfeTickPip: null };
