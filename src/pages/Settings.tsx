@@ -100,9 +100,8 @@ const Settings = () => {
     name: string;
     startingBalance: number;
     accountMode: import('@/contexts/AccountsContext').AccountMode;
-    propFirmSettings?: import('@/contexts/AccountsContext').PropFirmSettings;
   }) => {
-    addAccount(data.name, data.startingBalance, data.accountMode, data.propFirmSettings);
+    addAccount(data.name, data.startingBalance, data.accountMode);
     toast.success(`Account "${data.name}" created`);
   };
 
@@ -111,9 +110,8 @@ const Settings = () => {
     name: string;
     startingBalance: number;
     accountMode: import('@/contexts/AccountsContext').AccountMode;
-    propFirmSettings?: import('@/contexts/AccountsContext').PropFirmSettings;
   }) => {
-    updateAccount(data.id, data.name, data.startingBalance, data.accountMode, data.propFirmSettings);
+    updateAccount(data.id, data.name, data.startingBalance, data.accountMode);
     toast.success(`Account "${data.name}" updated`);
   };
 
