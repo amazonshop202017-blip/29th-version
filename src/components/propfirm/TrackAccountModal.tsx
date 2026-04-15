@@ -1,9 +1,96 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { X, Search, ChevronDown, ChevronUp, CalendarDays, Settings, ArrowRight, Check } from "lucide-react";
+import { useStrategiesContext } from "@/contexts/StrategiesContext";
+import { toast } from "sonner";
 
 type TrackAccountModalProps = { open: boolean; onClose: () => void };
 type Phase = "Evaluation" | "Funded";
 type Steps = "1 Step" | "2 Steps";
+type DrawdownType = "Static" | "EOD" | "Trailing";
+
+export interface ChallengeData {
+  challengeId: string;
+  nickname: string;
+  fundingFirm: string;
+  strategyIds: string[];
+  evaluationFee: string;
+  activationFee: string;
+  phase: Phase;
+  status: "Active" | "Breached";
+  steps: Steps;
+  accountSetup: "Automatic accounts" | "Customize accounts";
+  broker: string;
+  startDate: string;
+  quantity: number;
+  rules: ChallengeRules;
+  createdAt: string;
+}
+
+export interface StepRules {
+  minTradingDays: string;
+  tradingPeriodEnd: string;
+  tradingPeriodUnlimited: boolean;
+  profitTarget: string;
+  profitTargetUnit: "%" | "$";
+  maxDailyLoss: string;
+  maxDailyLossUnit: "%" | "$";
+  maxDrawdown: string;
+  maxDrawdownUnit: "%" | "$";
+  maxDrawdownType: DrawdownType;
+  bestDayConsistency: string;
+}
+
+export interface FundingRules {
+  maxDailyLoss: string;
+  maxDailyLossUnit: "%" | "$";
+  minTradingDays: string;
+  maxDrawdown: string;
+  maxDrawdownUnit: "%" | "$";
+  maxDrawdownType: DrawdownType;
+  bestDayConsistency: string;
+}
+
+export interface ChallengeRules {
+  balanceAmount: string;
+  step1: StepRules;
+  step2: StepRules;
+  sameStep2AsStep1: boolean;
+  funding: FundingRules;
+  sameFundingAsStep1: boolean;
+}
+
+const CHALLENGES_STORAGE_KEY = "propfirm-challenges";
+
+function generateChallengeId(): string {
+  return String(Math.floor(1000000 + Math.random() * 9000000));
+}
+
+export function getChallenges(): ChallengeData[] {
+  try {
+    const raw = localStorage.getItem(CHALLENGES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function saveChallenge(challenge: ChallengeData) {
+  const all = getChallenges();
+  all.push(challenge);
+  localStorage.setItem(CHALLENGES_STORAGE_KEY, JSON.stringify(all));
+}
+
+const defaultStepRules = (): StepRules => ({
+  minTradingDays: "", tradingPeriodEnd: "", tradingPeriodUnlimited: false,
+  profitTarget: "", profitTargetUnit: "$", maxDailyLoss: "", maxDailyLossUnit: "$",
+  maxDrawdown: "", maxDrawdownUnit: "$", maxDrawdownType: "Static", bestDayConsistency: "",
+});
+
+const defaultFundingRules = (): FundingRules => ({
+  maxDailyLoss: "", maxDailyLossUnit: "$", minTradingDays: "",
+  maxDrawdown: "", maxDrawdownUnit: "$", maxDrawdownType: "Static", bestDayConsistency: "",
+});
+
+// ─── Shared UI Components ────────────────────────────────────────
 
 function UnitToggle({ value, onChange }: { value: "%" | "$"; onChange: (v: "%" | "$") => void }) {
   return (
@@ -16,17 +103,17 @@ function UnitToggle({ value, onChange }: { value: "%" | "$"; onChange: (v: "%" |
   );
 }
 
-function UnitInput({ unit, className }: { unit: "%" | "$"; className?: string }) {
+function UnitInput({ unit, value, onChange, className }: { unit: "%" | "$"; value: string; onChange: (v: string) => void; className?: string }) {
   return (
-    <div className={`flex items-center border border-border rounded-lg px-2.5 py-2 bg-white gap-1 ${className ?? ""}`}>
+    <div className={`flex items-center border border-border rounded-lg px-2.5 py-2 bg-background gap-1 ${className ?? ""}`}>
       {unit === "$" && <span className="text-xs text-muted-foreground shrink-0">$</span>}
-      <input type="text" readOnly className="flex-1 text-sm focus:outline-none bg-transparent w-0 min-w-0" />
+      <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder="0" className="flex-1 text-sm focus:outline-none bg-transparent w-0 min-w-0" />
       {unit === "%" && <span className="text-xs text-muted-foreground shrink-0">%</span>}
     </div>
   );
 }
 
-function DrawdownToggle({ value, onChange }: { value: "Static" | "EOD" | "Trailing"; onChange: (v: "Static" | "EOD" | "Trailing") => void }) {
+function DrawdownToggle({ value, onChange }: { value: DrawdownType; onChange: (v: DrawdownType) => void }) {
   return (
     <div className="flex shrink-0">
       {(["Static", "EOD", "Trailing"] as const).map((t, i) => (
@@ -37,24 +124,22 @@ function DrawdownToggle({ value, onChange }: { value: "Static" | "EOD" | "Traili
   );
 }
 
-function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+function CheckboxItem({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <label className="flex items-center gap-2.5 cursor-pointer" onClick={onChange}>
-      <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors shrink-0 ${checked ? "bg-primary border-primary" : "border-border bg-white"}`}>
-        {checked && <Check className="w-3 h-3 text-white" />}
+      <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors shrink-0 ${checked ? "bg-primary border-primary" : "border-border bg-background"}`}>
+        {checked && <Check className="w-3 h-3 text-primary-foreground" />}
       </div>
       <span className="text-sm text-foreground">{label}</span>
     </label>
   );
 }
 
-function StepSection({ title, disabled = false }: { title: string; disabled?: boolean }) {
+// ─── Step Section ────────────────────────────────────────────────
+
+function StepSection({ title, disabled = false, rules, onChange }: { title: string; disabled?: boolean; rules: StepRules; onChange: (r: StepRules) => void }) {
   const [expanded, setExpanded] = useState(true);
-  const [ptUnit, setPtUnit] = useState<"%" | "$">("$");
-  const [mdlUnit, setMdlUnit] = useState<"%" | "$">("$");
-  const [ddType, setDdType] = useState<"Static" | "EOD" | "Trailing">("Static");
-  const [ddUnit, setDdUnit] = useState<"%" | "$">("$");
-  const [unlimited, setUnlimited] = useState(false);
+  const upd = (patch: Partial<StepRules>) => onChange({ ...rules, ...patch });
 
   return (
     <div className={`border border-border rounded-xl overflow-hidden ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
@@ -65,26 +150,26 @@ function StepSection({ title, disabled = false }: { title: string; disabled?: bo
       {expanded && (
         <div className="p-4 space-y-4 bg-muted/10">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Minimum trading days</label><input type="text" placeholder="Type here" readOnly className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none placeholder:text-muted-foreground/50" /></div>
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Trading period end (days)</label><div className="flex items-center gap-2"><input type="text" placeholder="Type here" readOnly className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none placeholder:text-muted-foreground/50" /><label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap cursor-pointer" onClick={() => setUnlimited(v => !v)}><div className={`w-4 h-4 border rounded flex items-center justify-center ${unlimited ? "bg-primary border-primary" : "border-border bg-white"}`}>{unlimited && <Check className="w-3 h-3 text-white" />}</div>Unlimited</label></div></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Minimum trading days</label><input type="text" value={rules.minTradingDays} onChange={e => upd({ minTradingDays: e.target.value })} placeholder="Type here" className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none placeholder:text-muted-foreground/50" /></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Trading period end (days)</label><div className="flex items-center gap-2"><input type="text" value={rules.tradingPeriodEnd} onChange={e => upd({ tradingPeriodEnd: e.target.value })} placeholder="Type here" disabled={rules.tradingPeriodUnlimited} className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none placeholder:text-muted-foreground/50 disabled:opacity-50" /><label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap cursor-pointer" onClick={() => upd({ tradingPeriodUnlimited: !rules.tradingPeriodUnlimited })}><div className={`w-4 h-4 border rounded flex items-center justify-center ${rules.tradingPeriodUnlimited ? "bg-primary border-primary" : "border-border bg-background"}`}>{rules.tradingPeriodUnlimited && <Check className="w-3 h-3 text-primary-foreground" />}</div>Unlimited</label></div></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Profit target</label><div className="flex items-center gap-1.5"><UnitToggle value={ptUnit} onChange={setPtUnit} /><UnitInput unit={ptUnit} className="flex-1 min-w-0" /></div></div>
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max daily loss</label><div className="flex items-center gap-1.5"><UnitToggle value={mdlUnit} onChange={setMdlUnit} /><UnitInput unit={mdlUnit} className="flex-1 min-w-0" /></div></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Profit target</label><div className="flex items-center gap-1.5"><UnitToggle value={rules.profitTargetUnit} onChange={v => upd({ profitTargetUnit: v })} /><UnitInput unit={rules.profitTargetUnit} value={rules.profitTarget} onChange={v => upd({ profitTarget: v })} className="flex-1 min-w-0" /></div></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max daily loss</label><div className="flex items-center gap-1.5"><UnitToggle value={rules.maxDailyLossUnit} onChange={v => upd({ maxDailyLossUnit: v })} /><UnitInput unit={rules.maxDailyLossUnit} value={rules.maxDailyLoss} onChange={v => upd({ maxDailyLoss: v })} className="flex-1 min-w-0" /></div></div>
           </div>
-          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Drawdown</label><div className="flex items-center gap-1.5 flex-wrap"><DrawdownToggle value={ddType} onChange={setDdType} /><UnitToggle value={ddUnit} onChange={setDdUnit} /><UnitInput unit={ddUnit} className="flex-1 min-w-[60px]" /></div></div>
-          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Best Day Consistency Target</label><div className="flex items-center border border-border rounded-lg px-3 py-2 bg-white gap-1"><input type="text" readOnly className="flex-1 text-sm focus:outline-none bg-transparent" /><span className="text-xs text-muted-foreground shrink-0">%</span></div><p className="text-[10px] text-muted-foreground/70 mt-1.5">E.g. Your best profitable day must be below 50% of your total profit.</p></div>
+          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Drawdown</label><div className="flex items-center gap-1.5 flex-wrap"><DrawdownToggle value={rules.maxDrawdownType} onChange={v => upd({ maxDrawdownType: v })} /><UnitToggle value={rules.maxDrawdownUnit} onChange={v => upd({ maxDrawdownUnit: v })} /><UnitInput unit={rules.maxDrawdownUnit} value={rules.maxDrawdown} onChange={v => upd({ maxDrawdown: v })} className="flex-1 min-w-[60px]" /></div></div>
+          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Best Day Consistency Target</label><div className="flex items-center border border-border rounded-lg px-3 py-2 bg-background gap-1"><input type="text" value={rules.bestDayConsistency} onChange={e => upd({ bestDayConsistency: e.target.value })} className="flex-1 text-sm focus:outline-none bg-transparent" /><span className="text-xs text-muted-foreground shrink-0">%</span></div><p className="text-[10px] text-muted-foreground/70 mt-1.5">E.g. Your best profitable day must be below 50% of your total profit.</p></div>
         </div>
       )}
     </div>
   );
 }
 
-function FundingSection({ defaultExpanded = false }: { defaultExpanded?: boolean }) {
+// ─── Funding Section ─────────────────────────────────────────────
+
+function FundingSectionUI({ defaultExpanded = false, rules, onChange }: { defaultExpanded?: boolean; rules: FundingRules; onChange: (r: FundingRules) => void }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const [mdlUnit, setMdlUnit] = useState<"%" | "$">("$");
-  const [ddType, setDdType] = useState<"Static" | "EOD" | "Trailing">("Static");
-  const [ddUnit, setDdUnit] = useState<"%" | "$">("$");
+  const upd = (patch: Partial<FundingRules>) => onChange({ ...rules, ...patch });
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
@@ -95,16 +180,18 @@ function FundingSection({ defaultExpanded = false }: { defaultExpanded?: boolean
       {expanded && (
         <div className="p-4 space-y-4 bg-muted/10">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Daily Loss</label><div className="flex items-center gap-1.5"><UnitToggle value={mdlUnit} onChange={setMdlUnit} /><UnitInput unit={mdlUnit} className="flex-1 min-w-0" /></div></div>
-            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Minimum trading days</label><input type="text" placeholder="Type here" readOnly className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none placeholder:text-muted-foreground/50" /></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Daily Loss</label><div className="flex items-center gap-1.5"><UnitToggle value={rules.maxDailyLossUnit} onChange={v => upd({ maxDailyLossUnit: v })} /><UnitInput unit={rules.maxDailyLossUnit} value={rules.maxDailyLoss} onChange={v => upd({ maxDailyLoss: v })} className="flex-1 min-w-0" /></div></div>
+            <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Minimum trading days</label><input type="text" value={rules.minTradingDays} onChange={e => upd({ minTradingDays: e.target.value })} placeholder="Type here" className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none placeholder:text-muted-foreground/50" /></div>
           </div>
-          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Drawdown</label><div className="flex items-center gap-1.5 flex-wrap"><DrawdownToggle value={ddType} onChange={setDdType} /><UnitToggle value={ddUnit} onChange={setDdUnit} /><UnitInput unit={ddUnit} className="flex-1 min-w-[60px]" /></div></div>
-          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Best Day Consistency</label><div className="flex items-center border border-border rounded-lg px-3 py-2 bg-white gap-1"><input type="text" readOnly className="flex-1 text-sm focus:outline-none bg-transparent" /><span className="text-xs text-muted-foreground shrink-0">%</span></div><p className="text-[10px] text-muted-foreground/70 mt-1.5">E.g. Your best profitable day must be below 50% of your total profit.</p></div>
+          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Max Drawdown</label><div className="flex items-center gap-1.5 flex-wrap"><DrawdownToggle value={rules.maxDrawdownType} onChange={v => upd({ maxDrawdownType: v })} /><UnitToggle value={rules.maxDrawdownUnit} onChange={v => upd({ maxDrawdownUnit: v })} /><UnitInput unit={rules.maxDrawdownUnit} value={rules.maxDrawdown} onChange={v => upd({ maxDrawdown: v })} className="flex-1 min-w-[60px]" /></div></div>
+          <div><label className="block text-xs font-medium text-muted-foreground mb-1.5">Best Day Consistency</label><div className="flex items-center border border-border rounded-lg px-3 py-2 bg-background gap-1"><input type="text" value={rules.bestDayConsistency} onChange={e => upd({ bestDayConsistency: e.target.value })} className="flex-1 text-sm focus:outline-none bg-transparent" /><span className="text-xs text-muted-foreground shrink-0">%</span></div><p className="text-[10px] text-muted-foreground/70 mt-1.5">E.g. Your best profitable day must be below 50% of your total profit.</p></div>
         </div>
       )}
     </div>
   );
 }
+
+// ─── Account Select Row ──────────────────────────────────────────
 
 function AccountSelectRow({ label, showHelp = false }: { label: string; showHelp?: boolean }) {
   return (
@@ -113,12 +200,12 @@ function AccountSelectRow({ label, showHelp = false }: { label: string; showHelp
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         {showHelp && (<div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 flex items-center justify-center cursor-help"><span className="text-[9px] font-bold text-muted-foreground leading-none">?</span></div>)}
       </div>
-      <div className="flex items-center gap-2.5 border border-primary/50 rounded-lg px-3 py-2.5 bg-white cursor-pointer hover:border-primary transition-colors">
+      <div className="flex items-center gap-2.5 border border-primary/50 rounded-lg px-3 py-2.5 bg-background cursor-pointer hover:border-primary transition-colors">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-          <rect x="1" y="1" width="5.5" height="5.5" rx="1" fill="#818cf8" opacity="0.8" />
-          <rect x="9.5" y="1" width="5.5" height="5.5" rx="1" fill="#818cf8" opacity="0.8" />
-          <rect x="1" y="9.5" width="5.5" height="5.5" rx="1" fill="#818cf8" opacity="0.5" />
-          <rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1" fill="#818cf8" opacity="0.5" />
+          <rect x="1" y="1" width="5.5" height="5.5" rx="1" fill="hsl(var(--primary))" opacity="0.8" />
+          <rect x="9.5" y="1" width="5.5" height="5.5" rx="1" fill="hsl(var(--primary))" opacity="0.8" />
+          <rect x="1" y="9.5" width="5.5" height="5.5" rx="1" fill="hsl(var(--primary))" opacity="0.5" />
+          <rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1" fill="hsl(var(--primary))" opacity="0.5" />
         </svg>
         <span className="flex-1 text-sm text-foreground">Create a new account</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -127,13 +214,81 @@ function AccountSelectRow({ label, showHelp = false }: { label: string; showHelp
   );
 }
 
-function EditRulesPanel({ onDone, phase, steps }: { onDone: () => void; phase: Phase; steps: Steps }) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [sameStep2AsStep1, setSameStep2AsStep1] = useState(false);
-  const [sameFundingAsStep1, setSameFundingAsStep1] = useState(false);
+// ─── Strategy Multi-Select ───────────────────────────────────────
+
+function StrategyMultiSelect({ selectedIds, onChange }: { selectedIds: string[]; onChange: (ids: string[]) => void }) {
+  const { strategies } = useStrategiesContext();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const toggle = (id: string) => {
+    onChange(selectedIds.includes(id) ? selectedIds.filter(s => s !== id) : [...selectedIds, id]);
+  };
+
+  const selectedNames = strategies.filter(s => selectedIds.includes(s.id)).map(s => s.name);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-sm font-medium text-foreground">Strategies (Setups)</label>
+        <button onClick={() => navigate("/strategies")} className="text-xs font-medium text-primary hover:text-primary/80">Create new setup</button>
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className="w-full flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-background cursor-pointer text-left"
+        >
+          <span className={`text-sm truncate ${selectedNames.length ? "text-foreground" : "text-muted-foreground/60"}`}>
+            {selectedNames.length ? selectedNames.join(", ") : "Select setups..."}
+          </span>
+          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <div className="absolute z-20 mt-1 w-full bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {strategies.length === 0 ? (
+                <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                  No setups created yet.{" "}
+                  <button onClick={() => navigate("/strategies")} className="text-primary hover:underline">Create one</button>
+                </div>
+              ) : strategies.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => toggle(s.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className={`w-4 h-4 border rounded flex items-center justify-center shrink-0 ${selectedIds.includes(s.id) ? "bg-primary border-primary" : "border-border bg-background"}`}>
+                    {selectedIds.includes(s.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <span className="text-sm text-foreground">{s.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Rules Panel ────────────────────────────────────────────
+
+function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
+  onDone: () => void; phase: Phase; steps: Steps;
+  rules: ChallengeRules; onRulesChange: (r: ChallengeRules) => void;
+}) {
   const isFunded = phase === "Funded";
   const show2Steps = phase === "Evaluation" && steps === "2 Steps";
   const sizes = ["25K", "50K", "75K", "100K", "150K", "200K"];
+
+  const setBalance = (v: string) => onRulesChange({ ...rules, balanceAmount: v });
+  const selectSize = (s: string) => {
+    const val = s.replace("K", "000");
+    onRulesChange({ ...rules, balanceAmount: rules.balanceAmount === val ? "" : val });
+  };
+  const selectedSize = useMemo(() => sizes.find(s => s.replace("K", "000") === rules.balanceAmount) ?? null, [rules.balanceAmount]);
 
   return (
     <div className="flex flex-col h-full">
@@ -143,18 +298,31 @@ function EditRulesPanel({ onDone, phase, steps }: { onDone: () => void; phase: P
       <div className="flex-1 overflow-y-auto px-7 py-5 space-y-5">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">Balance amount <span className="text-rose-500">*</span></label>
-          <div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-white gap-1.5 mb-2"><span className="text-sm text-muted-foreground">$</span><input type="text" defaultValue="0" readOnly className="flex-1 text-sm focus:outline-none bg-transparent" /></div>
-          <div className="flex gap-2 flex-wrap">{sizes.map(s => (<button key={s} onClick={() => setSelectedSize(s === selectedSize ? null : s)} className={`px-3.5 py-1.5 text-xs font-semibold border rounded-lg transition-colors ${selectedSize === s ? "bg-primary/10 border-primary text-primary" : "border-border bg-white text-foreground hover:border-foreground/30"}`}>{s}</button>))}</div>
+          <div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-background gap-1.5 mb-2">
+            <span className="text-sm text-muted-foreground">$</span>
+            <input type="text" value={rules.balanceAmount} onChange={e => setBalance(e.target.value)} className="flex-1 text-sm focus:outline-none bg-transparent" />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {sizes.map(s => (
+              <button key={s} onClick={() => selectSize(s)}
+                className={`px-3.5 py-1.5 text-xs font-semibold border rounded-lg transition-colors ${selectedSize === s ? "bg-primary/10 border-primary text-primary" : "border-border bg-background text-foreground hover:border-foreground/30"}`}>{s}</button>
+            ))}
+          </div>
         </div>
         {!isFunded && (
           <>
-            <StepSection title="STEP 1" />
-            {show2Steps && (<><Checkbox checked={sameStep2AsStep1} onChange={() => setSameStep2AsStep1(v => !v)} label="Same rules as Step 1" /><StepSection title="STEP 2" disabled={sameStep2AsStep1} /></>)}
-            <Checkbox checked={sameFundingAsStep1} onChange={() => setSameFundingAsStep1(v => !v)} label="Same rules as Step 1" />
-            <FundingSection defaultExpanded={false} />
+            <StepSection title="STEP 1" rules={rules.step1} onChange={s1 => onRulesChange({ ...rules, step1: s1 })} />
+            {show2Steps && (
+              <>
+                <CheckboxItem checked={rules.sameStep2AsStep1} onChange={() => onRulesChange({ ...rules, sameStep2AsStep1: !rules.sameStep2AsStep1 })} label="Same rules as Step 1" />
+                <StepSection title="STEP 2" disabled={rules.sameStep2AsStep1} rules={rules.step2} onChange={s2 => onRulesChange({ ...rules, step2: s2 })} />
+              </>
+            )}
+            <CheckboxItem checked={rules.sameFundingAsStep1} onChange={() => onRulesChange({ ...rules, sameFundingAsStep1: !rules.sameFundingAsStep1 })} label="Same rules as Step 1" />
+            <FundingSectionUI defaultExpanded={false} rules={rules.funding} onChange={f => onRulesChange({ ...rules, funding: f })} />
           </>
         )}
-        {isFunded && <FundingSection defaultExpanded={true} />}
+        {isFunded && <FundingSectionUI defaultExpanded={true} rules={rules.funding} onChange={f => onRulesChange({ ...rules, funding: f })} />}
       </div>
       <div className="px-7 py-4 border-t border-border shrink-0 flex justify-end">
         <button onClick={onDone} className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Done <ArrowRight className="w-4 h-4" /></button>
@@ -163,13 +331,59 @@ function EditRulesPanel({ onDone, phase, steps }: { onDone: () => void; phase: P
   );
 }
 
+// ─── Main Modal ──────────────────────────────────────────────────
+
 export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
+  const [nickname, setNickname] = useState("");
+  const [fundingFirm, setFundingFirm] = useState("");
+  const [strategyIds, setStrategyIds] = useState<string[]>([]);
+  const [evaluationFee, setEvaluationFee] = useState("0");
+  const [activationFee, setActivationFee] = useState("0");
   const [phase, setPhase] = useState<Phase>("Evaluation");
   const [status, setStatus] = useState<"Active" | "Breached">("Active");
   const [steps, setSteps] = useState<Steps>("1 Step");
-  const [setup, setSetup] = useState<"Automatic accounts" | "Customize accounts">("Automatic accounts");
+  const [accountSetup, setAccountSetup] = useState<"Automatic accounts" | "Customize accounts">("Automatic accounts");
+  const [startDate, setStartDate] = useState("");
   const [showEditRules, setShowEditRules] = useState(false);
+  const [rules, setRules] = useState<ChallengeRules>({
+    balanceAmount: "", step1: defaultStepRules(), step2: defaultStepRules(),
+    sameStep2AsStep1: false, funding: defaultFundingRules(), sameFundingAsStep1: false,
+  });
+
   const isFunded = phase === "Funded";
+
+  const handleCreate = () => {
+    if (!nickname.trim()) { toast.error("Challenge nickname is required"); return; }
+    if (!fundingFirm.trim()) { toast.error("Funding firm is required"); return; }
+    if (!startDate) { toast.error("Start date is required"); return; }
+
+    const challenge: ChallengeData = {
+      challengeId: generateChallengeId(),
+      nickname: nickname.trim(),
+      fundingFirm: fundingFirm.trim(),
+      strategyIds,
+      evaluationFee,
+      activationFee,
+      phase,
+      status,
+      steps,
+      accountSetup,
+      broker: "",
+      startDate,
+      quantity: 1,
+      rules,
+      createdAt: new Date().toISOString(),
+    };
+
+    saveChallenge(challenge);
+    toast.success(`Challenge "${challenge.nickname}" created (ID: ${challenge.challengeId})`);
+    // Reset
+    setNickname(""); setFundingFirm(""); setStrategyIds([]); setEvaluationFee("0");
+    setActivationFee("0"); setPhase("Evaluation"); setStatus("Active"); setSteps("1 Step");
+    setAccountSetup("Automatic accounts"); setStartDate(""); setShowEditRules(false);
+    setRules({ balanceAmount: "", step1: defaultStepRules(), step2: defaultStepRules(), sameStep2AsStep1: false, funding: defaultFundingRules(), sameFundingAsStep1: false });
+    onClose();
+  };
 
   if (!open) return null;
 
@@ -177,57 +391,65 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-[680px] h-[90vh] overflow-hidden pointer-events-auto flex flex-col relative" onClick={e => e.stopPropagation()}>
+        <div className="bg-background rounded-2xl shadow-xl w-full max-w-[680px] h-[90vh] overflow-hidden pointer-events-auto flex flex-col relative" onClick={e => e.stopPropagation()}>
           <div className="flex flex-1 min-h-0 transition-transform duration-300 ease-in-out" style={{ width: "200%", transform: showEditRules ? "translateX(-50%)" : "translateX(0)" }}>
+            {/* Step 1: Main form */}
             <div className="w-1/2 flex flex-col min-h-0">
               <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-border shrink-0">
-                <h2 className="text-lg font-bold text-foreground">Track prop firm account</h2>
+                <h2 className="text-lg font-bold text-foreground">Add Challenge</h2>
                 <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"><X className="w-4 h-4" /></button>
               </div>
               <div className="flex-1 overflow-y-auto px-7 py-5 space-y-5">
+                {/* Nickname + Edit Rules */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">Challenge nickname <span className="text-rose-500">*</span></label>
                   <div className="flex gap-2">
-                    <input type="text" readOnly className="flex-1 border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-white" />
-                    <button onClick={() => setShowEditRules(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border border-border rounded-lg bg-white text-foreground hover:bg-muted/30 transition-colors whitespace-nowrap"><Settings className="w-3.5 h-3.5 text-muted-foreground" />Edit rules</button>
+                    <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} placeholder="e.g. FTMO 100K Step 1" className="flex-1 border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-background placeholder:text-muted-foreground/50" />
+                    <button onClick={() => setShowEditRules(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border border-border rounded-lg bg-background text-foreground hover:bg-muted/30 transition-colors whitespace-nowrap"><Settings className="w-3.5 h-3.5 text-muted-foreground" />Edit rules</button>
                   </div>
                 </div>
+                {/* Funding firm */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">Funding firm <span className="text-rose-500">*</span></label>
-                  <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 bg-white"><Search className="w-4 h-4 text-muted-foreground shrink-0" /><input type="text" placeholder="Search firms..." readOnly className="flex-1 text-sm focus:outline-none bg-transparent placeholder:text-muted-foreground/60" /></div>
+                  <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2.5 bg-background"><Search className="w-4 h-4 text-muted-foreground shrink-0" /><input type="text" value={fundingFirm} onChange={e => setFundingFirm(e.target.value)} placeholder="Search firms..." className="flex-1 text-sm focus:outline-none bg-transparent placeholder:text-muted-foreground/60" /></div>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5"><label className="text-sm font-medium text-foreground">Strategies</label><button className="text-xs font-medium text-primary hover:text-primary/80">Create new strategy</button></div>
-                  <div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-white cursor-pointer"><span className="text-sm text-muted-foreground/60">Select strategies...</span><ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /></div>
-                </div>
+                {/* Strategies */}
+                <StrategyMultiSelect selectedIds={strategyIds} onChange={setStrategyIds} />
+                {/* Fees */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Evaluation Fee <span className="text-rose-500">*</span></label><div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-white gap-1.5"><span className="text-sm text-muted-foreground">$</span><input type="text" defaultValue="0" readOnly className="flex-1 text-sm focus:outline-none bg-transparent" /></div></div>
-                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Activation Fee <span className="text-rose-500">*</span></label><div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-white gap-1.5"><span className="text-sm text-muted-foreground">$</span><input type="text" defaultValue="0" readOnly className="flex-1 text-sm focus:outline-none bg-transparent" /></div></div>
+                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Evaluation Fee <span className="text-rose-500">*</span></label><div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-background gap-1.5"><span className="text-sm text-muted-foreground">$</span><input type="text" value={evaluationFee} onChange={e => setEvaluationFee(e.target.value)} className="flex-1 text-sm focus:outline-none bg-transparent" /></div></div>
+                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Activation Fee <span className="text-rose-500">*</span></label><div className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-background gap-1.5"><span className="text-sm text-muted-foreground">$</span><input type="text" value={activationFee} onChange={e => setActivationFee(e.target.value)} className="flex-1 text-sm focus:outline-none bg-transparent" /></div></div>
                 </div>
+                {/* Phase / Status / Steps */}
                 <div className={`grid gap-4 ${isFunded ? "grid-cols-2" : "grid-cols-3"}`}>
-                  <div><label className="block text-xs font-medium text-foreground mb-2">Account Phase</label><div className="flex gap-1.5">{(["Evaluation", "Funded"] as Phase[]).map(opt => (<button key={opt} onClick={() => setPhase(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${phase === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-white"}`}>{opt}</button>))}</div></div>
-                  <div><label className="block text-xs font-medium text-foreground mb-2">Account Status</label><div className="flex gap-1.5 flex-wrap">{(["Active", "Breached"] as const).map(opt => (<button key={opt} onClick={() => setStatus(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${status === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-white"}`}>{opt}</button>))}</div></div>
-                  {!isFunded && (<div><label className="block text-xs font-medium text-foreground mb-2">Number of Steps</label><div className="flex gap-1.5 flex-wrap">{(["1 Step", "2 Steps"] as Steps[]).map(opt => (<button key={opt} onClick={() => setSteps(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${steps === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-white"}`}>{opt}</button>))}</div></div>)}
+                  <div><label className="block text-xs font-medium text-foreground mb-2">Account Phase</label><div className="flex gap-1.5">{(["Evaluation", "Funded"] as Phase[]).map(opt => (<button key={opt} onClick={() => setPhase(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${phase === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-background"}`}>{opt}</button>))}</div></div>
+                  <div><label className="block text-xs font-medium text-foreground mb-2">Account Status</label><div className="flex gap-1.5 flex-wrap">{(["Active", "Breached"] as const).map(opt => (<button key={opt} onClick={() => setStatus(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${status === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-background"}`}>{opt}</button>))}</div></div>
+                  {!isFunded && (<div><label className="block text-xs font-medium text-foreground mb-2">Number of Steps</label><div className="flex gap-1.5 flex-wrap">{(["1 Step", "2 Steps"] as Steps[]).map(opt => (<button key={opt} onClick={() => setSteps(opt)} className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${steps === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-background"}`}>{opt}</button>))}</div></div>)}
                 </div>
-                <div><label className="block text-sm font-medium text-foreground mb-2">Account Setup</label><div className="flex gap-2">{(["Automatic accounts", "Customize accounts"] as const).map(opt => (<button key={opt} onClick={() => setSetup(opt)} className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${setup === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-white"}`}>{opt}</button>))}</div></div>
-                {setup === "Automatic accounts" ? (
+                {/* Account Setup */}
+                <div><label className="block text-sm font-medium text-foreground mb-2">Account Setup</label><div className="flex gap-2">{(["Automatic accounts", "Customize accounts"] as const).map(opt => (<button key={opt} onClick={() => setAccountSetup(opt)} className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${accountSetup === opt ? "bg-primary/10 border-primary text-primary" : "border-border text-foreground hover:border-foreground/40 bg-background"}`}>{opt}</button>))}</div></div>
+                {accountSetup === "Automatic accounts" ? (
                   <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div><div><p className="text-sm font-semibold text-emerald-700">Accounts will be created automatically</p><p className="text-xs text-emerald-600/80 mt-0.5">A new account will be generated for each step as it begins.</p></div></div>
                 ) : (
                   <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">{!isFunded && (<><AccountSelectRow label="Step 1 – select account" />{steps === "2 Steps" && <AccountSelectRow label="Step 2 – select account" />}</>)}<AccountSelectRow label="Funding – select account" showHelp /></div>
                 )}
-                <div><label className="block text-sm font-medium text-foreground mb-1.5">Broker</label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-white"><input type="text" placeholder="Start typing the broker" readOnly className="flex-1 text-sm focus:outline-none bg-transparent placeholder:text-muted-foreground/60" /><Search className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
+                {/* Broker (disabled) */}
+                <div><label className="block text-sm font-medium text-foreground mb-1.5">Broker</label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-muted/30 opacity-60 cursor-not-allowed"><span className="text-sm text-muted-foreground">Coming soon</span><Search className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
+                {/* Start date + Quantity */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Start date <span className="text-rose-500">*</span></label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-white"><span className="text-sm text-muted-foreground/60">MM/DD/YYYY</span><CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
-                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Quantity</label><input type="number" defaultValue={1} readOnly className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-white" /></div>
+                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Start date <span className="text-rose-500">*</span></label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-background"><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="flex-1 text-sm focus:outline-none bg-transparent text-foreground" /><CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
+                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Quantity</label><input type="number" value={1} disabled className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-muted/30 opacity-60 cursor-not-allowed" /></div>
                 </div>
               </div>
+              {/* Footer */}
               <div className="flex items-center justify-end gap-3 px-7 py-4 border-t border-border shrink-0">
-                <button onClick={onClose} className="px-5 py-2 text-sm font-medium border border-border rounded-lg text-foreground bg-white hover:bg-muted/30 transition-colors">Cancel</button>
-                <button className="px-5 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Create challenge</button>
+                <button onClick={onClose} className="px-5 py-2 text-sm font-medium border border-border rounded-lg text-foreground bg-background hover:bg-muted/30 transition-colors">Cancel</button>
+                <button onClick={handleCreate} className="px-5 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Create challenge</button>
               </div>
             </div>
+            {/* Step 2: Edit Rules */}
             <div className="w-1/2 flex flex-col min-h-0">
-              <EditRulesPanel onDone={() => setShowEditRules(false)} phase={phase} steps={steps} />
+              <EditRulesPanel onDone={() => setShowEditRules(false)} phase={phase} steps={steps} rules={rules} onRulesChange={setRules} />
             </div>
           </div>
         </div>
