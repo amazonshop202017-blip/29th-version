@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Wallet, Save } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -7,27 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import type { Account, AccountMode, PropFirmStep, DrawdownType } from '@/contexts/AccountsContext';
-
-interface PhaseData {
-  targetPercent: string;
-  totalDrawdown: string;
-  dailyDrawdown: string;
-  drawdownType: DrawdownType;
-}
-
-const emptyPhase = (): PhaseData => ({
-  targetPercent: '',
-  totalDrawdown: '',
-  dailyDrawdown: '',
-  drawdownType: 'static',
-});
-
-const isPhaseFilled = (p: PhaseData) =>
-  p.targetPercent !== '' || p.totalDrawdown !== '' || p.dailyDrawdown !== '';
-
-const isInstantFilled = (p: PhaseData) =>
-  p.totalDrawdown !== '' || p.dailyDrawdown !== '';
+import type { Account, AccountMode } from '@/contexts/AccountsContext';
+import { useNavigate } from 'react-router-dom';
 
 interface NewAccountModalProps {
   open: boolean;
@@ -36,99 +17,29 @@ interface NewAccountModalProps {
     name: string;
     startingBalance: number;
     accountMode: AccountMode;
-    propFirmSettings?: {
-      step: PropFirmStep;
-      targetPercent: number;
-      totalDrawdownPercent: number;
-      dailyDrawdownPercent: number;
-      drawdownType: DrawdownType;
-    };
   }) => void;
   onUpdateAccount?: (data: {
     id: string;
     name: string;
     startingBalance: number;
     accountMode: AccountMode;
-    propFirmSettings?: {
-      step: PropFirmStep;
-      targetPercent: number;
-      totalDrawdownPercent: number;
-      dailyDrawdownPercent: number;
-      drawdownType: DrawdownType;
-    };
   }) => void;
   editingAccount?: Account | null;
   currencySymbol: string;
 }
 
-type PhaseTab = 'step1' | 'step2' | 'instant';
-
-const tabs: { value: PhaseTab; label: string }[] = [
-  { value: 'step1', label: 'Step 1' },
-  { value: 'step2', label: 'Step 2' },
-  { value: 'instant', label: 'Instant' },
-];
-
-const drawdownOptions: { value: DrawdownType; label: string }[] = [
-  { value: 'static', label: 'Static' },
-  { value: 'live', label: 'Live' },
-  { value: 'eod', label: 'EOD' },
-];
-
 export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateAccount, editingAccount, currencySymbol }: NewAccountModalProps) => {
   const isEditing = !!editingAccount;
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [balance, setBalance] = useState('');
   const [mode, setMode] = useState<AccountMode>('normal');
-  const [activeTab, setActiveTab] = useState<PhaseTab>('step1');
 
-  const [step1Data, setStep1Data] = useState<PhaseData>(emptyPhase());
-  const [step2Data, setStep2Data] = useState<PhaseData>(emptyPhase());
-  const [instantData, setInstantData] = useState<PhaseData>(emptyPhase());
-
-  // Sliding indicator refs
-  const tabsContainerRef = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<Record<PhaseTab, HTMLButtonElement | null>>({ step1: null, step2: null, instant: null });
-  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
-
-  useEffect(() => {
-    const el = tabRefs.current[activeTab];
-    const container = tabsContainerRef.current;
-    if (el && container) {
-      const containerRect = container.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      setIndicatorStyle({
-        left: elRect.left - containerRect.left,
-        width: elRect.width,
-      });
-    }
-  }, [activeTab, mode, open]);
-
-  // Pre-fill form when editing
   useEffect(() => {
     if (open && editingAccount) {
       setName(editingAccount.name);
       setBalance(editingAccount.startingBalance.toString());
       setMode(editingAccount.accountMode || 'normal');
-      if (editingAccount.propFirmSettings) {
-        const ps = editingAccount.propFirmSettings;
-        const phaseData: PhaseData = {
-          targetPercent: ps.targetPercent ? ps.targetPercent.toString() : '',
-          totalDrawdown: ps.totalDrawdownPercent ? ps.totalDrawdownPercent.toString() : '',
-          dailyDrawdown: ps.dailyDrawdownPercent ? ps.dailyDrawdownPercent.toString() : '',
-          drawdownType: ps.drawdownType || 'static',
-        };
-        if (ps.step === 'instant') {
-          setInstantData(phaseData);
-          setActiveTab('instant');
-        } else if (ps.step === 'step2') {
-          setStep2Data(phaseData);
-          setActiveTab('step2');
-        } else {
-          setStep1Data(phaseData);
-          setActiveTab('step1');
-        }
-      }
     }
   }, [open, editingAccount]);
 
@@ -136,10 +47,6 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
     setName('');
     setBalance('');
     setMode('normal');
-    setActiveTab('step1');
-    setStep1Data(emptyPhase());
-    setStep2Data(emptyPhase());
-    setInstantData(emptyPhase());
   };
 
   const handleOpenChange = (val: boolean) => {
@@ -147,144 +54,22 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
     onOpenChange(val);
   };
 
-  // Mutual exclusion logic
-  const step1Or2Filled = isPhaseFilled(step1Data) || isPhaseFilled(step2Data);
-  const instantIsFilled = isInstantFilled(instantData);
-  const isInstantDisabled = step1Or2Filled;
-  const isStep1Disabled = instantIsFilled;
-  const isStep2Disabled = instantIsFilled;
-
-  const canCreate = name.trim() && balance && parseFloat(balance) >= 0;
+  const isPropfirm = mode === 'propfirm';
+  const canCreate = name.trim() && balance && parseFloat(balance) >= 0 && !isPropfirm;
 
   const handleSubmit = () => {
     if (!canCreate) return;
-
-    let propFirmSettings;
-    if (mode === 'propfirm') {
-      if (instantIsFilled && !step1Or2Filled) {
-        propFirmSettings = {
-          step: 'instant' as PropFirmStep,
-          targetPercent: 0,
-          totalDrawdownPercent: parseFloat(instantData.totalDrawdown) || 0,
-          dailyDrawdownPercent: parseFloat(instantData.dailyDrawdown) || 0,
-          drawdownType: instantData.drawdownType,
-        };
-      } else {
-        const isStep2Filled = isPhaseFilled(step2Data);
-        const data = isStep2Filled ? step2Data : step1Data;
-        propFirmSettings = {
-          step: isStep2Filled ? ('step2' as PropFirmStep) : ('step1' as PropFirmStep),
-          targetPercent: parseFloat(data.targetPercent) || 0,
-          totalDrawdownPercent: parseFloat(data.totalDrawdown) || 0,
-          dailyDrawdownPercent: parseFloat(data.dailyDrawdown) || 0,
-          drawdownType: data.drawdownType,
-        };
-      }
-    }
-
     const accountData = {
       name: name.trim(),
       startingBalance: parseFloat(balance) || 0,
       accountMode: mode,
-      ...(propFirmSettings && { propFirmSettings }),
     };
-
     if (isEditing && editingAccount && onUpdateAccount) {
       onUpdateAccount({ id: editingAccount.id, ...accountData });
     } else {
       onCreateAccount(accountData);
     }
     handleOpenChange(false);
-  };
-
-  const renderPhaseFields = (
-    phase: PhaseTab,
-    data: PhaseData,
-    setData: React.Dispatch<React.SetStateAction<PhaseData>>
-  ) => {
-    const showTarget = phase !== 'instant';
-
-    return (
-      <div className="space-y-4 pt-1">
-        {showTarget && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Target %</Label>
-            <div className="relative">
-              <Input
-                type="number"
-                placeholder="10"
-                value={data.targetPercent}
-                onChange={(e) => setData((d) => ({ ...d, targetPercent: e.target.value }))}
-                className="bg-input border-border pr-8"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Total Drawdown %</Label>
-          <div className="relative">
-            <Input
-              type="number"
-              placeholder="10"
-              value={data.totalDrawdown}
-              onChange={(e) => setData((d) => ({ ...d, totalDrawdown: e.target.value }))}
-              className="bg-input border-border pr-8"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Daily Drawdown %</Label>
-          <div className="relative">
-            <Input
-              type="number"
-              placeholder="5"
-              value={data.dailyDrawdown}
-              onChange={(e) => setData((d) => ({ ...d, dailyDrawdown: e.target.value }))}
-              className="bg-input border-border pr-8"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Drawdown Type</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {drawdownOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setData((d) => ({ ...d, drawdownType: opt.value }))}
-                className={cn(
-                  "py-2 rounded-lg text-sm font-medium border transition-colors",
-                  data.drawdownType === opt.value
-                    ? "bg-propfirm text-propfirm-foreground border-propfirm"
-                    : "bg-input border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const getDataForTab = (tab: PhaseTab) => {
-    if (tab === 'step1') return { data: step1Data, setData: setStep1Data };
-    if (tab === 'step2') return { data: step2Data, setData: setStep2Data };
-    return { data: instantData, setData: setInstantData };
-  };
-
-  const isTabDisabled = (tab: PhaseTab) => {
-    if (tab === 'instant') return isInstantDisabled;
-    if (tab === 'step1') return isStep1Disabled;
-    if (tab === 'step2') return isStep2Disabled;
-    return false;
   };
 
   return (
@@ -361,90 +146,37 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
                 Prop Firm
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {mode === 'normal'
-                ? 'This account will show in Live Trading mode.'
-                : 'Configure prop firm challenge parameters.'}
-            </p>
-          </div>
 
-          {/* Prop Firm Settings with Animated Tabs */}
-          {mode === 'propfirm' && (
-            <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
-              {/* Phase Tab Selector with sliding indicator */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Challenge Phase</Label>
-                <div
-                  ref={tabsContainerRef}
-                  className="relative flex rounded-lg border border-border bg-input p-1 gap-1"
-                >
-                  {/* Animated sliding indicator */}
-                  <div
-                    className="absolute top-1 bottom-1 rounded-md bg-propfirm transition-all duration-300 ease-in-out z-0"
-                    style={{
-                      left: `${indicatorStyle.left}px`,
-                      width: `${indicatorStyle.width}px`,
-                    }}
-                  />
-
-                  {tabs.map((tab) => {
-                    const disabled = isTabDisabled(tab.value);
-                    const isActive = activeTab === tab.value;
-
-                    return (
-                      <button
-                        key={tab.value}
-                        ref={(el) => { tabRefs.current[tab.value] = el; }}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => !disabled && setActiveTab(tab.value)}
-                        className={cn(
-                          "relative z-10 flex-1 py-2 rounded-md text-sm font-medium transition-colors duration-200",
-                          isActive
-                            ? "text-propfirm-foreground"
-                            : disabled
-                              ? "text-muted-foreground/40 cursor-not-allowed"
-                              : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Phase description */}
-                <p className="text-xs text-muted-foreground">
-                  {activeTab === 'step1' && 'Configure Step 1 challenge parameters.'}
-                  {activeTab === 'step2' && 'Configure Step 2 parameters. Fill both Step 1 & 2 for a 2-phase challenge.'}
-                  {activeTab === 'instant' && 'Instant funded account — no profit target required.'}
+            {isPropfirm ? (
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Prop firm accounts and challenges can be added through the Prop Firm page.
                 </p>
-              </div>
-
-              {/* Phase Fields with crossfade animation */}
-              <div className="relative overflow-hidden">
-                <div
-                  key={activeTab}
-                  className="animate-fade-in"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    handleOpenChange(false);
+                    navigate('/propfirm');
+                  }}
                 >
-                  {(() => {
-                    const { data, setData } = getDataForTab(activeTab);
-                    return renderPhaseFields(activeTab, data, setData);
-                  })()}
-                </div>
+                  Go to Prop Firm
+                </Button>
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                This account will show in Live Trading mode.
+              </p>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
           <Button
             onClick={handleSubmit}
             disabled={!canCreate}
-            className={cn(
-              "w-full gap-2",
-              mode === 'propfirm' && "bg-propfirm text-propfirm-foreground hover:bg-propfirm/90"
-            )}
+            className="w-full gap-2"
           >
             {isEditing ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {isEditing ? 'Save Changes' : 'Create Account'}
