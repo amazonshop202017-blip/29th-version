@@ -242,11 +242,11 @@ export const GlobalHeader = () => {
     }
   };
 
-  const handleAccountToggle = (accountName: string) => {
-    if (selectedAccounts.includes(accountName)) {
-      setSelectedAccounts(selectedAccounts.filter(a => a !== accountName));
+  const handleAccountToggle = (accountId: string) => {
+    if (selectedAccounts.includes(accountId)) {
+      setSelectedAccounts(selectedAccounts.filter(a => a !== accountId));
     } else {
-      setSelectedAccounts([...selectedAccounts, accountName]);
+      setSelectedAccounts([...selectedAccounts, accountId]);
     }
   };
 
@@ -362,7 +362,8 @@ export const GlobalHeader = () => {
       return 'All accounts';
     }
     if (selectedAccounts.length === 1) {
-      return selectedAccounts[0];
+      const acc = accounts.find(a => a.id === selectedAccounts[0]);
+      return acc?.name ?? 'Unknown Account';
     }
     return `${selectedAccounts.length} accounts`;
   };
@@ -526,10 +527,10 @@ export const GlobalHeader = () => {
                 {activeAccounts.map((account) => (
                   <div
                     key={account.id}
-                    className={cn("flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors", selectedAccounts.includes(account.name) && "bg-accent")}
-                    onClick={() => handleAccountToggle(account.name)}
+                    className={cn("flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors", selectedAccounts.includes(account.id) && "bg-accent")}
+                    onClick={() => handleAccountToggle(account.id)}
                   >
-                    <Checkbox checked={selectedAccounts.includes(account.name)} />
+                    <Checkbox checked={selectedAccounts.includes(account.id)} />
                     <span className="text-sm">{account.name}</span>
                   </div>
                 ))}
@@ -1289,8 +1290,8 @@ export const GlobalHeader = () => {
                 {activeAccounts.map((account) => (
                   <DropdownMenuCheckboxItem
                     key={account.id}
-                    checked={selectedAccounts.includes(account.name)}
-                    onCheckedChange={() => handleAccountToggle(account.name)}
+                    checked={selectedAccounts.includes(account.id)}
+                    onCheckedChange={() => handleAccountToggle(account.id)}
                     className="cursor-pointer"
                   >
                     {account.name}

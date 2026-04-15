@@ -523,9 +523,7 @@ export const TradeModal = () => {
       return;
     }
 
-    // Get the account name from selected account ID
-    const selectedAccount = accounts.find(a => a.id === selectedAccountId);
-    const resolvedAccountName = selectedAccount?.name || '';
+    // accountId (UUID) is stored directly on the trade — no name resolution needed
 
     const tradeData: TradeFormData = {
       symbol: symbol.trim(),

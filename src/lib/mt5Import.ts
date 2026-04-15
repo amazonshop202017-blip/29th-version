@@ -217,7 +217,6 @@ function findHeaderRowIndex(lines: string[]): number {
 
 export function parseCSVToTrades(
   csvContent: string,
-  accountName: string,
   accountId: string,
   accountBalanceSnapshot: number,
   contractSizes?: Record<string, number>
@@ -340,7 +339,6 @@ export function parseCSVToTrades(
         entries,
         tradeRisk: 0,
         tradeTarget: 0,
-        accountName,
         accountId,
         tags: [],
         notes: '',
@@ -369,7 +367,6 @@ export function parseCSVToTrades(
 // Main import function
 export async function importMT5Trades(
   file: File,
-  accountName: string,
   accountId: string,
   accountBalanceSnapshot: number,
   bulkAddTrades: (tradesData: TradeFormData[]) => void,
@@ -384,7 +381,7 @@ export async function importMT5Trades(
     const csvContent = parseMT5HtmlToCSV(htmlContent);
     
     // Step 2: CSV → Trades (pass account balance for Return % calculation)
-    const { trades, skipped } = parseCSVToTrades(csvContent, accountName, accountId, accountBalanceSnapshot, contractSizes);
+    const { trades, skipped } = parseCSVToTrades(csvContent, accountId, accountBalanceSnapshot, contractSizes);
     
     if (trades.length === 0) {
       return {

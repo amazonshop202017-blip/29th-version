@@ -220,7 +220,9 @@ const TableWithStickyHorizontalScroll = ({
                   )}
 
                   {isColumnVisible('accountName') && (
-                    <TableCell className="text-muted-foreground px-2 py-1">{trade.accountName || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground px-2 py-1">
+                      {trade.accountId ? (accounts.find(a => a.id === trade.accountId)?.name ?? '—') : '—'}
+                    </TableCell>
                   )}
 
                   {isColumnVisible('openDateTime') && (
