@@ -139,15 +139,15 @@ const AuthenticatedApp = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <InterfaceThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <InterfaceThemeProvider>
           <BrowserRouter>
             <Toaster />
             <Sonner />
             <AuthenticatedApp />
           </BrowserRouter>
-        </AuthProvider>
-      </InterfaceThemeProvider>
+        </InterfaceThemeProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
