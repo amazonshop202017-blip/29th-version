@@ -74,8 +74,8 @@ const PropFirm = () => {
             onClick={() => setTrackAccountOpen(true)}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Track prop firm account</span>
-            <span className="sm:hidden">Track account</span>
+            <span className="hidden sm:inline">Add Challenge</span>
+            <span className="sm:hidden">Add Challenge</span>
           </Button>
         </div>
       </div>
