@@ -89,7 +89,7 @@ const InterfaceThemeContext = createContext<InterfaceThemeContextType | null>(nu
 export const InterfaceThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<InterfaceTheme>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(getStorageKey());
       if (saved) return { ...DEFAULT_THEME, ...JSON.parse(saved) };
     } catch {}
     return DEFAULT_THEME;
@@ -97,7 +97,7 @@ export const InterfaceThemeProvider = ({ children }: { children: ReactNode }) =>
 
   useEffect(() => {
     applyThemeToDOM(theme);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(theme));
+    localStorage.setItem(getStorageKey(), JSON.stringify(theme));
   }, [theme]);
 
   // Re-apply when theme mode (light/dark) changes
