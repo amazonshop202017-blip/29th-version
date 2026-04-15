@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useTradesContext } from './TradesContext';
+import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
 
 export type AccountMode = 'normal' | 'propfirm';
@@ -10,6 +11,7 @@ export type PropFirmStepType = '1' | '2' | 'funded';
 export interface Account {
   id: string;
   accountId: string;
+  userId: string;
   name: string;
   startingBalance: number;
   createdAt: string;
@@ -67,6 +69,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { trades } = useTradesContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     try {
@@ -106,6 +109,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
       accountId: generateUniqueAccountId(),
+      userId: user?.userId || '',
       name: name.trim(),
       startingBalance,
       createdAt: new Date().toISOString(),

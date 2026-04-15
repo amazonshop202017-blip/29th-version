@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 
 interface User {
   email: string;
+  userId: string;
 }
 
 interface AuthContextType {
@@ -17,6 +18,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface StoredUser {
   email: string;
   password: string;
+  userId: string;
+}
+
+const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function generateUserId(existingIds: Set<string>): string {
+  let id: string;
+  do {
+    id = '';
+    for (let i = 0; i < 10; i++) {
+      id += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
+    }
+  } while (existingIds.has(id));
+  return id;
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -46,9 +61,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (users.find(u => u.email === email)) {
       return { success: false, error: 'An account with this email already exists' };
     }
-    users.push({ email, password });
+    const existingIds = new Set(users.map(u => u.userId).filter(Boolean));
+    const userId = generateUserId(existingIds);
+    users.push({ email, password, userId });
     localStorage.setItem('auth_users', JSON.stringify(users));
-    const userData = { email };
+    const userData = { email, userId };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
@@ -60,7 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!found) {
       return { success: false, error: 'Invalid email or password' };
     }
-    const userData = { email };
+    // Backfill userId for legacy users
+    if (!found.userId) {
+      const existingIds = new Set(users.map(u => u.userId).filter(Boolean));
+      found.userId = generateUserId(existingIds);
+      localStorage.setItem('auth_users', JSON.stringify(users));
+    }
+    const userData = { email, userId: found.userId };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
