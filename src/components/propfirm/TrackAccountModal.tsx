@@ -339,6 +339,7 @@ function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
 // ─── Main Modal ──────────────────────────────────────────────────
 
 export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
+  const { user } = useAuth();
   const { addAccount } = useAccountsContext();
   const { addChallenge } = useChallengesContext();
   const [nickname, setNickname] = useState("");
