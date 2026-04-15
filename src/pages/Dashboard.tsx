@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DndContext,
   closestCenter,
@@ -66,27 +67,30 @@ const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   instrumentDistribution: { component: InstrumentTradeDistribution, colSpan: 2, rowSpan: 1 },
 };
 
-const STORAGE_KEY = 'dashboard-chart-order';
-
 const Dashboard = () => {
   const { stats } = useFilteredTrades();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { isEditMode } = useDashboardEdit();
+  const { getPreferences, updatePreferences, user } = useAuth();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [chartOrder, setChartOrder] = useState<string[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Validate that all charts exist
-        if (Array.isArray(parsed) && parsed.every(id => CHART_CONFIGS[id])) {
-          return parsed;
-        }
-      } catch {}
+    const prefs = getPreferences();
+    if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
+      return prefs.dashboardChartOrder;
     }
     return DEFAULT_CHART_ORDER;
   });
+
+  // Reload when user changes
+  useEffect(() => {
+    const prefs = getPreferences();
+    if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
+      setChartOrder(prefs.dashboardChartOrder);
+    } else {
+      setChartOrder(DEFAULT_CHART_ORDER);
+    }
+  }, [user, getPreferences]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -106,8 +110,8 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(chartOrder));
-  }, [chartOrder]);
+    updatePreferences({ dashboardChartOrder: chartOrder });
+  }, [chartOrder, updatePreferences]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

@@ -8,6 +8,9 @@ export interface UserPreferences {
     mode: 'flat' | 'gradient';
   };
   favoriteMetrics?: string[];
+  dashboardChartOrder?: string[];
+  dashboardMetricsOrder?: string[];
+  [key: string]: unknown; // JSONB-like: allows future keys without schema changes
 }
 
 interface User {
