@@ -339,6 +339,7 @@ function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
 
 export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
   const { addAccount } = useAccountsContext();
+  const { addChallenge } = useChallengesContext();
   const [nickname, setNickname] = useState("");
   const [fundingFirm, setFundingFirm] = useState("");
   const [strategyIds, setStrategyIds] = useState<string[]>([]);
@@ -362,47 +363,60 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
     if (!fundingFirm.trim()) { toast.error("Funding firm is required"); return; }
     if (!startDate) { toast.error("Start date is required"); return; }
 
-    const challenge: ChallengeData = {
-      challengeId: generateChallengeId(),
+    const challengeId = generateChallengeId();
+    const balanceAmount = parseFloat(rules.balanceAmount) || 0;
+
+    // Build structured rules
+    const show2Steps = !isFunded && steps === "2 Steps";
+    const structuredRules: ChallengeRulesSchema = {
+      step1: isFunded ? createDefaultStepRules() : convertStepRules(rules.step1),
+      step2: show2Steps
+        ? (rules.sameStep2AsStep1 ? convertStepRules(rules.step1) : convertStepRules(rules.step2))
+        : null,
+      funded: isFunded
+        ? convertFundedRules(rules.funding, false)
+        : convertFundedRules(rules.funding, rules.sameFundingAsStep1),
+    };
+
+    const stepsValue = isFunded ? 'Instant Funded' as const : steps;
+
+    const challenge: Challenge = {
+      challengeId,
       nickname: nickname.trim(),
-      fundingFirm: fundingFirm.trim(),
-      strategyIds,
-      evaluationFee,
-      activationFee,
-      phase,
+      firm: fundingFirm.trim(),
+      balanceAmount,
+      steps: stepsValue,
       status,
-      steps,
-      accountSetup,
-      broker: "",
+      setups: strategyIds,
       startDate,
-      quantity: 1,
-      rules,
+      evaluationFee: parseFloat(evaluationFee) || 0,
+      activationFee: parseFloat(activationFee) || 0,
+      rules: structuredRules,
       createdAt: new Date().toISOString(),
     };
 
-    saveChallenge(challenge);
+    addChallenge(challenge);
 
     // Create a propfirm account based on phase
     if (isFunded) {
       addAccount(
         `${challenge.nickname} (Funded)`,
-        parseFloat(rules.balanceAmount) || 0,
+        balanceAmount,
         'propfirm',
         {
-          challengeId: challenge.challengeId,
+          challengeId,
           step: 'funded' as const,
           phase: 'funded' as const,
           status: status.toLowerCase() as 'active' | 'breached',
         }
       );
     } else {
-      // Evaluation: only create Step 1 account
       addAccount(
         `${challenge.nickname} (Step 1)`,
-        parseFloat(rules.balanceAmount) || 0,
+        balanceAmount,
         'propfirm',
         {
-          challengeId: challenge.challengeId,
+          challengeId,
           step: '1' as const,
           phase: 'evaluation' as const,
           status: status.toLowerCase() as 'active' | 'breached',
@@ -410,7 +424,7 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
       );
     }
 
-    toast.success(`Challenge "${challenge.nickname}" created (ID: ${challenge.challengeId})`);
+    toast.success(`Challenge "${challenge.nickname}" created (ID: ${challengeId})`);
     // Reset
     setNickname(""); setFundingFirm(""); setStrategyIds([]); setEvaluationFee("0");
     setActivationFee("0"); setPhase("Evaluation"); setStatus("Active"); setSteps("1 Step");
