@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useTradesContext } from './TradesContext';
 import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
-import { calculateTradeMetrics } from '@/types/trade';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
