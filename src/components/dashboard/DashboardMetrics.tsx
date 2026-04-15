@@ -30,12 +30,12 @@ import { MetricsLibraryModal } from '@/components/dashboard/MetricsLibraryModal'
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
+import { useAuth } from '@/contexts/AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
 import { parseISO, format } from 'date-fns';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 const DEFAULT_METRICS_ORDER = ['netPnl', 'tradeWinRate', 'profitFactor', 'dayWinRate', 'avgWinLoss'];
-const METRICS_STORAGE_KEY = 'dashboard-metrics-order';
 const MAX_METRICS = 5;
 
 interface SortableMetricProps {
@@ -97,6 +97,7 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
   const { stats, filteredTrades } = useFilteredTrades();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
+  const { getPreferences, updatePreferences, user } = useAuth();
   const [isMetricsLibraryOpen, setIsMetricsLibraryOpen] = useState(false);
 
   const microChartData = useMemo(() => {
@@ -117,17 +118,22 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
   }, [filteredTrades]);
 
   const [metricsOrder, setMetricsOrder] = useState<string[]>(() => {
-    const saved = localStorage.getItem(METRICS_STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length <= MAX_METRICS) {
-          return parsed;
-        }
-      } catch {}
+    const prefs = getPreferences();
+    if (prefs.dashboardMetricsOrder && Array.isArray(prefs.dashboardMetricsOrder) && prefs.dashboardMetricsOrder.length <= MAX_METRICS) {
+      return prefs.dashboardMetricsOrder;
     }
     return DEFAULT_METRICS_ORDER;
   });
+
+  // Reload when user changes
+  useEffect(() => {
+    const prefs = getPreferences();
+    if (prefs.dashboardMetricsOrder && Array.isArray(prefs.dashboardMetricsOrder) && prefs.dashboardMetricsOrder.length <= MAX_METRICS) {
+      setMetricsOrder(prefs.dashboardMetricsOrder);
+    } else {
+      setMetricsOrder(DEFAULT_METRICS_ORDER);
+    }
+  }, [user, getPreferences]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -136,8 +142,8 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
   );
 
   useEffect(() => {
-    localStorage.setItem(METRICS_STORAGE_KEY, JSON.stringify(metricsOrder));
-  }, [metricsOrder]);
+    updatePreferences({ dashboardMetricsOrder: metricsOrder });
+  }, [metricsOrder, updatePreferences]);
 
   const handleMetricDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
