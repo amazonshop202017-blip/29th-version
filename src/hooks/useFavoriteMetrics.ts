@@ -1,11 +1,24 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ChartDisplayType } from '@/hooks/useChartDisplayMode';
 
-const STORAGE_KEY = 'favorite-metrics';
+const BASE_KEY = 'favorite-metrics';
+
+const getCurrentUserId = (): string | undefined => {
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (session) return JSON.parse(session).userId;
+  } catch {}
+  return undefined;
+};
+
+const getStorageKey = () => {
+  const userId = getCurrentUserId();
+  return userId ? `${BASE_KEY}-${userId}` : BASE_KEY;
+};
 
 const getStoredFavorites = (): ChartDisplayType[] => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey());
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -13,7 +26,7 @@ const getStoredFavorites = (): ChartDisplayType[] => {
 };
 
 const saveFavorites = (favorites: ChartDisplayType[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+  localStorage.setItem(getStorageKey(), JSON.stringify(favorites));
 };
 
 // Simple event-based sync across hook instances

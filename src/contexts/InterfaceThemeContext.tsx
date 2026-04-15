@@ -14,7 +14,20 @@ const DEFAULT_THEME: InterfaceTheme = {
   mode: 'flat',
 };
 
-const STORAGE_KEY = 'interface-theme';
+const BASE_STORAGE_KEY = 'interface-theme';
+
+const getCurrentUserId = (): string | undefined => {
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (session) return JSON.parse(session).userId;
+  } catch {}
+  return undefined;
+};
+
+const getStorageKey = () => {
+  const userId = getCurrentUserId();
+  return userId ? `${BASE_STORAGE_KEY}-${userId}` : BASE_STORAGE_KEY;
+};
 
 function hexToHSL(hex: string): string {
   let r = parseInt(hex.slice(1, 3), 16) / 255;
