@@ -382,7 +382,6 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
 
     const stepsValue = isFunded ? 0 as const : (steps === '2 Steps' ? 2 as const : 1 as const);
 
-    const { user } = useAuth();
 
     const challenge: Challenge = {
       challengeId,
