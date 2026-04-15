@@ -16,6 +16,7 @@ export interface PropFirmSettings {
 
 export interface Account {
   id: string;
+  accountId: string;
   name: string;
   startingBalance: number;
   createdAt: string;
@@ -95,9 +96,19 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     setTransactions(newTransactions);
   }, []);
 
+  const generateUniqueAccountId = useCallback((): string => {
+    const existing = new Set(accounts.map(a => a.accountId).filter(Boolean));
+    let id: string;
+    do {
+      id = String(Math.floor(10000000 + Math.random() * 90000000));
+    } while (existing.has(id));
+    return id;
+  }, [accounts]);
+
   const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmSettings?: PropFirmSettings) => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
+      accountId: generateUniqueAccountId(),
       name: name.trim(),
       startingBalance,
       createdAt: new Date().toISOString(),
@@ -107,7 +118,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     };
     saveAccounts([...accounts, newAccount]);
     return newAccount;
-  }, [accounts, saveAccounts]);
+  }, [accounts, saveAccounts, generateUniqueAccountId]);
 
   const removeAccount = useCallback((id: string) => {
     saveAccounts(accounts.filter(a => a.id !== id));
