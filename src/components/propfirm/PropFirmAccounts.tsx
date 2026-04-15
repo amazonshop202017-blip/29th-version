@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { MoreHorizontal, Clock, CheckCircle2, LayoutList, LayoutGrid } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
@@ -25,30 +26,18 @@ const menuItems = [
   { label: "Delete Challenge", danger: true },
 ];
 
-function ContextMenu({ onClose }: { onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleClick(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
-
+function ThreeDotMenu() {
   return (
-    <div ref={ref} className="absolute right-0 top-7 z-50 bg-white border border-border rounded-xl shadow-lg py-1 min-w-[170px]">
-      {menuItems.map((item, i) => (
-        <button key={i} onClick={onClose} className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-muted ${item.danger ? "text-rose-500 hover:text-rose-600" : "text-foreground"}`}>{item.label}</button>
-      ))}
-    </div>
-  );
-}
-
-function ThreeDotMenu({ onClick }: { onClick?: (e: React.MouseEvent) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button onClick={(e) => { e.stopPropagation(); onClick?.(e); setOpen((v) => !v); }} className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground"><MoreHorizontal className="w-4 h-4" /></button>
-      {open && <ContextMenu onClose={() => setOpen(false)} />}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+        <button className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground"><MoreHorizontal className="w-4 h-4" /></button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[170px]">
+        {menuItems.map((item, i) => (
+          <DropdownMenuItem key={i} className={item.danger ? "text-rose-500 focus:text-rose-600" : ""}>{item.label}</DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
