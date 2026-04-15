@@ -88,7 +88,6 @@ export const SymbolTickSizeManagement = () => {
     if (editingRuleId) {
       updateTickPipRule(editingRuleId, {
         accountIds: formAccountIds,
-        accountNames: resolvedNames,
         symbol: formSymbol.trim(),
         tickSize: tickVal,
         contractSize: contractVal,
@@ -97,7 +96,6 @@ export const SymbolTickSizeManagement = () => {
     } else {
       addTickPipRule({
         accountIds: formAccountIds,
-        accountNames: resolvedNames,
         symbol: formSymbol.trim(),
         tickSize: tickVal,
         contractSize: contractVal,
@@ -192,9 +190,12 @@ export const SymbolTickSizeManagement = () => {
                   <TableRow key={rule.id} className="border-border">
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {rule.accountNames.map((name) => (
-                          <Badge key={name} variant="secondary" className="text-xs">{name}</Badge>
-                        ))}
+                        {rule.accountIds.map((id) => {
+                          const acc = accounts.find(a => a.id === id);
+                          return (
+                            <Badge key={id} variant="secondary" className="text-xs">{acc?.name ?? 'Unknown'}</Badge>
+                          );
+                        })}
                       </div>
                     </TableCell>
                     <TableCell>{rule.symbol}</TableCell>

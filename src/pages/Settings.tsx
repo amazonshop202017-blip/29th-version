@@ -603,7 +603,6 @@ const Settings = () => {
       onConfirm={() => {
         if (deleteTarget) {
           deleteTradesByAccountId(deleteTarget.id);
-          deleteTradesByAccountName(deleteTarget.name);
           deleteAccountPermanently(deleteTarget.id);
           setDeleteTarget(null);
         }
