@@ -1,5 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
+export interface UserPreferences {
+  interfaceTheme?: {
+    positive: string;
+    negative: string;
+    neutral: string;
+    mode: 'flat' | 'gradient';
+  };
+  favoriteMetrics?: string[];
+}
+
 interface User {
   email: string;
   userId: string;
@@ -11,6 +21,8 @@ interface AuthContextType {
   login: (email: string, password: string) => { success: boolean; error?: string };
   signup: (email: string, password: string) => { success: boolean; error?: string };
   logout: () => void;
+  getPreferences: () => UserPreferences;
+  updatePreferences: (update: Partial<UserPreferences>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +31,7 @@ interface StoredUser {
   email: string;
   password: string;
   userId: string;
+  preferences?: UserPreferences;
 }
 
 const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -63,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     const existingIds = new Set(users.map(u => u.userId).filter(Boolean));
     const userId = generateUserId(existingIds);
-    users.push({ email, password, userId });
+    users.push({ email, password, userId, preferences: {} });
     localStorage.setItem('auth_users', JSON.stringify(users));
     const userData = { email, userId };
     localStorage.setItem('auth_session', JSON.stringify(userData));
@@ -77,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!found) {
       return { success: false, error: 'Invalid email or password' };
     }
-    // Backfill userId for legacy users
     if (!found.userId) {
       const existingIds = new Set(users.map(u => u.userId).filter(Boolean));
       found.userId = generateUserId(existingIds);
@@ -94,8 +106,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   }, []);
 
+  const getPreferences = useCallback((): UserPreferences => {
+    if (!user) return {};
+    const users = getUsers();
+    const found = users.find(u => u.userId === user.userId);
+    return found?.preferences || {};
+  }, [user]);
+
+  const updatePreferences = useCallback((update: Partial<UserPreferences>) => {
+    if (!user) return;
+    const users = getUsers();
+    const idx = users.findIndex(u => u.userId === user.userId);
+    if (idx === -1) return;
+    users[idx].preferences = { ...users[idx].preferences, ...update };
+    localStorage.setItem('auth_users', JSON.stringify(users));
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, getPreferences, updatePreferences }}>
       {children}
     </AuthContext.Provider>
   );
