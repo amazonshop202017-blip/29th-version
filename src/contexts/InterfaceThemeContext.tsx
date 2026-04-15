@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface InterfaceTheme {
   positive: string;
@@ -12,21 +13,6 @@ const DEFAULT_THEME: InterfaceTheme = {
   negative: '#d10046',
   neutral: '#4a4a4a',
   mode: 'flat',
-};
-
-const BASE_STORAGE_KEY = 'interface-theme';
-
-const getCurrentUserId = (): string | undefined => {
-  try {
-    const session = localStorage.getItem('auth_session');
-    if (session) return JSON.parse(session).userId;
-  } catch {}
-  return undefined;
-};
-
-const getStorageKey = () => {
-  const userId = getCurrentUserId();
-  return userId ? `${BASE_STORAGE_KEY}-${userId}` : BASE_STORAGE_KEY;
 };
 
 function hexToHSL(hex: string): string {
@@ -61,13 +47,11 @@ function applyThemeToDOM(theme: InterfaceTheme) {
   root.style.setProperty('--loss', lossHSL);
   root.style.setProperty('--neutral-theme', neutralHSL);
 
-  // Also update profit/loss foreground for contrast
   const profitL = parseInt(profitHSL.split('%')[1] || '50');
   root.style.setProperty('--profit-foreground', profitL > 50 ? `${profitHSL.split(' ')[0]} ${profitHSL.split(' ')[1]} 10%` : `${profitHSL.split(' ')[0]} ${profitHSL.split(' ')[1]} 95%`);
   const lossL = parseInt(lossHSL.split('%')[1] || '50');
   root.style.setProperty('--loss-foreground', lossL > 50 ? `${lossHSL.split(' ')[0]} ${lossHSL.split(' ')[1]} 10%` : `${lossHSL.split(' ')[0]} ${lossHSL.split(' ')[1]} 95%`);
 
-  // Update gradient vars
   const [pH, pS, pLStr] = profitHSL.split(' ');
   const pL = parseInt(pLStr);
   root.style.setProperty('--gradient-profit', `linear-gradient(135deg, hsl(${pH} ${pS} ${pL}%) 0%, hsl(${pH} ${pS} ${Math.max(pL - 10, 5)}%) 100%)`);
@@ -87,20 +71,25 @@ interface InterfaceThemeContextType {
 const InterfaceThemeContext = createContext<InterfaceThemeContextType | null>(null);
 
 export const InterfaceThemeProvider = ({ children }: { children: ReactNode }) => {
+  const { getPreferences, updatePreferences, user } = useAuth();
+
   const [theme, setTheme] = useState<InterfaceTheme>(() => {
-    try {
-      const saved = localStorage.getItem(getStorageKey());
-      if (saved) return { ...DEFAULT_THEME, ...JSON.parse(saved) };
-    } catch {}
-    return DEFAULT_THEME;
+    const prefs = getPreferences();
+    return prefs.interfaceTheme ? { ...DEFAULT_THEME, ...prefs.interfaceTheme } : DEFAULT_THEME;
   });
+
+  // Reload theme when user changes (login/logout)
+  useEffect(() => {
+    const prefs = getPreferences();
+    const saved = prefs.interfaceTheme;
+    setTheme(saved ? { ...DEFAULT_THEME, ...saved } : DEFAULT_THEME);
+  }, [user, getPreferences]);
 
   useEffect(() => {
     applyThemeToDOM(theme);
-    localStorage.setItem(getStorageKey(), JSON.stringify(theme));
   }, [theme]);
 
-  // Re-apply when theme mode (light/dark) changes
+  // Re-apply when light/dark mode changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       applyThemeToDOM(theme);
@@ -109,17 +98,31 @@ export const InterfaceThemeProvider = ({ children }: { children: ReactNode }) =>
     return () => observer.disconnect();
   }, [theme]);
 
+  const persistTheme = useCallback((newTheme: InterfaceTheme) => {
+    setTheme(newTheme);
+    updatePreferences({ interfaceTheme: newTheme });
+  }, [updatePreferences]);
+
   const setThemeColor = useCallback((key: 'positive' | 'negative' | 'neutral', color: string) => {
-    setTheme(prev => ({ ...prev, [key]: color }));
-  }, []);
+    setTheme(prev => {
+      const next = { ...prev, [key]: color };
+      updatePreferences({ interfaceTheme: next });
+      return next;
+    });
+  }, [updatePreferences]);
 
   const setMode = useCallback((mode: 'flat' | 'gradient') => {
-    setTheme(prev => ({ ...prev, mode }));
-  }, []);
+    setTheme(prev => {
+      const next = { ...prev, mode };
+      updatePreferences({ interfaceTheme: next });
+      return next;
+    });
+  }, [updatePreferences]);
 
   const resetToDefaults = useCallback(() => {
     setTheme(DEFAULT_THEME);
-  }, []);
+    updatePreferences({ interfaceTheme: DEFAULT_THEME });
+  }, [updatePreferences]);
 
   return (
     <InterfaceThemeContext.Provider value={{ theme, setThemeColor, setMode, resetToDefaults }}>
@@ -131,7 +134,6 @@ export const InterfaceThemeProvider = ({ children }: { children: ReactNode }) =>
 export const useInterfaceTheme = () => {
   const ctx = useContext(InterfaceThemeContext);
   if (!ctx) {
-    // Fallback for portal rendering outside provider tree
     const fallback: InterfaceThemeContextType = {
       theme: { positive: '#00c2ab', negative: '#d10046', neutral: '#4a4a4a', mode: 'flat' as const },
       setThemeColor: () => {},
