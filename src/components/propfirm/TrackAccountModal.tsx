@@ -378,7 +378,7 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
         : convertFundedRules(rules.funding, rules.sameFundingAsStep1),
     };
 
-    const stepsValue = isFunded ? 'Instant Funded' as const : steps;
+    const stepsValue = isFunded ? 0 as const : (steps === '2 Steps' ? 2 as const : 1 as const);
 
     const challenge: Challenge = {
       challengeId,
@@ -386,7 +386,7 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
       firm: fundingFirm.trim(),
       balanceAmount,
       steps: stepsValue,
-      status,
+      status: status.toLowerCase() as 'active' | 'breached',
       setups: strategyIds,
       startDate,
       evaluationFee: parseFloat(evaluationFee) || 0,
