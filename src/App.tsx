@@ -126,6 +126,7 @@ const AuthenticatedApp = () => {
                     </SymbolTickSizeProvider>
                   </CustomStatsProvider>
                 </GlobalFiltersProvider>
+                </ChallengesProvider>
               </AccountsProvider>
             </TradesProvider>
           </StrategiesProvider>
