@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Search, ChevronDown, ChevronUp, CalendarDays, Settings, ArrowRight, Check } from "lucide-react";
 import { useStrategiesContext } from "@/contexts/StrategiesContext";
+import { useAccountsContext } from "@/contexts/AccountsContext";
 import { toast } from "sonner";
 
 type TrackAccountModalProps = { open: boolean; onClose: () => void };
