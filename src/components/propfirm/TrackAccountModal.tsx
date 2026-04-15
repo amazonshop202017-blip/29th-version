@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { X, Search, ChevronDown, ChevronUp, CalendarDays, Settings, ArrowRight, Check } from "lucide-react";
 import { useStrategiesContext } from "@/contexts/StrategiesContext";
@@ -380,8 +381,11 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
 
     const stepsValue = isFunded ? 0 as const : (steps === '2 Steps' ? 2 as const : 1 as const);
 
+    const { user } = useAuth();
+
     const challenge: Challenge = {
       challengeId,
+      userId: user?.userId || '',
       nickname: nickname.trim(),
       firm: fundingFirm.trim(),
       balanceAmount,
