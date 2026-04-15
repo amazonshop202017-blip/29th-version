@@ -17,6 +17,7 @@ import { DiaryProvider } from "@/contexts/DiaryContext";
 import { SymbolTickSizeProvider } from "@/contexts/SymbolTickSizeContext";
 import { InterfaceThemeProvider } from "@/contexts/InterfaceThemeContext";
 import { DashboardEditProvider } from "@/contexts/DashboardEditContext";
+import { ChallengesProvider } from "@/contexts/ChallengesContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TradeModal } from "@/components/trades/TradeModal";
 import Dashboard from "./pages/Dashboard";
