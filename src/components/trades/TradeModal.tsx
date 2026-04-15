@@ -85,7 +85,6 @@ export const TradeModal = () => {
   
   // Additional fields
   const [symbol, setSymbol] = useState('');
-  const [accountName, setAccountName] = useState('');
   const [notes, setNotes] = useState('');
   const [tradeRisk, setTradeRisk] = useState(0);
   const [tradeTarget, setTradeTarget] = useState(0);
@@ -201,10 +200,8 @@ export const TradeModal = () => {
   useEffect(() => {
     if (editingTrade) {
       setSymbol(editingTrade.symbol);
-      setAccountName(editingTrade.accountName);
-      // Set account ID from accountName
-      const matchedAccount = accounts.find(a => a.name === editingTrade.accountName);
-      setSelectedAccountId(matchedAccount?.id || '');
+      // Set account ID directly
+      setSelectedAccountId(editingTrade.accountId || '');
       setStrategyId(editingTrade.strategyId || '');
       setSelectedTags(editingTrade.tags);
       setSelectedChecklistItems(editingTrade.selectedChecklistItems || []);
@@ -274,12 +271,9 @@ export const TradeModal = () => {
         setEntryDate(initialEntryDate);
       }
       // Auto-select account when exactly one account is selected in global filter (Add Trade only)
-      // globalSelectedAccounts contains account NAMES, so we need to find the matching account ID
+      // globalSelectedAccounts now contains account IDs (UUIDs)
       if (!isAllAccountsSelected && globalSelectedAccounts.length === 1) {
-        const matchedAccount = accounts.find(a => a.name === globalSelectedAccounts[0]);
-        if (matchedAccount) {
-          setSelectedAccountId(matchedAccount.id);
-        }
+        setSelectedAccountId(globalSelectedAccounts[0]);
       }
     }
   }, [editingTrade, isOpen, initialEntryDate]);
@@ -287,7 +281,6 @@ export const TradeModal = () => {
   const resetForm = () => {
     setActiveTab('regular');
     setSymbol('');
-    setAccountName('');
     setSelectedAccountId('');
     setAccountError(false);
     setStrategyId('');
