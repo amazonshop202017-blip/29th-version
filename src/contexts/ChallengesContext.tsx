@@ -40,13 +40,16 @@ export interface ChallengeRulesSchema {
   funded: FundedRules;
 }
 
+export type ChallengeSteps = 0 | 1 | 2; // 0 = Instant Funded, 1 = 1 Step, 2 = 2 Steps
+export type ChallengeStatus = 'active' | 'breached';
+
 export interface Challenge {
   challengeId: string;
   nickname: string;
   firm: string;
   balanceAmount: number;
-  steps: '1 Step' | '2 Steps' | 'Instant Funded';
-  status: 'Active' | 'Breached';
+  steps: ChallengeSteps;
+  status: ChallengeStatus;
   setups: string[];
   startDate: string;
   evaluationFee: number;
@@ -75,7 +78,17 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setChallenges(JSON.parse(stored));
+      if (stored) {
+        const parsed: Challenge[] = JSON.parse(stored);
+        // Migrate legacy data
+        const migrated = parsed.map(c => ({
+          ...c,
+          steps: migrateSteps(c.steps),
+          status: migrateStatus(c.status),
+        }));
+        setChallenges(migrated);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      }
     } catch (e) {
       console.error('Error loading challenges:', e);
     }
@@ -116,6 +129,29 @@ export const useChallengesContext = () => {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────
+
+/** Convert legacy string-based steps to numeric */
+function migrateSteps(val: unknown): ChallengeSteps {
+  if (val === 0 || val === 1 || val === 2) return val;
+  if (val === '1 Step') return 1;
+  if (val === '2 Steps') return 2;
+  if (val === 'Instant Funded') return 0;
+  return 1;
+}
+
+/** Convert legacy capitalized status to lowercase */
+function migrateStatus(val: unknown): ChallengeStatus {
+  if (val === 'active' || val === 'breached') return val;
+  if (typeof val === 'string') return val.toLowerCase() as ChallengeStatus;
+  return 'active';
+}
+
+/** Map numeric steps to UI label */
+export function stepsToLabel(steps: ChallengeSteps): string {
+  if (steps === 0) return 'Instant Funded';
+  if (steps === 2) return '2 Steps';
+  return '1 Step';
+}
 
 export function generateChallengeId(): string {
   return String(Math.floor(1000000 + Math.random() * 9000000));
