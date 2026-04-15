@@ -230,9 +230,6 @@ export const useTrades = () => {
     saveTrades(trades.filter(trade => trade.accountId !== accountId));
   }, [trades, saveTrades]);
 
-
-  const getTradeById = useCallback((id: string) => {
-
   const getTradeById = useCallback((id: string) => {
     return trades.find(trade => trade.id === id);
   }, [trades]);
