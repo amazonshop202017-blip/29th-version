@@ -2,6 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
 
+const getCurrentUserId = (): string | undefined => {
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (session) {
+      const parsed = JSON.parse(session);
+      return parsed.userId;
+    }
+  } catch {}
+  return undefined;
+};
+
 const STORAGE_KEY = 'trading-journal-trades';
 
 export const useTrades = () => {
