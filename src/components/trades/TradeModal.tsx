@@ -323,26 +323,25 @@ export const TradeModal = () => {
       entries,
       tradeRisk,
       tradeTarget,
-      accountName,
+      accountId: selectedAccountId,
       strategyId: strategyId || undefined,
       tags: selectedTags,
       notes,
-      // Use stored contractSize for edits, registry value for new trades
       contractSize: editingTrade
         ? editingTrade.contractSize
-        : (getContractSizeForAccountSymbol(accountName, symbol.trim())),
+        : (getContractSizeForAccountSymbol(selectedAccountId, symbol.trim())),
       mfeTickPip: null,
       maeTickPip: null,
     };
     return calculateTradeMetrics(formData);
-  }, [symbol, direction, entries, tradeRisk, tradeTarget, accountName, strategyId, selectedTags, notes, editingTrade]);
+  }, [symbol, direction, entries, tradeRisk, tradeTarget, selectedAccountId, strategyId, selectedTags, notes, editingTrade]);
 
   // Auto-calculate fee from fee rules when manualFees is not set
   const calculatedFee = useMemo(() => {
     const selectedAccount = accounts.find(a => a.id === selectedAccountId);
     if (!selectedAccount || !symbol.trim()) return 0;
     const rules = loadFeeRules();
-    const rule = findMatchingFeeRule(rules, selectedAccount.name, symbol.trim());
+    const rule = findMatchingFeeRule(rules, selectedAccountId, symbol.trim());
     if (!rule) return 0;
 
     // When editing, use the original trade's full entries array (preserves all executions)
@@ -388,16 +387,16 @@ export const TradeModal = () => {
   const calculatedTpSl = useMemo(() => {
     // Only for new trades or when TP/SL fields are empty
     const selectedAccount = accounts.find(a => a.id === selectedAccountId);
-    if (!selectedAccount || !symbol.trim()) return { tp: undefined as number | undefined, sl: undefined as number | undefined };
+    if (!selectedAccountId || !symbol.trim()) return { tp: undefined as number | undefined, sl: undefined as number | undefined };
     const ep = parseFloat(entryPrice);
     if (!ep || ep <= 0) return { tp: undefined, sl: undefined };
 
     const trimmedSymbol = symbol.trim();
-    const tickSize = getTickSizeForAccountSymbol(selectedAccount.name, trimmedSymbol);
+    const tickSize = getTickSizeForAccountSymbol(selectedAccountId, trimmedSymbol);
     if (!tickSize || tickSize <= 0) return { tp: undefined, sl: undefined };
 
     const rules = loadTpSlRules();
-    const rule = findMatchingTpSlRule(rules, selectedAccount.name, trimmedSymbol);
+    const rule = findMatchingTpSlRule(rules, selectedAccountId, trimmedSymbol);
     if (!rule) return { tp: undefined, sl: undefined };
 
     return computeAutoTpSl(rule, ep, direction, tickSize);
@@ -534,7 +533,7 @@ export const TradeModal = () => {
       entries,
       tradeRisk,
       tradeTarget,
-      accountName: resolvedAccountName,
+      accountId: selectedAccountId,
       strategyId: strategyId || undefined,
       selectedChecklistItems,
       tags: selectedTags,
@@ -542,12 +541,9 @@ export const TradeModal = () => {
       stopLoss: stopLoss !== '' ? parseFloat(stopLoss) : (calculatedTpSl.sl !== undefined ? calculatedTpSl.sl : undefined),
       takeProfit: takeProfit !== '' ? parseFloat(takeProfit) : (calculatedTpSl.tp !== undefined ? calculatedTpSl.tp : undefined),
       manualGrossPnl: manualGrossPnl !== '' ? parseFloat(manualGrossPnl) : undefined,
-      // Persist manual fees override (even if 0); if empty, persist calculated fee
       manualFees: fees !== '' ? parseFloat(fees) : (calculatedFee > 0 ? calculatedFee : undefined),
-      // Persist scale entries and exits
       scaleEntries: scaleEntries.length > 0 ? scaleEntries : undefined,
       scaleExits: scaleExits.length > 0 ? scaleExits : undefined,
-      // Advanced Data fields
       entryComment: entryComment || undefined,
       tradeManagement: tradeManagement || undefined,
       exitComment: exitComment || undefined,
@@ -555,39 +551,28 @@ export const TradeModal = () => {
       farthestPriceInLoss: farthestPriceInLoss !== '' ? parseFloat(farthestPriceInLoss) : null,
       priceReachedFirst: priceReachedFirst || undefined,
       breakEven: breakEven ?? undefined,
-      // Save Return (%) - for new trades, always calculate; for edits, update if P/L or account changed
       savedReturnPercent: editingTrade && !pnlFieldsChanged 
         ? editingTrade.savedReturnPercent 
         : calculatedReturnPercent,
-      // Save R-Multiple - use the same value displayed in the footer (rMultipleCalculated)
-      // Update when R-Multiple affecting fields change (entry, exit, stopLoss, direction)
       savedRMultiple: editingTrade && !rMultipleFieldsChanged
         ? editingTrade.savedRMultiple
         : (rMultipleCalculated ?? undefined),
-      // Save Planned RRR - based on Entry, Stop Loss, Take Profit
       savedRRR: rrrCalculated ?? undefined,
-      // Account snapshot - save accountId and balance at trade creation time
-      accountId: editingTrade && !pnlFieldsChanged
-        ? editingTrade.accountId
-        : selectedAccountId,
       accountBalanceSnapshot: editingTrade && !pnlFieldsChanged
         ? editingTrade.accountBalanceSnapshot
         : accountBalanceSnapshot,
-      // Contract size: snapshot from registry for new trades, preserve stored value for edits
       contractSize: editingTrade
         ? editingTrade.contractSize
-        : (getContractSizeForAccountSymbol(accountName, symbol.trim())),
-      // MFE/MAE in ticks — start with existing values for edits, null for new trades
+        : (getContractSizeForAccountSymbol(selectedAccountId, symbol.trim())),
       mfeTickPip: editingTrade ? editingTrade.mfeTickPip ?? null : null,
       maeTickPip: editingTrade ? editingTrade.maeTickPip ?? null : null,
-      // Screenshots
       screenshots: screenshots.length > 0 ? screenshots : undefined,
     };
 
     // Auto-calculate MFE/MAE in tick/pip units (independently) for BOTH new and edited trades
     {
       const trimmedSymbol = symbol.trim();
-      const tickSize = getTickSizeForAccountSymbol(accountName, trimmedSymbol);
+      const tickSize = getTickSizeForAccountSymbol(selectedAccountId, trimmedSymbol);
       const ep = parseFloat(entryPrice);
       const fpProfit = farthestPriceInProfit !== '' ? parseFloat(farthestPriceInProfit) : NaN;
       const fpLoss = farthestPriceInLoss !== '' ? parseFloat(farthestPriceInLoss) : NaN;
