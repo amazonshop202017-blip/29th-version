@@ -26,7 +26,7 @@ export interface Account {
 
 export interface Transaction {
   id: string;
-  userId?: string;
+  userId: string;
   accountId: string;
   type: 'deposit' | 'withdraw';
   amount: number;
@@ -166,8 +166,10 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   }, [accounts, transactions, saveAccounts, saveTransactions]);
 
   const addTransaction = useCallback((accountId: string, type: 'deposit' | 'withdraw', amount: number, note?: string) => {
+    if (!user?.userId) return;
     const newTransaction: Transaction = {
       id: crypto.randomUUID(),
+      userId: user.userId,
       accountId,
       type,
       amount,
@@ -175,7 +177,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       note,
     };
     saveTransactions([...transactions, newTransaction]);
-  }, [transactions, saveTransactions]);
+  }, [transactions, saveTransactions, user]);
 
   const getTransactionsForAccount = useCallback((accountId: string) => {
     return transactions.filter(t => t.accountId === accountId);
