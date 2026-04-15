@@ -378,6 +378,22 @@ export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
     };
 
     saveChallenge(challenge);
+
+    // Also create a propfirm account in the accounts system
+    const stepValue = isFunded ? 'funded' as const : (steps === '2 Steps' ? '2' as const : '1' as const);
+    const phaseValue = isFunded ? 'funded' as const : 'evaluation' as const;
+    addAccount(
+      challenge.nickname,
+      parseFloat(rules.balanceAmount) || 0,
+      'propfirm',
+      {
+        challengeId: challenge.challengeId,
+        step: stepValue,
+        phase: phaseValue,
+        status: status.toLowerCase() as 'active' | 'breached',
+      }
+    );
+
     toast.success(`Challenge "${challenge.nickname}" created (ID: ${challenge.challengeId})`);
     // Reset
     setNickname(""); setFundingFirm(""); setStrategyIds([]); setEvaluationFee("0");
