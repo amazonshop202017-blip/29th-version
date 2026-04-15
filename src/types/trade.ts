@@ -26,6 +26,7 @@ export interface TradeScreenshot {
 
 export interface Trade {
   id: string;
+  userId?: string;
   symbol: string;
   side: 'LONG' | 'SHORT';
   entries: TradeEntry[];

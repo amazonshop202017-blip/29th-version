@@ -2,6 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
 
+const getCurrentUserId = (): string | undefined => {
+  try {
+    const session = localStorage.getItem('auth_session');
+    if (session) {
+      const parsed = JSON.parse(session);
+      return parsed.userId;
+    }
+  } catch {}
+  return undefined;
+};
+
 const STORAGE_KEY = 'trading-journal-trades';
 
 export const useTrades = () => {
@@ -38,6 +49,14 @@ export const useTrades = () => {
               ...updated,
               contractSize: getContractSizeForSymbol(updated.symbol),
             };
+          }
+          
+          // Migration: Backfill userId from current session for pre-existing trades
+          if (!updated.userId) {
+            const currentUserId = getCurrentUserId();
+            if (currentUserId) {
+              updated = { ...updated, userId: currentUserId };
+            }
           }
           
           // Migration: Normalize mfeTickPip/maeTickPip — ensure they are number|null, never undefined
@@ -121,6 +140,7 @@ export const useTrades = () => {
     const newTrade: Trade = {
       ...data,
       id: crypto.randomUUID(),
+      userId: getCurrentUserId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -130,9 +150,11 @@ export const useTrades = () => {
 
   const bulkAddTrades = useCallback((tradesData: TradeFormData[]): Trade[] => {
     const now = new Date().toISOString();
+    const userId = getCurrentUserId();
     const newTrades: Trade[] = tradesData.map(data => ({
       ...data,
       id: crypto.randomUUID(),
+      userId,
       createdAt: now,
       updatedAt: now,
     }));
