@@ -76,6 +76,7 @@ interface TableWithStickyHorizontalScrollProps {
   isPrivacyMode: boolean;
   maskCurrency: (value: number, formatter: (v: number) => string) => string;
   formatCurrency: (v: number) => string;
+  accounts: { id: string; name: string }[];
 }
 
 const TableWithStickyHorizontalScroll = ({
@@ -89,6 +90,7 @@ const TableWithStickyHorizontalScroll = ({
   isPrivacyMode,
   maskCurrency,
   formatCurrency,
+  accounts,
 }: TableWithStickyHorizontalScrollProps) => {
   if (paginatedTrades.length === 0) {
     return (
@@ -624,6 +626,7 @@ const Trades = () => {
           isPrivacyMode={isPrivacyMode}
           maskCurrency={maskCurrency}
           formatCurrency={formatCurrency}
+          accounts={accounts}
         />
 
         {/* Pagination Footer */}
