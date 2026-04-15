@@ -335,6 +335,7 @@ function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
 // ─── Main Modal ──────────────────────────────────────────────────
 
 export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
+  const { addAccount } = useAccountsContext();
   const [nickname, setNickname] = useState("");
   const [fundingFirm, setFundingFirm] = useState("");
   const [strategyIds, setStrategyIds] = useState<string[]>([]);
