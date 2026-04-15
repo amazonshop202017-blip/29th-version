@@ -22,8 +22,16 @@ export const useTrades = () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
+        // Load accounts from localStorage for migration (avoids context dependency)
+        let accountsList: any[] = [];
+        try {
+          const storedAccounts = localStorage.getItem('trading-journal-accounts');
+          if (storedAccounts) accountsList = JSON.parse(storedAccounts);
+        } catch {}
+
+        let migrationReport = { migrated: 0, skipped: 0 };
+
         const parsed = JSON.parse(stored);
-        // Migrate old trades
         const migrated = parsed.map((trade: any) => {
           try {
           let updated = trade;
@@ -66,13 +74,35 @@ export const useTrades = () => {
           if (updated.maeTickPip === undefined) {
             updated = { ...updated, maeTickPip: null };
           }
+
+          // CRITICAL MIGRATION: accountName → accountId (UUID)
+          if (!updated.accountId && updated.accountName) {
+            const matchingAccounts = accountsList.filter(
+              (a: any) => a.name === updated.accountName
+            );
+            if (matchingAccounts.length === 1) {
+              updated = { ...updated, accountId: matchingAccounts[0].id };
+              migrationReport.migrated++;
+            } else {
+              // 0 or multiple matches — skip assignment, log warning
+              if (matchingAccounts.length > 1) {
+                console.warn(
+                  `[Migration] Ambiguous accountName "${updated.accountName}" matches ${matchingAccounts.length} accounts — skipping trade ${updated.id}`
+                );
+              }
+              migrationReport.skipped++;
+            }
+          }
+          // Remove deprecated accountName field after migration
+          if ('accountName' in updated && updated.accountId) {
+            const { accountName: _, ...rest } = updated;
+            updated = rest;
+          }
           
           // Calculate metrics once for all derived field reconciliation
           const metrics = calculateTradeMetrics(updated);
           
           // Migration 2: Reconcile savedRMultiple
-          // Handles: undefined, null, AND stale zero values (stored 0 when should be non-zero)
-          // This ensures backward compatibility when new derived fields are added
           if (updated.tradeRisk > 0 && metrics.positionStatus === 'CLOSED') {
             const calculatedRMultiple = metrics.netPnl / updated.tradeRisk;
             const isMissing = updated.savedRMultiple === undefined || updated.savedRMultiple === null;
@@ -87,8 +117,6 @@ export const useTrades = () => {
           }
           
           // Migration 3: Reconcile savedReturnPercent
-          // AUTHORITATIVE DEFINITION: Return % = (Net P&L / Account Balance at Trade Time) × 100
-          // Handles: undefined, null, AND stale zero values
           if (updated.accountBalanceSnapshot && updated.accountBalanceSnapshot > 0) {
             const netPnl = updated.manualGrossPnl !== undefined 
               ? updated.manualGrossPnl - metrics.totalCharges 
@@ -105,7 +133,6 @@ export const useTrades = () => {
               };
             }
           } else if (metrics.positionStatus === 'CLOSED') {
-            // Legacy trade without account balance - only set to 0 if truly missing
             if (updated.savedReturnPercent === undefined || updated.savedReturnPercent === null) {
               updated = {
                 ...updated,
@@ -117,12 +144,16 @@ export const useTrades = () => {
           return updated;
           } catch (err) {
             console.error('[useTrades] Migration error for trade:', trade?.id, err);
-            // Return trade as-is with safe defaults to prevent app crash
             return { ...trade, mfeTickPip: trade.mfeTickPip ?? null, maeTickPip: trade.maeTickPip ?? null };
           }
         }).filter(Boolean);
+
+        // Log migration report
+        if (migrationReport.migrated > 0 || migrationReport.skipped > 0) {
+          console.log(`[useTrades] Account migration: ${migrationReport.migrated} trades migrated, ${migrationReport.skipped} skipped`);
+        }
+
         setTrades(migrated);
-        // Save migrated trades back to localStorage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
       }
     } catch (error) {
@@ -199,10 +230,6 @@ export const useTrades = () => {
     saveTrades(trades.filter(trade => trade.accountId !== accountId));
   }, [trades, saveTrades]);
 
-  const deleteTradesByAccountName = useCallback((accountName: string) => {
-    saveTrades(trades.filter(trade => trade.accountName !== accountName));
-  }, [trades, saveTrades]);
-
   const getTradeById = useCallback((id: string) => {
     return trades.find(trade => trade.id === id);
   }, [trades]);
@@ -264,7 +291,6 @@ export const useTrades = () => {
     deleteTrade,
     deleteTrades,
     deleteTradesByAccountId,
-    deleteTradesByAccountName,
     getTradeById,
   };
 };

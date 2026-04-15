@@ -2,12 +2,7 @@ import { TradeEntry } from '@/types/trade';
 
 export interface FeeRule {
   id: string;
-  /** @deprecated Use accountIds */
-  accountId?: string;
-  /** @deprecated Use accountNames */
-  accountName?: string;
   accountIds: string[];
-  accountNames: string[];
   symbol: string;
   mode: 'per-contract' | 'per-execution';
   apply: 'all' | 'entry-only' | 'exit-only';
@@ -16,14 +11,21 @@ export interface FeeRule {
 
 const FEE_RULES_STORAGE_KEY = 'trading-journal-fee-rules';
 
-/** Migrate legacy single-account rule to multi-account */
+/** Migrate legacy rules: drop accountNames, resolve accountName→accountId */
 const migrateRule = (raw: any): FeeRule => {
-  if (raw.accountIds && raw.accountNames) return raw as FeeRule;
-  return {
-    ...raw,
-    accountIds: raw.accountId ? [raw.accountId] : [],
-    accountNames: raw.accountName ? [raw.accountName] : [],
+  const rule: FeeRule = {
+    id: raw.id,
+    accountIds: raw.accountIds || [],
+    symbol: raw.symbol,
+    mode: raw.mode,
+    apply: raw.apply,
+    feeValue: raw.feeValue,
   };
+  // Legacy single-account migration
+  if (rule.accountIds.length === 0 && raw.accountId) {
+    rule.accountIds = [raw.accountId];
+  }
+  return rule;
 };
 
 export function loadFeeRules(): FeeRule[] {
@@ -38,10 +40,10 @@ export function loadFeeRules(): FeeRule[] {
 
 export function findMatchingFeeRule(
   rules: FeeRule[],
-  accountName: string,
+  accountId: string,
   symbol: string
 ): FeeRule | null {
-  return rules.find(r => r.accountNames.includes(accountName) && r.symbol === symbol) || null;
+  return rules.find(r => r.accountIds.includes(accountId) && r.symbol === symbol) || null;
 }
 
 /**

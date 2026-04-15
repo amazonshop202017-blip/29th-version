@@ -40,7 +40,7 @@ import {
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { accounts, addAccount, updateAccount, getActiveAccountsWithStats, getArchivedAccountsWithStats, archiveAccount, unarchiveAccount, deleteAccountPermanently, addTransaction, getTransactionsForAccount } = useAccountsContext();
-  const { trades, deleteTradesByAccountId, deleteTradesByAccountName } = useTradesContext();
+  const { trades, deleteTradesByAccountId } = useTradesContext();
   const { logout } = useAuth();
   const { currency, setCurrency, currencyConfig, breakevenTolerance, setBreakevenTolerance } = useGlobalFilters();
 
@@ -409,7 +409,7 @@ const Settings = () => {
                       <div className="space-y-2 mt-2">
                         <AnimatePresence>
                           {archivedAccountsWithStats.map((account) => {
-                            const tradeCount = trades.filter(t => t.accountName === account.name).length;
+                            const tradeCount = trades.filter(t => t.accountId === account.id).length;
                             
                             return (
                               <motion.div
@@ -603,7 +603,6 @@ const Settings = () => {
       onConfirm={() => {
         if (deleteTarget) {
           deleteTradesByAccountId(deleteTarget.id);
-          deleteTradesByAccountName(deleteTarget.name);
           deleteAccountPermanently(deleteTarget.id);
           setDeleteTarget(null);
         }

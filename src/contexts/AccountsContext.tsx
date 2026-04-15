@@ -26,6 +26,7 @@ export interface Account {
 
 export interface Transaction {
   id: string;
+  userId?: string;
   accountId: string;
   type: 'deposit' | 'withdraw';
   amount: number;
@@ -55,7 +56,7 @@ interface AccountsContextType {
   deleteAccountPermanently: (id: string) => void;
   addTransaction: (accountId: string, type: 'deposit' | 'withdraw', amount: number, note?: string) => void;
   getTransactionsForAccount: (accountId: string) => Transaction[];
-  getActiveAccountNames: () => string[];
+  getActiveAccountIds: () => string[];
   // Get account balance BEFORE any trade P/L (starting balance + transactions only)
   getAccountBalanceBeforeTrades: (id: string) => number;
 }
@@ -182,7 +183,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
 
   // Helper function to calculate account stats
   const calculateAccountStats = useCallback((account: Account): AccountWithStats => {
-    const accountTrades = trades.filter(t => t.accountName === account.name);
+    const accountTrades = trades.filter(t => t.accountId === account.id);
     const tradePnl = accountTrades.reduce((sum, t) => sum + calculateTradeMetrics(t).netPnl, 0);
     
     const accountTransactions = transactions.filter(t => t.accountId === account.id);
@@ -229,8 +230,8 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       .map(account => calculateAccountStats(account));
   }, [accounts, calculateAccountStats]);
 
-  const getActiveAccountNames = useCallback((): string[] => {
-    return accounts.filter(a => !a.isArchived).map(a => a.name);
+  const getActiveAccountIds = useCallback((): string[] => {
+    return accounts.filter(a => !a.isArchived).map(a => a.id);
   }, [accounts]);
 
   // Get account balance BEFORE any trade P/L is applied
@@ -267,7 +268,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       deleteAccountPermanently,
       addTransaction,
       getTransactionsForAccount,
-      getActiveAccountNames,
+      getActiveAccountIds,
       getAccountBalanceBeforeTrades,
     }}>
       {children}

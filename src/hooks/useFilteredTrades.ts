@@ -4,18 +4,14 @@ import { useMemo } from 'react';
 
 /**
  * Wrapper hook that provides filtered trades with automatic account filtering.
- * This hook combines TradesContext and AccountsContext to provide proper filtering
- * based on active (non-archived) accounts.
- * 
- * All components should use this hook instead of importing useFilteredTradesContext from TradesContext directly.
- * This avoids the circular dependency between TradesContext and AccountsContext.
+ * Uses account IDs (UUIDs) for filtering — never account names.
  */
 export const useFilteredTrades = () => {
-  const { getActiveAccountNames } = useAccountsContext();
+  const { getActiveAccountIds } = useAccountsContext();
   
-  // Get active account names (excluding archived accounts)
-  const activeAccountNames = useMemo(() => getActiveAccountNames(), [getActiveAccountNames]);
+  // Get active account IDs (excluding archived accounts)
+  const activeAccountIds = useMemo(() => getActiveAccountIds(), [getActiveAccountIds]);
   
-  // Call the base hook with active account names
-  return useBaseFilteredTradesContext(activeAccountNames);
+  // Call the base hook with active account IDs
+  return useBaseFilteredTradesContext(activeAccountIds);
 };

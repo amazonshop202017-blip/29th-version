@@ -1,15 +1,9 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { setContractSizeRegistry, setTickSizeRegistry } from '@/lib/contractSizeRegistry';
-// Multi-account rule support with backward-compatible migration
 
 export interface TickPipRule {
   id: string;
-  /** @deprecated Use accountIds */
-  accountId?: string;
-  /** @deprecated Use accountNames */
-  accountName?: string;
   accountIds: string[];
-  accountNames: string[];
   symbol: string;
   tickSize: number;
   contractSize: number;
@@ -39,8 +33,8 @@ interface SymbolTickSizeContextType {
   addTickPipRule: (rule: Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTickPipRule: (id: string, rule: Partial<Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>>) => void;
   deleteTickPipRule: (id: string) => void;
-  getTickSizeForAccountSymbol: (accountName: string, symbol: string) => number | undefined;
-  getContractSizeForAccountSymbol: (accountName: string, symbol: string) => number;
+  getTickSizeForAccountSymbol: (accountId: string, symbol: string) => number | undefined;
+  getContractSizeForAccountSymbol: (accountId: string, symbol: string) => number;
 }
 
 const STORAGE_KEY = 'symbol-tick-sizes';
@@ -49,15 +43,22 @@ const RULES_STORAGE_KEY = 'trading-journal-tickpip-rules';
 
 const SymbolTickSizeContext = createContext<SymbolTickSizeContextType | undefined>(undefined);
 
-/** Migrate legacy single-account rules to multi-account format */
+/** Migrate legacy rules — drop accountNames, keep accountIds only */
 const migrateRule = (raw: any): TickPipRule => {
-  if (raw.accountIds && raw.accountNames) return raw as TickPipRule;
-  // Legacy single-account rule
-  return {
-    ...raw,
-    accountIds: raw.accountId ? [raw.accountId] : [],
-    accountNames: raw.accountName ? [raw.accountName] : [],
+  const rule: TickPipRule = {
+    id: raw.id,
+    accountIds: raw.accountIds || [],
+    symbol: raw.symbol,
+    tickSize: raw.tickSize,
+    contractSize: raw.contractSize,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
   };
+  // Legacy single-account migration
+  if (rule.accountIds.length === 0 && raw.accountId) {
+    rule.accountIds = [raw.accountId];
+  }
+  return rule;
 };
 
 const loadRules = (): TickPipRule[] => {
@@ -160,17 +161,17 @@ export const SymbolTickSizeProvider = ({ children }: { children: ReactNode }) =>
     saveRules(updated);
   };
 
-  // Account+Symbol lookup — strict: only account+symbol rule match
-  const getTickSizeForAccountSymbol = (accountName: string, symbol: string): number | undefined => {
+  // Account+Symbol lookup — uses accountIds (UUIDs)
+  const getTickSizeForAccountSymbol = (accountId: string, symbol: string): number | undefined => {
     const accountRule = tickPipRules.find(
-      r => r.accountNames.includes(accountName) && r.symbol === symbol
+      r => r.accountIds.includes(accountId) && r.symbol === symbol
     );
     return accountRule ? accountRule.tickSize : undefined;
   };
 
-  const getContractSizeForAccountSymbol = (accountName: string, symbol: string): number => {
+  const getContractSizeForAccountSymbol = (accountId: string, symbol: string): number => {
     const accountRule = tickPipRules.find(
-      r => r.accountNames.includes(accountName) && r.symbol === symbol
+      r => r.accountIds.includes(accountId) && r.symbol === symbol
     );
     return accountRule ? accountRule.contractSize : 1;
   };

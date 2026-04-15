@@ -32,7 +32,9 @@ export interface Trade {
   entries: TradeEntry[];
   tradeRisk: number;
   tradeTarget: number;
-  accountName: string;
+  accountId: string;
+  /** @deprecated Use accountId (UUID). Kept only for migration of legacy data. */
+  accountName?: string;
   strategyId?: string;
   selectedChecklistItems?: string[];
   tags: string[];
@@ -67,7 +69,6 @@ export interface Trade {
   // Saved Planned RRR (Risk:Reward Ratio) - based on Entry, Stop Loss, Take Profit
   savedRRR?: number;
   // Account snapshot at trade creation time
-  accountId?: string;
   accountBalanceSnapshot?: number;
   // Contract size snapshot — captured at trade creation, never re-read from registry
   contractSize?: number;
