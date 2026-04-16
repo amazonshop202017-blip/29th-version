@@ -281,24 +281,37 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-4">
-                {chartRoomItems.map((item) => {
-                  const isSubActive = location.pathname === item.path;
-                  return (
-                    <NavLink key={item.path} to={item.path} className="block">
-                      <div
-                        className={cn(
-                          "flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                          isSubActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        )}
-                      >
-                        {item.label}
-                      </div>
-                    </NavLink>
-                  );
-                })}
+              <div className="relative ml-5 mt-1 pl-4">
+                {/* Vertical trunk line — stops at the center of the last item */}
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 w-px bg-sidebar-border"
+                  style={{ height: `calc(100% - 1.125rem)` }}
+                />
+                <div className="space-y-0.5">
+                  {chartRoomItems.map((item) => {
+                    const isSubActive = location.pathname === item.path;
+                    return (
+                      <NavLink key={item.path} to={item.path} className="block">
+                        <div
+                          className={cn(
+                            "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                            isSubActive
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          )}
+                        >
+                          {/* Horizontal branch — connects trunk to this item */}
+                          <span
+                            aria-hidden
+                            className="absolute -left-4 top-1/2 w-4 h-px bg-sidebar-border"
+                          />
+                          {item.label}
+                        </div>
+                      </NavLink>
+                    );
+                  })}
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
