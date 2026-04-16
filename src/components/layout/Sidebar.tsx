@@ -112,15 +112,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       )}
       style={{ height: '100dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      {/* Collapse/Expand toggle - hidden on mobile */}
-      <motion.button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3.5 top-8 z-50 w-7 h-7 rounded-full bg-sidebar border border-sidebar-border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors duration-200 hidden md:flex"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </motion.button>
+      {/* Collapse/Expand toggle moved to GlobalHeader. Mobile-only spacer kept. */}
 
       {/* Logo — extra left padding on mobile to avoid overlap with burger/close button */}
       <div className="p-4 max-md:pl-14">
