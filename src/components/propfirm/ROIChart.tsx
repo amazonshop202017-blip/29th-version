@@ -89,13 +89,13 @@ export function ROIChart() {
                 <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" vertical={false} />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(220,15%,55%)" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "hsl(220,15%,55%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
-            <ReferenceLine y={0} stroke="hsl(220,15%,80%)" strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} iconType="circle" iconSize={7}
-              formatter={(value) => (<span style={{ color: "hsl(220,15%,45%)", textTransform: "capitalize" }}>{value === "roi" ? "Return on investment" : value}</span>)} />
+              formatter={(value) => (<span style={{ color: "hsl(var(--muted-foreground))", textTransform: "capitalize" }}>{value === "roi" ? "Return on investment" : value}</span>)} />
             <Area type="monotone" dataKey="income" stroke="#6366f1" strokeWidth={2} fill="url(#pfColorIncome)" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} name="Income" />
             <Area type="monotone" dataKey="roi" stroke="#10b981" strokeWidth={2} fill="url(#pfColorRoi)" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} name="roi" />
             <Area type="monotone" dataKey="expenses" stroke="#f43f5e" strokeWidth={2} fill="url(#pfColorExpenses)" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} name="Expenses" />

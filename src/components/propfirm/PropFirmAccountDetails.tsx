@@ -95,9 +95,9 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={balanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs><linearGradient id="pfBalanceGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(250,80%,70%)" stopOpacity={0.35} /><stop offset="95%" stopColor="hsl(250,80%,70%)" stopOpacity={0.02} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,93%)" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(220,15%,55%)" }} tickLine={false} axisLine={false} interval={1} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(220,15%,55%)" }} tickLine={false} axisLine={false} tickFormatter={(v) => v.toLocaleString()} domain={[9000, 11000]} width={55} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval={1} />
+                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => v.toLocaleString()} domain={[9000, 11000]} width={55} />
                 <Tooltip content={<CustomTooltip />} />
                 <ReferenceLine y={10800} stroke="hsl(145,60%,50%)" strokeDasharray="5 4" label={{ value: "Profit Target (8.0%)", position: "right", fontSize: 10, fill: "hsl(145,60%,45%)" }} />
                 <ReferenceLine y={9200} stroke="hsl(0,70%,60%)" strokeDasharray="5 4" label={{ value: "Drawdown Floor", position: "right", fontSize: 10, fill: "hsl(0,65%,55%)" }} />

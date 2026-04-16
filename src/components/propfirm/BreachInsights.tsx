@@ -28,9 +28,9 @@ export function BreachInsights() {
           </div>
           <div className="absolute bottom-0 right-0 w-5 h-5 bg-muted rounded-full flex items-center justify-center">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <circle cx="5" cy="5" r="4" stroke="hsl(220,15%,65%)" strokeWidth="1.5" />
-              <line x1="5" y1="3" x2="5" y2="6" stroke="hsl(220,15%,65%)" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="5" cy="7.5" r="0.5" fill="hsl(220,15%,65%)" />
+              <circle cx="5" cy="5" r="4" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
+              <line x1="5" y1="3" x2="5" y2="6" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="5" cy="7.5" r="0.5" fill="hsl(var(--muted-foreground))" />
             </svg>
           </div>
         </div>

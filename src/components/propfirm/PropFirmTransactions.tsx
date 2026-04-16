@@ -40,7 +40,7 @@ function TypeBadge({ type }: { type: "Income" | "Expense" }) {
 function DateIcon() {
   return (
     <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="hsl(220,15%,55%)" strokeWidth="1.3" fill="none"/><path d="M1 5.5h12" stroke="hsl(220,15%,55%)" strokeWidth="1.3"/><path d="M4.5 1v2M9.5 1v2" stroke="hsl(220,15%,55%)" strokeWidth="1.3" strokeLinecap="round"/></svg>
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="hsl(var(--muted-foreground))" strokeWidth="1.3" fill="none"/><path d="M1 5.5h12" stroke="hsl(var(--muted-foreground))" strokeWidth="1.3"/><path d="M4.5 1v2M9.5 1v2" stroke="hsl(var(--muted-foreground))" strokeWidth="1.3" strokeLinecap="round"/></svg>
     </div>
   );
 }
