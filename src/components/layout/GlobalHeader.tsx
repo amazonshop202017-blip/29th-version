@@ -395,7 +395,7 @@ export const GlobalHeader = () => {
       <button
         onClick={toggleSidebar}
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
+        className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-muted/60 dark:bg-[#151515] border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
       >
         {sidebarCollapsed ? <ChevronRight className="w-6 h-6" strokeWidth={2} /> : <ChevronLeft className="w-6 h-6" strokeWidth={2} />}
       </button>
@@ -1331,7 +1331,7 @@ export const GlobalHeader = () => {
             "h-9 gap-1.5 px-3 flex-shrink-0 hidden lg:flex items-center justify-center rounded-lg border border-border/40 text-sm font-medium transition-colors",
             isEditMode
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
-              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              : "bg-muted/60 dark:bg-[#151515] text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
           {isEditMode ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
