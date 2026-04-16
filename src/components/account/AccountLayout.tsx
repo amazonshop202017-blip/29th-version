@@ -102,7 +102,7 @@ export const AccountLayout = ({ children }: AccountLayoutProps) => {
         </div>
       </div>
 
-      <main className={cn("min-h-screen flex flex-col", "lg:ml-52")}>
+      <main className={cn("min-h-screen flex flex-col", "lg:ml-[229px]")}>
         <div className="p-4 sm:p-6 lg:p-8 flex-1">
           {children}
         </div>

@@ -15,7 +15,7 @@ export const AccountSidebar = () => {
   const navigate = useNavigate();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-52 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-screen w-[229px] bg-sidebar border-r border-sidebar-border flex flex-col z-40">
       {/* Logo Section */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex flex-col items-center justify-center">
