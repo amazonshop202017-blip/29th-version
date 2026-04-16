@@ -49,7 +49,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           !isCollapsed ? "lg:ml-[229px]" : "lg:ml-[70px]",
           isCollapsed ? "md:ml-[70px]" : "md:ml-[229px]"
         )}>
-          <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(222_47%_10%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
+          <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(0_0%_5%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
             <div className="flex-shrink-0">
               <GlobalHeader />
               <SelectedFiltersBar />
