@@ -296,19 +296,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           )}
                         >
-                          {/* Curved L-branch connector */}
-                          <svg
-                            aria-hidden
-                            className="absolute -left-4 top-0 h-full w-4 overflow-visible text-sidebar-border"
-                            preserveAspectRatio="none"
-                            fill="none"
-                          >
-                          {/* Vertical trunk segment (top half always; bottom half only if not last) */}
+                          {/* Vertical trunk segment (top → curve start) */}
                           <span
                             aria-hidden
                             className="absolute -left-4 top-0 w-px bg-sidebar-border"
                             style={{ height: "calc(50% - 6px)" }}
                           />
+                          {/* Bottom trunk segment continues for non-last items */}
                           {!isLast && (
                             <span
                               aria-hidden
