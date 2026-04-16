@@ -282,10 +282,17 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="relative ml-5 mt-1 pl-4">
+                {/* Single continuous trunk — runs from top down to the last item's curve */}
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 w-px bg-sidebar-border pointer-events-none"
+                  style={{
+                    height: `calc(100% - ${chartRoomItems.length > 0 ? "1.125rem" : "0px"})`,
+                  }}
+                />
                 <div className="space-y-0.5">
-                  {chartRoomItems.map((item, idx) => {
+                  {chartRoomItems.map((item) => {
                     const isSubActive = location.pathname === item.path;
-                    const isLast = idx === chartRoomItems.length - 1;
                     return (
                       <NavLink key={item.path} to={item.path} className="block">
                         <div
@@ -296,31 +303,17 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           )}
                         >
-                          {/* Vertical trunk segment (top → curve start, +1px overlap) */}
-                          <span
-                            aria-hidden
-                            className="absolute -left-4 top-0 w-px bg-sidebar-border"
-                            style={{ height: "calc(50% - 5px)" }}
-                          />
-                          {/* Bottom trunk segment continues for non-last items */}
-                          {!isLast && (
-                            <span
-                              aria-hidden
-                              className="absolute -left-4 w-px bg-sidebar-border"
-                              style={{ top: "calc(50% + 6px)", bottom: 0 }}
-                            />
-                          )}
-                          {/* Curved corner from vertical into horizontal branch */}
+                          {/* Curved branch: rounds off the trunk into the horizontal connector */}
                           <svg
                             aria-hidden
                             width="16"
                             height="12"
                             viewBox="0 0 16 12"
                             fill="none"
-                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-sidebar-border"
+                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-sidebar-border pointer-events-none"
                           >
                             <path
-                              d="M 0.5 0 Q 0.5 11.5, 12 11.5 L 16 11.5"
+                              d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
                               stroke="currentColor"
                               strokeWidth="1"
                               fill="none"
