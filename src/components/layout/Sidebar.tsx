@@ -296,18 +296,18 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           )}
                         >
-                          {/* Vertical trunk segment (top → curve start) */}
+                          {/* Vertical trunk segment (top → curve start, +1px overlap) */}
                           <span
                             aria-hidden
                             className="absolute -left-4 top-0 w-px bg-sidebar-border"
-                            style={{ height: "calc(50% - 6px)" }}
+                            style={{ height: "calc(50% - 5px)" }}
                           />
                           {/* Bottom trunk segment continues for non-last items */}
                           {!isLast && (
                             <span
                               aria-hidden
-                              className="absolute -left-4 bottom-0 w-px bg-sidebar-border"
-                              style={{ height: "50%" }}
+                              className="absolute -left-4 w-px bg-sidebar-border"
+                              style={{ top: "calc(50% + 6px)", bottom: 0 }}
                             />
                           )}
                           {/* Curved corner from vertical into horizontal branch */}
