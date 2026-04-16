@@ -397,7 +397,7 @@ export const GlobalHeader = () => {
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
       >
-        {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        {sidebarCollapsed ? <ChevronRight className="w-8 h-8" strokeWidth={2} /> : <ChevronLeft className="w-8 h-8" strokeWidth={2} />}
       </button>
 
       {/* Page Title */}
