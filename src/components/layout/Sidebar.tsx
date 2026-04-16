@@ -282,15 +282,10 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="relative ml-5 mt-1 pl-4">
-                {/* Vertical trunk line — stops at the center of the last item */}
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-0 w-px bg-sidebar-border"
-                  style={{ height: `calc(100% - 1.125rem)` }}
-                />
                 <div className="space-y-0.5">
-                  {chartRoomItems.map((item) => {
+                  {chartRoomItems.map((item, idx) => {
                     const isSubActive = location.pathname === item.path;
+                    const isLast = idx === chartRoomItems.length - 1;
                     return (
                       <NavLink key={item.path} to={item.path} className="block">
                         <div
@@ -301,11 +296,29 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           )}
                         >
-                          {/* Horizontal branch — connects trunk to this item */}
-                          <span
+                          {/* Curved L-branch connector */}
+                          <svg
                             aria-hidden
-                            className="absolute -left-4 top-1/2 w-4 h-px bg-sidebar-border"
-                          />
+                            className="absolute -left-4 top-0 h-full w-4 overflow-visible text-sidebar-border"
+                            preserveAspectRatio="none"
+                            fill="none"
+                          >
+                            {/* Vertical segment: full height for middle items, half for last */}
+                            <line
+                              x1="0.5"
+                              y1="0"
+                              x2="0.5"
+                              y2={isLast ? "50%" : "100%"}
+                              stroke="currentColor"
+                              strokeWidth="1"
+                            />
+                            {/* Curved corner from vertical into horizontal branch */}
+                            <path
+                              d="M 0.5 calc(50% - 6px) Q 0.5 50%, 6.5 50% L 16 50%"
+                              stroke="currentColor"
+                              strokeWidth="1"
+                            />
+                          </svg>
                           {item.label}
                         </div>
                       </NavLink>
