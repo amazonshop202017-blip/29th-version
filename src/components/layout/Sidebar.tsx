@@ -231,13 +231,20 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
               <NavLink to="/chart-room/drawdown" className="block">
                 <div
                   className={cn(
-                    "relative flex items-center justify-center px-3 py-2.5 rounded-lg transition-all duration-200",
+                    "relative flex items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200",
                     isChartRoomActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
-                  <BarChart3 className="w-5 h-5 flex-shrink-0" />
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                      isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                    )}
+                  >
+                    <BarChart3 className="w-[15px] h-[15px]" />
+                  </span>
                 </div>
               </NavLink>
             </TooltipTrigger>
@@ -250,13 +257,20 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
             <CollapsibleTrigger asChild>
               <button
                 className={cn(
-                  "relative w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+                  "relative w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
                   isChartRoomActive
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
-                <BarChart3 className={cn("w-[18px] h-[18px] flex-shrink-0", isChartRoomActive ? "text-primary" : "text-sidebar-foreground/60")} />
+                <span
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                    isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                  )}
+                >
+                  <BarChart3 className="w-[15px] h-[15px]" />
+                </span>
                 <span className="flex-1 text-left text-sm">Chart Room</span>
                 <ChevronDown
                   className={cn(
