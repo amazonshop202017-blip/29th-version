@@ -65,8 +65,8 @@ export const DisplayModeSelector = () => {
         <button
           className={cn(
             "h-9 px-3 rounded-md flex items-center gap-1.5",
-            "border border-border bg-background hover:bg-accent transition-colors",
-            "text-sm text-muted-foreground hover:text-foreground"
+            "border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors",
+            "text-sm text-muted-foreground"
           )}
         >
           {selectedOption.icon}

@@ -571,7 +571,7 @@ export const GlobalHeader = () => {
         {/* Basic Filters Dropdown */}
         <DropdownMenu open={basicFiltersOpen} onOpenChange={setBasicFiltersOpen}>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent transition-colors">
+            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
               <span>Filters</span>
               {activeBasicFiltersCount > 0 && (
@@ -1190,7 +1190,7 @@ export const GlobalHeader = () => {
         {/* Advanced Filters Dropdown */}
         <Popover open={advancedFiltersOpen} onOpenChange={setAdvancedFiltersOpen}>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent transition-colors">
+            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
               <span>Advanced Filters</span>
               {hasActiveTagFilters && (
@@ -1212,7 +1212,7 @@ export const GlobalHeader = () => {
         {/* Date Range Selector */}
         <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent transition-colors">
+            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
               <CalendarIcon className="w-4 h-4 text-muted-foreground" />
               <span className="truncate">{getDateRangeLabel()}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-1" />
@@ -1277,7 +1277,7 @@ export const GlobalHeader = () => {
         {/* Account Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent transition-colors rounded-r-[calc(0.375rem-1px)]">
+            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded-r-[calc(0.375rem-1px)]">
               <Wallet className="w-4 h-4 text-muted-foreground" />
               <span className="truncate">{getAccountsLabel()}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-1" />
