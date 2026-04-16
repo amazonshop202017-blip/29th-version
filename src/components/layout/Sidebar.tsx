@@ -299,8 +299,8 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                           className={cn(
                             "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
                             isSubActive
-                              ? "bg-primary/10 text-primary font-medium"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                           )}
                         >
                           {/* Curved branch: rounds off the trunk into the horizontal connector */}
