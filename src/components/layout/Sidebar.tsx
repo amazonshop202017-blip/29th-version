@@ -303,20 +303,33 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                             preserveAspectRatio="none"
                             fill="none"
                           >
-                            {/* Vertical segment: full height for middle items, half for last */}
-                            <line
-                              x1="0.5"
-                              y1="0"
-                              x2="0.5"
-                              y2={isLast ? "50%" : "100%"}
-                              stroke="currentColor"
-                              strokeWidth="1"
+                          {/* Vertical trunk segment (top half always; bottom half only if not last) */}
+                          <span
+                            aria-hidden
+                            className="absolute -left-4 top-0 w-px bg-sidebar-border"
+                            style={{ height: "calc(50% - 6px)" }}
+                          />
+                          {!isLast && (
+                            <span
+                              aria-hidden
+                              className="absolute -left-4 bottom-0 w-px bg-sidebar-border"
+                              style={{ height: "50%" }}
                             />
-                            {/* Curved corner from vertical into horizontal branch */}
+                          )}
+                          {/* Curved corner from vertical into horizontal branch */}
+                          <svg
+                            aria-hidden
+                            width="16"
+                            height="12"
+                            viewBox="0 0 16 12"
+                            fill="none"
+                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-sidebar-border"
+                          >
                             <path
-                              d="M 0.5 calc(50% - 6px) Q 0.5 50%, 6.5 50% L 16 50%"
+                              d="M 0.5 0 Q 0.5 11.5, 12 11.5 L 16 11.5"
                               stroke="currentColor"
                               strokeWidth="1"
+                              fill="none"
                             />
                           </svg>
                           {item.label}
