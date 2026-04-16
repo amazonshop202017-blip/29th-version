@@ -233,14 +233,14 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                   className={cn(
                     "relative flex items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200",
                     isChartRoomActive
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                   )}
                 >
                   <span
                     className={cn(
                       "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
-                      isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                      isChartRoomActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
                     )}
                   >
                     <BarChart3 className="w-[15px] h-[15px]" />
@@ -259,14 +259,14 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                 className={cn(
                   "relative w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
                   isChartRoomActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                 )}
               >
                 <span
                   className={cn(
                     "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
-                    isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                    isChartRoomActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
                   )}
                 >
                   <BarChart3 className="w-[15px] h-[15px]" />
