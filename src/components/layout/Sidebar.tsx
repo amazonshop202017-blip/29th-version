@@ -48,16 +48,16 @@ const NavItem = ({ icon: Icon, label, path, isCollapsed, isActive }: {
             "relative flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
             isCollapsed ? "justify-center" : "",
             isActive
-              ? "bg-primary/10 text-primary font-medium"
-              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
           )}
         >
           <span
             className={cn(
               "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors",
               isActive
-                ? "bg-primary/15 text-primary"
-                : "bg-muted/60 text-sidebar-foreground/70"
+                ? "text-sidebar-accent-foreground"
+                : "text-sidebar-foreground"
             )}
           >
             <Icon className="w-[15px] h-[15px]" />
