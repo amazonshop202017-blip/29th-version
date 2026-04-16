@@ -1212,7 +1212,7 @@ export const GlobalHeader = () => {
         {/* Date Range Selector */}
         <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
               <CalendarIcon className="w-4 h-4 text-muted-foreground" />
               <span className="truncate">{getDateRangeLabel()}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-1" />
