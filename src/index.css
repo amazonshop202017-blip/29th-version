@@ -75,7 +75,7 @@
 
   /* Dark mode (default) */
   .dark {
-    --background: 222 47% 6%;
+    --background: 0 0% 9%;
     --foreground: 210 40% 98%;
 
     --card: 222 47% 8%;
@@ -110,7 +110,7 @@
     --input: 222 47% 14%;
     --ring: 217 20% 18%;
 
-    --sidebar-background: 222 47% 5%;
+    --sidebar-background: 0 0% 9%;
     --sidebar-foreground: 210 40% 85%;
     --sidebar-primary: 217 20% 18%;
     --sidebar-primary-foreground: 210 40% 98%;
