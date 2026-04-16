@@ -198,15 +198,20 @@ export const PerformanceByDurationChart = () => {
               <Bar
                 dataKey="absPnl"
                 radius={[0, 4, 4, 0]}
-                label={{
-                  position: 'right',
-                  fill: 'hsl(var(--muted-foreground))',
-                  fontSize: 11,
-                  formatter: (value: number, _: any, index: number) => {
-                    const original = chartData[index];
-                    if (!original || original.totalPnl === 0) return '';
-                    return formatCurrency(original.totalPnl, true);
-                  },
+                label={({ x, y, width, height, index }: any) => {
+                  const entry = chartData[index];
+                  if (!entry || entry.totalPnl === 0) return null;
+                  return (
+                    <text
+                      x={x + width + 5}
+                      y={y + height / 2}
+                      fill="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      dominantBaseline="middle"
+                    >
+                      {formatCurrency(entry.totalPnl, true)}
+                    </text>
+                  );
                 }}
               >
                 {chartData.map((entry, index) => (
