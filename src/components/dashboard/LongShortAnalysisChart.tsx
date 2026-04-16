@@ -243,7 +243,7 @@ export const LongShortAnalysisChart = () => {
                   fill={
                     displayMode === 'pnl'
                       ? getFill(entry.pnl >= 0)
-                      : 'hsl(var(--primary))'
+                      : 'hsl(var(--chart-1))'
                   }
                 />
               ))}

@@ -81,7 +81,7 @@ interface InstrumentData {
 }
 
 const DEFAULT_METRIC_COLORS = [
-  'hsl(var(--primary))',
+  'hsl(var(--chart-1))',
   'hsl(var(--profit))',
   'hsl(45 93% 47%)',
 ];
@@ -1117,9 +1117,9 @@ export const InstrumentPerformanceChart = ({
                     <Line
                       type="monotone"
                       dataKey="displayValue"
-                      stroke={metricConfigs[0]?.color || 'hsl(var(--primary))'}
+                      stroke={metricConfigs[0]?.color || 'hsl(var(--chart-1))'}
                       strokeWidth={2}
-                      dot={{ fill: metricConfigs[0]?.color || 'hsl(var(--primary))', r: 3 }}
+                      dot={{ fill: metricConfigs[0]?.color || 'hsl(var(--chart-1))', r: 3 }}
                       activeDot={{ r: 5 }}
                     />
                   ) : (

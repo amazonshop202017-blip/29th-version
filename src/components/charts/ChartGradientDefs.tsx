@@ -40,8 +40,8 @@ export const ChartGradientDefs = ({ direction = 'vertical', idPrefix = '' }: Cha
         <stop offset="100%" stopColor="hsl(var(--loss))" stopOpacity={0.85} />
       </linearGradient>
       <linearGradient id={primaryId} {...positiveCoords}>
-        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.85} />
+        <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+        <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0.85} />
       </linearGradient>
     </defs>
   );
@@ -57,7 +57,7 @@ export const useGradientFill = (idPrefix = '') => {
 
   const profitFill = isGradient ? `url(#${idPrefix}profitGradient)` : 'hsl(var(--profit))';
   const lossFill = isGradient ? `url(#${idPrefix}lossGradient)` : 'hsl(var(--loss))';
-  const primaryFill = isGradient ? `url(#${idPrefix}primaryGradient)` : 'hsl(var(--primary))';
+  const primaryFill = isGradient ? `url(#${idPrefix}primaryGradient)` : 'hsl(var(--chart-1))';
 
   const getFill = (isPositive: boolean) => isPositive ? profitFill : lossFill;
 
