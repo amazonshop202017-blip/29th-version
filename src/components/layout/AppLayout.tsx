@@ -43,9 +43,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       />
       <div className={cn(
         "h-screen transition-all duration-300 pl-1 md:pl-1 lg:pl-1 pr-3 md:pr-4 lg:pr-5 py-2 md:py-2.5 lg:py-3",
-        "ml-0 md:ml-16 lg:ml-52",
-        !isCollapsed ? "lg:ml-52" : "lg:ml-16",
-        isCollapsed ? "md:ml-16" : "md:ml-52"
+        "ml-0 md:ml-[70px] lg:ml-[229px]",
+        !isCollapsed ? "lg:ml-[229px]" : "lg:ml-[70px]",
+        isCollapsed ? "md:ml-[70px]" : "md:ml-[229px]"
       )}>
         <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(222_47%_10%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
           <div className="flex-shrink-0">

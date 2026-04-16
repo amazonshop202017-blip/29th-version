@@ -106,7 +106,7 @@ export const SettingsLayout = ({ children, activeTab, onTabChange }: SettingsLay
       {/* Main content */}
       <main className={cn(
         "min-h-screen flex flex-col",
-        "ml-0 lg:ml-52"
+        "ml-0 lg:ml-[229px]"
       )}>
         <div className="p-4 sm:p-6 lg:p-8 flex-1">
           {children}
