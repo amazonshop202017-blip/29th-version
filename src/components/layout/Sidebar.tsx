@@ -100,9 +100,9 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
     <aside
       className={cn(
         "fixed left-0 top-0 bg-sidebar flex flex-col z-40 transition-all duration-300",
-        isCollapsed ? "w-16" : "w-52",
+        isCollapsed ? "w-[70px]" : "w-[229px]",
         // Mobile: hidden by default, shown when isMobileOpen
-        "max-md:-translate-x-full max-md:w-52",
+        "max-md:-translate-x-full max-md:w-[229px]",
         isMobileOpen && "max-md:translate-x-0"
       )}
       style={{ height: '100dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
