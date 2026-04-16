@@ -111,21 +111,30 @@ export const PerformanceByDurationChart = () => {
   const { isPrivacyMode } = usePrivacyMode();
   const { profitFill, lossFill } = useGradientFill('perfDur');
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number, signed = false) => {
     if (isPrivacyMode) return '**';
     if (value === 0) return '$0';
-    const prefix = value >= 0 ? '+$' : '-$';
-    return `${prefix}${Math.abs(value).toFixed(0)}`;
+    if (signed) {
+      const prefix = value >= 0 ? '+$' : '-$';
+      return `${prefix}${Math.abs(value).toFixed(0)}`;
+    }
+    return `${currencyConfig.symbol}${Math.abs(value).toFixed(0)}`;
   };
 
-  // Calculate domain for x-axis
-  const xDomain = useMemo(() => {
-    const values = bucketData.map(d => d.totalPnl);
-    const min = Math.min(...values, 0);
-    const max = Math.max(...values, 0);
-    const padding = Math.max(Math.abs(max - min) * 0.1, 50);
-    return [min - padding, max + padding];
+  // Use absolute values for bar lengths, keep original sign for color
+  const chartData = useMemo(() => {
+    return bucketData.map(d => ({
+      ...d,
+      absPnl: Math.abs(d.totalPnl),
+    }));
   }, [bucketData]);
+
+  // Calculate domain for x-axis using absolute values
+  const xDomain = useMemo(() => {
+    const max = Math.max(...chartData.map(d => d.absPnl), 0);
+    const padding = Math.max(max * 0.15, 50);
+    return [0, max + padding];
+  }, [chartData]);
 
   return (
     <Card className="bg-card border-border">
@@ -139,7 +148,7 @@ export const PerformanceByDurationChart = () => {
         <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={bucketData}
+              data={chartData}
               layout="vertical"
               margin={{ top: 10, right: 80, left: 10, bottom: 10 }}
             >
@@ -167,17 +176,16 @@ export const PerformanceByDurationChart = () => {
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 width={70}
               />
-              <ReferenceLine x={0} stroke="hsl(var(--border))" strokeWidth={1} />
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload || payload.length === 0) return null;
-                  const data = payload[0].payload as BucketData;
+                  const data = payload[0].payload as BucketData & { absPnl: number };
                   return (
                     <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                       <p className="text-foreground font-medium mb-2">{data.bucket}</p>
                       <div className="space-y-1 text-sm">
                         <p className={isPrivacyMode ? 'text-foreground' : data.totalPnl >= 0 ? 'profit-text' : 'loss-text'}>
-                          P&L: {isPrivacyMode ? '**' : formatCurrency(data.totalPnl)}
+                          P&L: {isPrivacyMode ? '**' : formatCurrency(data.totalPnl, true)}
                         </p>
                         <p className="text-muted-foreground">
                           Trades: {data.tradeCount}
@@ -188,16 +196,20 @@ export const PerformanceByDurationChart = () => {
                 }}
               />
               <Bar
-                dataKey="totalPnl"
+                dataKey="absPnl"
                 radius={[0, 4, 4, 0]}
                 label={{
                   position: 'right',
                   fill: 'hsl(var(--muted-foreground))',
                   fontSize: 11,
-                  formatter: (value: number) => value !== 0 ? formatCurrency(value) : '',
+                  formatter: (value: number, _: any, index: number) => {
+                    const original = chartData[index];
+                    if (!original || original.totalPnl === 0) return '';
+                    return formatCurrency(original.totalPnl, true);
+                  },
                 }}
               >
-                {bucketData.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.totalPnl >= 0 ? profitFill : lossFill}
