@@ -29,7 +29,7 @@ const trades = [
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
-    return (<div className="bg-white border border-border rounded-lg px-3 py-2 shadow-lg text-xs"><p className="text-muted-foreground">{label}</p><p className="font-bold text-foreground">${payload[0].value.toLocaleString()}</p></div>);
+    return (<div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs"><p className="text-muted-foreground">{label}</p><p className="font-bold text-foreground">${payload[0].value.toLocaleString()}</p></div>);
   }
   return null;
 }
@@ -68,7 +68,7 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
           <div className="ml-7"><span className="text-xs text-muted-foreground bg-muted rounded px-2 py-0.5 font-medium">Evaluation Account</span></div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border rounded-lg bg-white text-foreground hover:bg-muted/30 transition-colors"><Paperclip className="w-3.5 h-3.5" />Attach strategy</button>
+          <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border rounded-lg bg-card text-foreground hover:bg-muted/30 transition-colors"><Paperclip className="w-3.5 h-3.5" />Attach strategy</button>
           <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"><BookOpen className="w-3.5 h-3.5" />Journal</button>
         </div>
       </div>
@@ -82,12 +82,12 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-        <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Account balance over time</h3>
             <div className="flex items-center gap-1 border border-border rounded-lg p-0.5">
               {(["Daily", "Hourly", "Per Trade"] as ChartView[]).map((v) => (
-                <button key={v} onClick={() => setChartView(v)} className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${chartView === v ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>{v}</button>
+                <button key={v} onClick={() => setChartView(v)} className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${chartView === v ? "bg-foreground text-background dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground"}`}>{v}</button>
               ))}
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">Path to funding</h3>
           <FundingItem showCheck={false} label="Target: 8%" value="Profit: $486.03" barValue={60.75} percentage="60.75%" />
           <FundingItem showCheck icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} label="Maximum daily loss: 2%" value="$0" barValue={0} percentage="0%" />
@@ -116,7 +116,7 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
           <div className="border-t border-border mt-2 pt-4">
             <h4 className="text-sm font-bold text-foreground mb-3">Stats</h4>
             <div className="space-y-2">
-              {[{ label: "Win rate", value: "60.42%", color: "" }, { label: "Average win", value: "+$31", color: "text-emerald-600" }, { label: "Average loss", value: "-$34", color: "text-rose-500" }, { label: "Best day", value: "—", color: "" }, { label: "Worst day", value: "—", color: "" }].map((stat) => (
+              {[{ label: "Win rate", value: "60.42%", color: "" }, { label: "Average win", value: "+$31", color: "text-emerald-500" }, { label: "Average loss", value: "-$34", color: "text-rose-500" }, { label: "Best day", value: "—", color: "" }, { label: "Worst day", value: "—", color: "" }].map((stat) => (
                 <div key={stat.label} className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{stat.label}</span><span className={`text-xs font-semibold ${stat.color || "text-foreground"}`}>{stat.value}</span></div>
               ))}
             </div>
@@ -124,7 +124,7 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border shadow-sm overflow-x-auto">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-x-auto">
         <div className="flex items-center justify-between px-5 pt-4 pb-0">
           <div className="flex items-center"><button className="px-4 py-2.5 text-xs font-bold text-foreground border-b-2 border-foreground tracking-wide uppercase">TRADES</button></div>
           <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mb-2"><Upload className="w-3.5 h-3.5" />Upload trades</button>
@@ -151,8 +151,8 @@ export default function PropFirmAccountDetails({ onBack }: AccountDetailsProps) 
                   <td className="px-3 py-2.5 text-foreground font-medium whitespace-nowrap">{trade.openDate}</td>
                   <td className="px-3 py-2.5 font-bold text-foreground whitespace-nowrap">{trade.symbol}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.closeDate}</td>
-                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.pnl >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{trade.pnl >= 0 ? `$${trade.pnl}` : `-$${Math.abs(trade.pnl)}`}</td>
-                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.roi >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{trade.roi >= 0 ? `${trade.roi}%` : `-${Math.abs(trade.roi)}%`}</td>
+                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.pnl >= 0 ? "text-emerald-500" : "text-rose-500"}`}>{trade.pnl >= 0 ? `$${trade.pnl}` : `-$${Math.abs(trade.pnl)}`}</td>
+                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>{trade.roi >= 0 ? `${trade.roi}%` : `-${Math.abs(trade.roi)}%`}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.side}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.volume}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.account}</td>

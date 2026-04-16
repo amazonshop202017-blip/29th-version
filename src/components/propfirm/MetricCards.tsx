@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, CircleDot } from "lucide-react";
 export function MetricCards() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="flex items-center gap-1 mb-1">
@@ -24,10 +24,10 @@ export function MetricCards() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
         <div className="text-xs text-muted-foreground font-medium mb-3">Total spent</div>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
             <TrendingDown className="w-4 h-4 text-rose-500" />
           </div>
           <div>
@@ -37,10 +37,10 @@ export function MetricCards() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
         <div className="text-xs text-muted-foreground font-medium mb-3">Total earned</div>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
             <TrendingUp className="w-4 h-4 text-emerald-500" />
           </div>
           <div>
@@ -50,15 +50,15 @@ export function MetricCards() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
         <div className="text-xs text-muted-foreground font-medium mb-3">Net total</div>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <DollarSign className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-emerald-600 tracking-tight">+$333</div>
-            <div className="text-xs text-emerald-600/80 font-medium mt-0.5">+199.4% ROI</div>
+            <div className="text-2xl font-bold text-emerald-500 tracking-tight">+$333</div>
+            <div className="text-xs text-emerald-500/80 font-medium mt-0.5">+199.4% ROI</div>
           </div>
         </div>
       </div>

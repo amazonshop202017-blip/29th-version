@@ -37,7 +37,7 @@ const dataMap: Record<Period, typeof data1W> = { "1W": data1W, "1M": data1M, "1Y
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-border rounded-lg shadow-md p-3 text-xs">
+      <div className="bg-card border border-border rounded-lg shadow-md p-3 text-xs">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-2 text-muted-foreground">
@@ -57,7 +57,7 @@ export function ROIChart() {
   const data = dataMap[period];
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5">
       <div className="flex items-start justify-between mb-1">
         <div>
           <h2 className="text-sm font-semibold text-foreground">ROI Progression</h2>
@@ -66,7 +66,7 @@ export function ROIChart() {
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
           {(["1W", "1M", "1Y"] as Period[]).map((p) => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${period === p ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${period === p ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               {p}
             </button>
           ))}

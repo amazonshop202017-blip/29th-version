@@ -8,7 +8,7 @@ export function BreachInsights() {
   const tabs: BreachTab[] = ["Evaluation Breaches", "Funded Breaches"];
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5">
       <div className="mb-3">
         <h2 className="text-sm font-semibold text-foreground">Breach insights</h2>
         <p className="text-xs text-muted-foreground mt-0.5">Understand why your accounts get breached and spot patterns.</p>

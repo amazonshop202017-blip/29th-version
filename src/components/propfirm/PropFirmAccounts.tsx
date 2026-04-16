@@ -34,7 +34,7 @@ function ThreeDotMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[170px]">
         {menuItems.map((item, i) => (
-          <DropdownMenuItem key={i} className={item.danger ? "text-rose-500 focus:text-rose-600" : ""}>{item.label}</DropdownMenuItem>
+          <DropdownMenuItem key={i} className={item.danger ? "text-rose-500 focus:text-rose-500" : ""}>{item.label}</DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -62,7 +62,7 @@ function TableView({ accounts, onSelect }: { accounts: typeof evaluationAccounts
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-foreground">{acc.firm}</span>
                 <span className="text-[10px] font-semibold text-muted-foreground border border-border rounded px-1.5 py-0.5 whitespace-nowrap">{acc.step}</span>
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 rounded px-1.5 py-0.5 whitespace-nowrap">{acc.status}</span>
+                <span className="text-[10px] font-semibold text-emerald-500 bg-emerald-500/15 rounded px-1.5 py-0.5 whitespace-nowrap">{acc.status}</span>
               </div>
             </td>
             <td className="py-4 pr-4 text-sm text-foreground font-medium whitespace-nowrap">{acc.balance}</td>
@@ -101,9 +101,9 @@ function ProgressRow({ icon, label, sublabel, value, barValue, percentage, barCo
 
 function EvalAccountCard({ onSelect }: { onSelect: () => void }) {
   return (
-    <div onClick={onSelect} className="bg-[hsl(220,20%,97%)] rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">e8</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-white rounded px-1.5 py-0.5 uppercase tracking-wide">STEP 1</span></div><ThreeDotMenu /></div>
-      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $10,486.03 <span className="text-sm font-semibold text-emerald-600">(+$486.03)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "e8 markets"</span></div>
+    <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
+      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">e8</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">STEP 1</span></div><ThreeDotMenu /></div>
+      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $10,486.03 <span className="text-sm font-semibold text-emerald-500">(+$486.03)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "e8 markets"</span></div>
       <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Feb 03, 2025</div></div></div>
       <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> MetaTrader 5</div>
       <div className="mt-1">
@@ -117,9 +117,9 @@ function EvalAccountCard({ onSelect }: { onSelect: () => void }) {
 
 function FundedAccountCard({ onSelect }: { onSelect: () => void }) {
   return (
-    <div onClick={onSelect} className="bg-[hsl(220,20%,97%)] rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">mffu</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-white rounded px-1.5 py-0.5 uppercase tracking-wide">FUNDED</span></div><ThreeDotMenu /></div>
-      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $64,742 <span className="text-sm font-semibold text-emerald-600">(+$14,742)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "mffu"</span></div>
+    <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
+      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">mffu</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">FUNDED</span></div><ThreeDotMenu /></div>
+      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $64,742 <span className="text-sm font-semibold text-emerald-500">(+$14,742)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "mffu"</span></div>
       <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Apr 07, 2026</div></div></div>
       <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> Demo account</div>
       <div className="mt-1">
@@ -136,7 +136,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const currentAccounts = activeTab === "Evaluations" ? evaluationAccounts : fundedAccounts;
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm">
+    <div className="bg-card rounded-xl border border-border shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 pt-4 pb-0 gap-2">
         <div className="flex items-center">
           {accountTabs.map((tab) => (
@@ -147,8 +147,8 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
           ))}
         </div>
         <div className="flex items-center gap-1 border border-border rounded-lg p-1">
-          <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutList className="w-4 h-4" /></button>
-          <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutGrid className="w-4 h-4" /></button>
+          <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-foreground text-background dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutList className="w-4 h-4" /></button>
+          <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-foreground text-background dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutGrid className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="border-b border-border" />

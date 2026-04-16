@@ -4,7 +4,7 @@ import { X, ChevronDown } from "lucide-react";
 function PillToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className={`px-3.5 py-1.5 text-sm rounded-full border transition-colors ${active ? "border-foreground bg-foreground text-background" : "border-border bg-white text-foreground hover:border-foreground/40"}`}>
+      className={`px-3.5 py-1.5 text-sm rounded-full border transition-colors ${active ? "border-foreground bg-foreground text-background dark:bg-foreground dark:text-background" : "border-border bg-card text-foreground hover:border-foreground/40"}`}>
       {label}
     </button>
   );
@@ -12,7 +12,7 @@ function PillToggle({ label, active, onClick }: { label: string; active: boolean
 
 function SearchDropdown({ placeholder }: { placeholder: string }) {
   return (
-    <div className="flex items-center justify-between w-full border border-border rounded-lg px-3 py-2.5 bg-white cursor-pointer hover:border-foreground/30 transition-colors">
+    <div className="flex items-center justify-between w-full border border-border rounded-lg px-3 py-2.5 bg-card cursor-pointer hover:border-foreground/30 transition-colors">
       <span className="text-sm text-muted-foreground">{placeholder}</span>
       <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
     </div>
@@ -36,7 +36,7 @@ export function FilterPanel({ open, onClose }: FilterPanelProps) {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="absolute right-0 top-full mt-2 z-50 w-[460px] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
+      <div className="absolute right-0 top-full mt-2 z-50 w-[460px] bg-card rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-foreground">Filters</h2>
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"><X className="w-4 h-4" /></button>
