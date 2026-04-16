@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronDown, Wallet, Settings, Check, X, Filter, SlidersHorizontal, Globe, TrendingUp, Star, BarChart2, Clock, Percent, Hash, ListFilter, Calendar as CalendarIcon2, Pencil } from 'lucide-react';
+import { CalendarIcon, ChevronDown, Wallet, Settings, Check, X, Filter, SlidersHorizontal, Globe, TrendingUp, Star, BarChart2, Clock, Percent, Hash, ListFilter, Calendar as CalendarIcon2, Pencil, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateRangeCalendar } from '@/components/layout/DateRangeCalendar';
 import {
@@ -42,6 +42,7 @@ import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
 import { DisplayModeSelector } from './DisplayModeSelector';
 import { useLocation } from 'react-router-dom';
 import { useDashboardEdit } from '@/contexts/DashboardEditContext';
+import { useSidebarCollapse } from '@/contexts/SidebarCollapseContext';
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -130,6 +131,7 @@ export const GlobalHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isEditMode, toggleEditMode } = useDashboardEdit();
+  const { isCollapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
   const isDashboard = location.pathname === '/';
 
   // Resolve page title from route
@@ -389,6 +391,15 @@ export const GlobalHeader = () => {
 
   return (
     <div className="flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-transparent pl-14 lg:pl-6 overflow-hidden">
+      {/* Sidebar collapse/expand toggle (desktop only) */}
+      <button
+        onClick={toggleSidebar}
+        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className="hidden md:flex items-center justify-center w-7 h-7 rounded-md bg-muted/60 text-sidebar-foreground/70 hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
+      >
+        {sidebarCollapsed ? <PanelLeftOpen className="w-[15px] h-[15px]" /> : <PanelLeftClose className="w-[15px] h-[15px]" />}
+      </button>
+
       {/* Page Title */}
       {pageTitle && (
         <h1 className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap mr-1 lg:mr-3">

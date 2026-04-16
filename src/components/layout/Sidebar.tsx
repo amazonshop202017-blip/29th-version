@@ -45,14 +45,23 @@ const NavItem = ({ icon: Icon, label, path, isCollapsed, isActive }: {
       <NavLink to={path} className="block">
         <div
           className={cn(
-            "relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+            "relative flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
             isCollapsed ? "justify-center" : "",
             isActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
-          <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive ? "text-primary" : "text-sidebar-foreground/60")} />
+          <span
+            className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors",
+              isActive
+                ? "bg-primary/15 text-primary"
+                : "bg-muted/60 text-sidebar-foreground/70"
+            )}
+          >
+            <Icon className="w-[15px] h-[15px]" />
+          </span>
           <AnimatePresence>
             {!isCollapsed && (
               <motion.span
@@ -103,15 +112,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       )}
       style={{ height: '100dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      {/* Collapse/Expand toggle - hidden on mobile */}
-      <motion.button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3.5 top-8 z-50 w-7 h-7 rounded-full bg-sidebar border border-sidebar-border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors duration-200 hidden md:flex"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </motion.button>
+      {/* Collapse/Expand toggle moved to GlobalHeader. Mobile-only spacer kept. */}
 
       {/* Logo — extra left padding on mobile to avoid overlap with burger/close button */}
       <div className="p-4 max-md:pl-14">
@@ -230,13 +231,20 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
               <NavLink to="/chart-room/drawdown" className="block">
                 <div
                   className={cn(
-                    "relative flex items-center justify-center px-3 py-2.5 rounded-lg transition-all duration-200",
+                    "relative flex items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200",
                     isChartRoomActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
-                  <BarChart3 className="w-5 h-5 flex-shrink-0" />
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                      isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                    )}
+                  >
+                    <BarChart3 className="w-[15px] h-[15px]" />
+                  </span>
                 </div>
               </NavLink>
             </TooltipTrigger>
@@ -249,13 +257,20 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
             <CollapsibleTrigger asChild>
               <button
                 className={cn(
-                  "relative w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+                  "relative w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
                   isChartRoomActive
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
-                <BarChart3 className={cn("w-[18px] h-[18px] flex-shrink-0", isChartRoomActive ? "text-primary" : "text-sidebar-foreground/60")} />
+                <span
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                    isChartRoomActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-sidebar-foreground/70"
+                  )}
+                >
+                  <BarChart3 className="w-[15px] h-[15px]" />
+                </span>
                 <span className="flex-1 text-left text-sm">Chart Room</span>
                 <ChevronDown
                   className={cn(
