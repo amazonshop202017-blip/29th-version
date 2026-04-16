@@ -571,7 +571,7 @@ export const GlobalHeader = () => {
         {/* Basic Filters Dropdown */}
         <DropdownMenu open={basicFiltersOpen} onOpenChange={setBasicFiltersOpen}>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 h-10 px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded-l-[calc(0.375rem-1px)]">
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
               <span>Filters</span>
               {activeBasicFiltersCount > 0 && (
