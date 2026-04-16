@@ -12,7 +12,7 @@ export function PassingInsights() {
   const tabs: InsightTab[] = ["By firm", "By account type", "By account size", "By strategy"];
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5">
       <div className="mb-3">
         <h2 className="text-sm font-semibold text-foreground">Passing insights</h2>
         <p className="text-xs text-muted-foreground mt-0.5">Understand your passing rates across different dimensions</p>

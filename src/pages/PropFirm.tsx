@@ -88,7 +88,7 @@ const PropFirm = () => {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 text-sm font-medium capitalize rounded-lg transition-colors ${
               activeTab === tab
-                ? "border border-border bg-white text-foreground shadow-sm"
+                ? "border border-border bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

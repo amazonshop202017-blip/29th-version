@@ -51,20 +51,20 @@ function DonutChart() {
           {hovered ? (
             <>
               <span className="text-[10px] text-muted-foreground leading-tight">{hovered.name}</span>
-              <span className={`text-sm font-bold mt-0.5 ${hovered.positive ? "text-emerald-600" : "text-rose-500"}`}>{hovered.net}</span>
+              <span className={`text-sm font-bold mt-0.5 ${hovered.positive ? "text-emerald-500" : "text-rose-500"}`}>{hovered.net}</span>
             </>
           ) : (
             <>
               <span className="text-[10px] text-muted-foreground leading-tight">Net by firm</span>
-              <span className="text-sm font-bold text-emerald-600 mt-0.5">+$333.</span>
+              <span className="text-sm font-bold text-emerald-500 mt-0.5">+$333.</span>
             </>
           )}
         </div>
         {tooltip && hovered && (
-          <div className="absolute pointer-events-none z-10 bg-white border border-border rounded-lg px-2.5 py-1.5 shadow-lg text-[11px] whitespace-nowrap -translate-x-1/2"
+          <div className="absolute pointer-events-none z-10 bg-card border border-border rounded-lg px-2.5 py-1.5 shadow-lg text-[11px] whitespace-nowrap -translate-x-1/2"
             style={{ left: tooltip.x, top: tooltip.y - 36 }}>
             <span className="font-medium text-foreground">{hovered.name}</span>
-            <span className={`ml-2 font-semibold ${hovered.positive ? "text-emerald-600" : "text-rose-500"}`}>{hovered.net}</span>
+            <span className={`ml-2 font-semibold ${hovered.positive ? "text-emerald-500" : "text-rose-500"}`}>{hovered.net}</span>
           </div>
         )}
       </div>
@@ -77,7 +77,7 @@ export function FinanceBreakdown() {
   const tabs: FinanceTab[] = ["By firm", "By account type", "By account size", "Expenses"];
 
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm p-5">
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5">
       <h2 className="text-sm font-semibold text-foreground mb-3">Finance breakdown</h2>
       <div className="flex gap-0 border-b border-border mb-4 overflow-x-auto md:overflow-x-visible">
         {tabs.map((tab) => (
@@ -96,11 +96,11 @@ export function FinanceBreakdown() {
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dotColor }} />
                 <span className="text-xs font-medium text-foreground">{item.name}</span>
               </div>
-              <span className={`text-xs font-bold ${item.positive ? "text-emerald-600" : "text-rose-500"}`}>{item.net}</span>
+              <span className={`text-xs font-bold ${item.positive ? "text-emerald-500" : "text-rose-500"}`}>{item.net}</span>
             </div>
             <div className="flex items-center gap-3 text-[11px] mb-2 ml-4">
               <span>Spent: <span className="text-rose-500 font-medium">${item.spent}</span></span>
-              <span>Earned: <span className="text-emerald-600 font-medium">${item.earned}</span></span>
+              <span>Earned: <span className="text-emerald-500 font-medium">${item.earned}</span></span>
             </div>
             <div className="ml-4 h-1.5 bg-muted rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all" style={{ width: `${item.barProgress}%`, background: item.color }} />
