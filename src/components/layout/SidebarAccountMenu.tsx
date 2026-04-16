@@ -61,7 +61,7 @@ export const SidebarAccountMenu = ({ isCollapsed }: { isCollapsed: boolean }) =>
         )}
       </Tooltip>
 
-      <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-0">
+      <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-0 dark:bg-[#0d0d0d]">
         {showThemePopup ? (
           <InterfaceThemePopup onClose={() => setShowThemePopup(false)} />
         ) : (
