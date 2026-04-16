@@ -45,14 +45,23 @@ const NavItem = ({ icon: Icon, label, path, isCollapsed, isActive }: {
       <NavLink to={path} className="block">
         <div
           className={cn(
-            "relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+            "relative flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
             isCollapsed ? "justify-center" : "",
             isActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
-          <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive ? "text-primary" : "text-sidebar-foreground/60")} />
+          <span
+            className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors",
+              isActive
+                ? "bg-primary/15 text-primary"
+                : "bg-muted/60 text-sidebar-foreground/70"
+            )}
+          >
+            <Icon className="w-[15px] h-[15px]" />
+          </span>
           <AnimatePresence>
             {!isCollapsed && (
               <motion.span
