@@ -262,7 +262,7 @@ export const TradeTimePerformanceChart = () => {
             />
             <Scatter 
               data={chartData} 
-              fill="hsl(var(--primary))"
+              fill="hsl(var(--chart-1))"
             >
               {chartData.map((entry, index) => (
                 <Cell 

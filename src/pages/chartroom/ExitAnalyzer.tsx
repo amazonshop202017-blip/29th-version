@@ -274,7 +274,7 @@ const ManualExitTab = () => {
               formatter={(value: number) => [formatVal(value), yLabel]}
               labelFormatter={(label) => `SL: ${label} ticks`}
             />
-            <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: 'hsl(var(--primary))' }} />
+            <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: 'hsl(var(--chart-1))' }} />
             {selectedSL != null && (
               <ReferenceLine
                 x={selectedSL}

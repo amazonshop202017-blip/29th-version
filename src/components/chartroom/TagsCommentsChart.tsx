@@ -43,7 +43,7 @@ import { X, Plus } from 'lucide-react';
 import { getDisplayLabel } from '@/hooks/useChartDisplayMode';
 
 const DEFAULT_METRIC_COLORS = [
-  'hsl(var(--primary))'  ,
+  'hsl(var(--chart-1))'  ,
   'hsl(var(--profit))'  ,
   'hsl(45 93% 47%)'  ,
 ];
