@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon, ChevronDown, Wallet, Settings, Check, X, Filter, SlidersHorizontal, Globe, TrendingUp, Star, BarChart2, Clock, Percent, Hash, ListFilter, Calendar as CalendarIcon2, Pencil, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, Wallet, Settings, Check, X, Filter, SlidersHorizontal, Globe, TrendingUp, Star, BarChart2, Clock, Percent, Hash, ListFilter, Calendar as CalendarIcon2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateRangeCalendar } from '@/components/layout/DateRangeCalendar';
 import {
@@ -395,9 +395,9 @@ export const GlobalHeader = () => {
       <button
         onClick={toggleSidebar}
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className="hidden md:flex items-center justify-center w-7 h-7 rounded-md bg-muted/60 text-sidebar-foreground/70 hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
+        className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-muted/60 border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0"
       >
-        {sidebarCollapsed ? <PanelLeftOpen className="w-[15px] h-[15px]" /> : <PanelLeftClose className="w-[15px] h-[15px]" />}
+        {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
 
       {/* Page Title */}
@@ -1325,15 +1325,18 @@ export const GlobalHeader = () => {
 
       {/* Dashboard Edit Button - after filter bar */}
       {isDashboard && (
-        <Button
-          variant={isEditMode ? "default" : "ghost"}
-          size="sm"
-          className="h-[2.125rem] gap-1.5 px-2.5 flex-shrink-0 hidden lg:flex"
+        <button
           onClick={toggleEditMode}
+          className={cn(
+            "h-9 gap-1.5 px-3 flex-shrink-0 hidden lg:flex items-center justify-center rounded-lg border border-border/40 text-sm font-medium transition-colors",
+            isEditMode
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
         >
           {isEditMode ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
           <span className="text-xs">{isEditMode ? 'Done' : 'Edit'}</span>
-        </Button>
+        </button>
       )}
     </div>
   );
