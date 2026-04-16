@@ -53,7 +53,8 @@ export const SettingsLayout = ({ children, activeTab, onTabChange }: SettingsLay
               <div className="p-4">
                 <motion.button
                   onClick={() => { setMobileOpen(false); navigate('/'); }}
-                  className="w-full h-11 bg-muted text-foreground rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:bg-muted/80"
+                  className="w-full h-11 text-primary-foreground rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90"
+                  style={{ backgroundColor: 'hsl(var(--primary-active))' }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <ArrowLeft className="w-5 h-5" />
