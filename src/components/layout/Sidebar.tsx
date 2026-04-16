@@ -285,7 +285,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                 {/* Single continuous trunk — runs from top down to the last item's curve */}
                 <span
                   aria-hidden
-                  className="absolute left-0 top-0 w-px bg-sidebar-border pointer-events-none"
+                  className="absolute left-0 top-0 w-px bg-[#f6f6f6] pointer-events-none"
                   style={{
                     height: `calc(100% - ${chartRoomItems.length > 0 ? "1.125rem" : "0px"})`,
                   }}
@@ -310,7 +310,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
                             height="12"
                             viewBox="0 0 16 12"
                             fill="none"
-                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-sidebar-border pointer-events-none"
+                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#f6f6f6] pointer-events-none"
                           >
                             <path
                               d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
