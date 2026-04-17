@@ -411,7 +411,7 @@ export const MonthlyPerformanceCalendar = () => {
                       : 'hsl(var(--loss) / 0.15)';
                   }
 
-                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.4)' : 'hsl(0 0% 0% / 0.063)';
+                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.55)' : 'hsl(0 0% 0% / 0.063)';
                   const otherMonthClass = !isCurrentMonth ? 'bg-[#fcfcfe] dark:bg-[#171717]' : '';
                   const otherMonthStyle: React.CSSProperties = !isCurrentMonth
                     ? {
