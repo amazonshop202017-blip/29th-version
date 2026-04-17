@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { usePrivacyMode, PRIVACY_MASK } from '@/hooks/usePrivacyMode';
@@ -119,6 +120,8 @@ export const MonthlyPerformanceCalendar = () => {
   const { filteredTrades: trades } = useFilteredTrades();
   const { currencyConfig } = useGlobalFilters();
   const { isPrivacyMode } = usePrivacyMode();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>({
     dailyPnl: true,
@@ -400,7 +403,7 @@ export const MonthlyPerformanceCalendar = () => {
                   const hasData = stats?.hasData && isCurrentMonth;
 
                   const bgStyle: React.CSSProperties = {};
-                  let bgClass = 'bg-secondary/30';
+                  let bgClass = 'bg-secondary/30 dark:bg-[#1f1f1f]';
                   if (hasData) {
                     bgClass = '';
                     bgStyle.backgroundColor = stats.pnl >= 0 
@@ -408,11 +411,12 @@ export const MonthlyPerformanceCalendar = () => {
                       : 'hsl(var(--loss) / 0.15)';
                   }
 
+                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.18)' : 'hsl(0 0% 0% / 0.063)';
+                  const otherMonthClass = !isCurrentMonth ? 'bg-[#fcfcfe] dark:bg-[#171717]' : '';
                   const otherMonthStyle: React.CSSProperties = !isCurrentMonth
                     ? {
-                        backgroundColor: '#fcfcfe',
                         backgroundImage:
-                          'repeating-linear-gradient(135deg, hsl(var(--muted-foreground) / 0.063) 0, hsl(var(--muted-foreground) / 0.063) 1px, transparent 1px, transparent 8px)',
+                          `repeating-linear-gradient(135deg, ${stripeColor} 0, ${stripeColor} 1px, transparent 1px, transparent 8px)`,
                       }
                     : {};
 
@@ -423,7 +427,7 @@ export const MonthlyPerformanceCalendar = () => {
                       style={isCurrentMonth && hasData ? bgStyle : !isCurrentMonth ? otherMonthStyle : undefined}
                       className={`
                         min-h-[68px] md:min-h-[80px] p-1 md:p-2 rounded-md md:rounded-lg border-transparent transition-colors
-                        ${isCurrentMonth ? bgClass : ''}
+                        ${isCurrentMonth ? bgClass : otherMonthClass}
                         ${isCurrentMonth ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : ''}
                       `}
                     >
@@ -470,7 +474,7 @@ export const MonthlyPerformanceCalendar = () => {
           {weeklySummaries.map((summary, index) => (
             <div
               key={index}
-              className="flex-1 min-h-[80px] flex flex-col justify-center items-start px-3 py-2 rounded-lg bg-secondary/30"
+              className="flex-1 min-h-[80px] flex flex-col justify-center items-start px-3 py-2 rounded-lg bg-secondary/30 dark:bg-[#1f1f1f]"
             >
               <div className="text-xs text-muted-foreground mb-1">Week {summary.weekNumber}</div>
               <div className={`text-sm font-bold font-mono ${isPrivacyMode ? 'text-foreground' : summary.pnl >= 0 ? 'profit-text' : 'loss-text'}`}>
