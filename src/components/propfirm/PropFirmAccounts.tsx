@@ -211,9 +211,9 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     { label: "Breached", count: 0 + realByTab.Breached.length },
   ];
 
-  // Demo actions (toast/dialog only — no persistence)
+  // Demo actions (toast/dialog only — no persistence). Demo opens demo details (no id).
   const demoActions = (acc: typeof demoEvaluationAccounts[number]): AccountActions => ({
-    onViewDetails: onSelectAccount,
+    onViewDetails: () => onSelectAccount(),
     onMoveToFunding: () => toast.info("Coming soon"),
     onMarkAsFailed: () =>
       setFailedDialog({
@@ -226,9 +226,9 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onDeleteChallenge: () => {},
   });
 
-  // Real actions (fully wired)
+  // Real actions (fully wired). View Details opens the REAL details page for this account.
   const realActions = (account: Account): AccountActions => ({
-    onViewDetails: onSelectAccount,
+    onViewDetails: () => onSelectAccount(account.id),
     onMoveToFunding: () => {
       patchAccount(account.id, { phase: 'funded', step: 'funded', status: 'active' });
       if (account.challengeId) updateChallenge(account.challengeId, { status: 'funded' });
@@ -287,7 +287,8 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const realIds = useMemo(() => new Set(realPropfirmAccounts.map(a => a.id)), [realPropfirmAccounts]);
 
   const handleRowSelect = (id: string) => {
-    onSelectAccount();
+    if (realIds.has(id)) onSelectAccount(id);
+    else onSelectAccount();
   };
 
   const makeActionsForRow = (id: string): AccountActions => {
@@ -309,7 +310,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
           account={acc}
           challenge={ch}
           trades={trades}
-          onSelect={onSelectAccount}
+          onSelect={() => onSelectAccount(acc.id)}
           ThreeDotMenu={ThreeDotMenu}
           actions={realActions(acc)}
         />
@@ -349,13 +350,13 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
             {activeTab === "Evaluations" && (
               <>
                 {renderGridRealCards(realByTab.Evaluations)}
-                <EvalAccountCard onSelect={onSelectAccount} actions={demoActions(demoEvaluationAccounts[0])} />
+                <EvalAccountCard onSelect={() => onSelectAccount()} actions={demoActions(demoEvaluationAccounts[0])} />
               </>
             )}
             {activeTab === "Funded" && (
               <>
                 {renderGridRealCards(realByTab.Funded)}
-                <FundedAccountCard onSelect={onSelectAccount} actions={demoActions(demoFundedAccounts[0])} />
+                <FundedAccountCard onSelect={() => onSelectAccount()} actions={demoActions(demoFundedAccounts[0])} />
               </>
             )}
             {activeTab === "Breached" && renderGridRealCards(realByTab.Breached)}
