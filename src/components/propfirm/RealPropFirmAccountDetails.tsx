@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
-import { ChevronLeft, ChevronDown, ChevronRight, Paperclip, BookOpen, CheckCircle2, RefreshCcw, Settings2, Upload } from "lucide-react";
+import { ChevronLeft, ChevronDown, Paperclip, BookOpen, CheckCircle2, RefreshCcw } from "lucide-react";
+import { TradesTableCard } from "@/components/trades/TradesTableCard";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, type StepRules } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
@@ -16,19 +17,6 @@ import {
 type Props = { accountId: string; onBack: () => void };
 type ChartView = "Daily" | "Hourly" | "Per Trade";
 type AccountTab = "STEP 1" | "STEP 2" | "FUNDING";
-
-const demoTrades = [
-  { openDate: "02/05/2026", symbol: "WTI", closeDate: "02/05/2026", pnl: 1.9, roi: 0.03, side: "LONG", volume: 0.1, account: "MetaTrader 5", closeTime: "04:50:34", duration: "1h 37m", avgEntry: "$64.16", avgExit: "$64.18" },
-  { openDate: "02/04/2026", symbol: "WTI", closeDate: "02/04/2026", pnl: -35.6, roi: -0.56, side: "LONG", volume: 0.1, account: "MetaTrader 5", closeTime: "03:45:24", duration: "15m 8s", avgEntry: "$63.5", avgExit: "$63.15" },
-  { openDate: "01/29/2026", symbol: "WTI", closeDate: "01/29/2026", pnl: -34.56, roi: -0.88, side: "SHORT", volume: 0.06, account: "MetaTrader 5", closeTime: "08:27:38", duration: "35m", avgEntry: "$64.77", avgExit: "$65.34" },
-  { openDate: "01/28/2026", symbol: "WTI", closeDate: "01/28/2026", pnl: 0.9, roi: 0.01, side: "SHORT", volume: 0.1, account: "MetaTrader 5", closeTime: "03:48:06", duration: "1h 44m", avgEntry: "$62.76", avgExit: "$62.75" },
-  { openDate: "01/27/2026", symbol: "WTI", closeDate: "01/27/2026", pnl: -21.06, roi: -0.57, side: "LONG", volume: 0.06, account: "MetaTrader 5", closeTime: "06:34:35", duration: "55m 11s", avgEntry: "$61.09", avgExit: "$60.74" },
-  { openDate: "01/21/2026", symbol: "WTI", closeDate: "01/21/2026", pnl: 42.4, roi: 0.70, side: "LONG", volume: 0.1, account: "MetaTrader 5", closeTime: "08:35:27", duration: "1h 49m", avgEntry: "$60.48", avgExit: "$60.91" },
-  { openDate: "01/19/2026", symbol: "WTI", closeDate: "01/19/2026", pnl: 11.1, roi: 0.19, side: "LONG", volume: 0.1, account: "MetaTrader 5", closeTime: "09:11:08", duration: "3h 4m", avgEntry: "$58.99", avgExit: "$59.1" },
-  { openDate: "01/16/2026", symbol: "WTI", closeDate: "01/16/2026", pnl: 40.14, roi: 1.13, side: "LONG", volume: 0.06, account: "MetaTrader 5", closeTime: "04:30:14", duration: "1h", avgEntry: "$59.19", avgExit: "$59.86" },
-  { openDate: "01/16/2026", symbol: "WTI", closeDate: "01/16/2026", pnl: 3.54, roi: 0.10, side: "LONG", volume: 0.06, account: "MetaTrader 5", closeTime: "03:52:12", duration: "1h 10m", avgEntry: "$59.42", avgExit: "$59.48" },
-  { openDate: "01/16/2026", symbol: "WTI", closeDate: "01/16/2026", pnl: 2.04, roi: 0.06, side: "LONG", volume: 0.06, account: "MetaTrader 5", closeTime: "03:51:49", duration: "1h 10m", avgEntry: "$59.41", avgExit: "$59.45" },
-];
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
@@ -508,63 +496,14 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-x-auto">
-        <div className="flex items-center justify-between px-5 pt-4 pb-0">
-          <div className="flex items-center">
-            <button className="px-4 py-2.5 text-xs font-bold text-foreground border-b-2 border-foreground tracking-wide uppercase">TRADES</button>
-          </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mb-2">
-            <Upload className="w-3.5 h-3.5" />Upload trades
-          </button>
-        </div>
-        <div className="border-b border-border" />
-        <div className="flex items-center justify-end gap-2 px-5 py-2.5">
-          <button className="p-1.5 rounded-md border border-border hover:bg-muted transition-colors text-muted-foreground"><Settings2 className="w-3.5 h-3.5" /></button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-border rounded-lg text-muted-foreground bg-muted/30 cursor-default">Bulk actions<ChevronDown className="w-3 h-3" /></button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-xs">
-            <thead>
-              <tr className="border-b border-border bg-muted/20">
-                <th className="w-8 px-4 py-2.5"><input type="checkbox" className="rounded border-border accent-primary" readOnly /></th>
-                {["Open date", "Symbol", "Close date", "Net P&L", "Net ROI", "Side", "Volume", "Account name", "Close time (US/Eastern)", "Duration", "Average entry", "Average exit", "Initial risk"].map((col) => (
-                  <th key={col} className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2.5 whitespace-nowrap">{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {demoTrades.map((trade, i) => (
-                <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td className="px-4 py-2.5"><input type="checkbox" className="rounded border-border accent-primary" readOnly /></td>
-                  <td className="px-3 py-2.5 text-foreground font-medium whitespace-nowrap">{trade.openDate}</td>
-                  <td className="px-3 py-2.5 font-bold text-foreground whitespace-nowrap">{trade.symbol}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.closeDate}</td>
-                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.pnl >= 0 ? "text-emerald-500" : "text-rose-500"}`}>{trade.pnl >= 0 ? `$${trade.pnl}` : `-$${Math.abs(trade.pnl)}`}</td>
-                  <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${trade.roi >= 0 ? "text-emerald-500" : "text-rose-500"}`}>{trade.roi >= 0 ? `${trade.roi}%` : `-${Math.abs(trade.roi)}%`}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.side}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.volume}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.account}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.closeTime}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.duration}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.avgEntry}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{trade.avgExit}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between px-5 py-3 border-t border-border">
-          <span className="text-xs text-muted-foreground">1 – 10 of 96 Trades</span>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Page 1 of 10</span>
-            <div className="flex items-center gap-1">
-              <button className="p-1 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-40" disabled><ChevronLeft className="w-3.5 h-3.5" /></button>
-              <button className="p-1 rounded-md border border-border hover:bg-muted transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TradesTableCard
+        trades={accountTrades}
+        className="min-h-[400px]"
+        emptyState={{
+          title: "No trades for this account yet",
+          subtitle: "Trades placed on this account will appear here",
+        }}
+      />
     </div>
   );
 }
