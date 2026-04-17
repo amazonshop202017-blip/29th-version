@@ -1092,6 +1092,17 @@ export const TagsCommentsChart = ({
                           <Line key={`line-${metric}-${index}`} yAxisId={`y-${index}`} type="monotone" dataKey={`metric_${index}`} stroke={color} strokeWidth={2} dot={{ fill: color, r: 3 }} activeDot={{ r: 5 }} />
                         );
                       }
+                      const isPnlMetric = metric === 'dollar' || metric === 'percent' || metric === 'avg_win' || metric === 'avg_loss' || metric === 'largest_win' || metric === 'largest_loss' || metric === 'trade_expectancy' || metric === 'avg_net_trade_pnl' || metric === 'avg_daily_drawdown' || metric === 'largest_daily_loss' || metric === 'avg_realized_r' || metric === 'avg_planned_r';
+                      const useSplitColors = isPnlMetric && color === DEFAULT_METRIC_COLORS[index];
+                      if (useSplitColors) {
+                        return (
+                          <Bar key={`bar-${metric}-${index}`} yAxisId={`y-${index}`} dataKey={`metric_${index}`} radius={[4, 4, 0, 0]} maxBarSize={48}>
+                            {multiMetricChartData.map((entry, i) => (
+                              <Cell key={`cell-${metric}-${i}`} fill={getFill((entry[`metric_${index}`] as number) >= 0)} />
+                            ))}
+                          </Bar>
+                        );
+                      }
                       return (
                         <Bar key={`bar-${metric}-${index}`} yAxisId={`y-${index}`} dataKey={`metric_${index}`} fill={color} radius={[4, 4, 0, 0]} maxBarSize={48} />
                       );
