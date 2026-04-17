@@ -1,26 +1,71 @@
+## Plan: Add Two Comparison Charts to Holding Time Page
 
-Dark-mode-only color tweaks for the dashboard's Monthly Performance Calendar. Currently:
-- Empty (no-trade) current-month days use `bg-secondary/30` (works for both themes).
-- Week summary cards use `bg-secondary/30`.
-- Non-current-month days use a hardcoded `backgroundColor: '#fcfcfe'` with stripes at `hsl(var(--muted-foreground) / 0.063)` — this hardcoded white shows in dark mode too, which we need to override.
+### Goal
 
-## Plan
+Add 2 side-by-side comparison charts above the existing "Performance By Trade Duration" section on the Holding Time page. They mirror the Performance by Time chart system, but the X-axis groups trades by **Holding Duration buckets** instead of timestamp buckets.
 
-Edit `src/components/dashboard/MonthlyPerformanceCalendar.tsx`:
+### Approach
 
-1. **Empty current-month day cards** (no trades that day):
-   - Keep light mode as `bg-secondary/30`.
-   - Add dark-mode override using `dark:bg-[#1f1f1f]` so `bgClass` becomes `bg-secondary/30 dark:bg-[#1f1f1f]`.
+Create a new reusable component `PerformanceByDurationChart.tsx` that mirrors `PerformanceByTimeChart.tsx` 1-to-1. Same metric system, same dropdown ("Add Metric", up to 3), same column/line toggle, same color customization, same legend/responsiveness. The ONLY change is bucketing logic and the period selector.
 
-2. **Weekly summary cards** (right column: Week 1, Week 2…):
-   - Change className from `bg-secondary/30` to `bg-secondary/30 dark:bg-[#1f1f1f]`.
+### What changes
 
-3. **Non-current-month day cards** (previous/next month with diagonal stripes):
-   - Replace the hardcoded inline `backgroundColor: '#fcfcfe'` with theme-aware styling. Use a CSS approach: drop the inline `backgroundColor` and instead apply Tailwind classes `bg-[#fcfcfe] dark:bg-[#171717]` so light mode keeps `#fcfcfe` and dark mode uses `#171717`.
-   - Keep the diagonal stripe pattern via inline `backgroundImage`, but make stripe color lighter in dark mode. Since inline styles can't react to theme, switch the stripe to use a CSS variable already wired for theming. Approach: use `hsl(var(--foreground) / 0.08)` in light mode and a brighter alpha in dark mode. Implementation: detect dark mode via the existing `useTheme` hook (or read `document.documentElement.classList.contains('dark')` once via `useTheme`) and pick the stripe alpha conditionally — light: `hsl(0 0% 0% / 0.063)`, dark: `hsl(0 0% 100% / 0.18)`.
+**1. New component:** `src/components/chartroom/PerformanceByDurationChart.tsx`
 
-4. **Scope guarantee**: All three changes are additive `dark:` variants or theme-conditional values. Light mode visuals remain identical.
+- Same UI shell, dropdowns, settings popover, multi-metric (max 3), column/line toggle, per-metric colors, legend
+- Reuses the SAME metric calculations (`getMetricValue`, `calculateTradingActivityStatsFromCounts`, `calculateRiskDrawdownStats`, `classifyTradeOutcome`, `calculateTradeMetrics`) — no metric formulas changed
+- Replaces `dateSetting` (Entry/Exit) dropdown — not relevant for duration
+- Replaces `period` (weekday/month/hour/etc.) with **Bucket Size** dropdown driven by trade duration
 
-## Files Touched
-- `src/components/dashboard/MonthlyPerformanceCalendar.tsx` (only)
+**2. Bucket Size options (period control)**
 
+
+| Option         | Buckets generated                                                    |
+| -------------- | -------------------------------------------------------------------- |
+| 5 min          | 0–5m, 5–10m, 10–15m, …, up to max trade duration                     |
+| 15 min         | 0–15m, 15–30m, …                                                     |
+| 30 min         | 0–30m, 30m–1h, …                                                     |
+| 1 hour         | 0–1h, 1–2h, 2–3h, …                                                  |
+| 2 hour         | 0–2h, 2–4h, …                                                        |
+| 4 hour         | 0–4h, 4–8h, …                                                        |
+| 1 day          | 0–1d, 1–2d, …                                                        |
+| Default preset | Mixed buckets matching existing `DURATION_BUCKETS` (0s–15s … 4h–24h) |
+
+
+X-axis label format auto-derived: minutes shown as `Xm–Ym`, hours as `Xh–Yh`, days as `Xd–Yd`. Bucket sortOrder = bucket lower bound for natural ordering.
+
+**3. Bucketing logic**
+
+- For each closed trade, compute `metrics.durationMinutes`
+- Assign to a bucket whose `[min, max)` range contains the duration
+- Group all metrics (PnL, win/loss, R, profit factor, expectancy, etc.) per bucket — identical aggregation pipeline as Performance by Time
+- "Trading activity per day" stats are kept (still use calendar day inside each duration bucket) so all metric options keep working
+
+**4. Page integration:** edit `src/pages/chartroom/HoldingTime.tsx`
+
+- Insert a new row above the existing `<PerformanceByDurationChart />` (the legacy bucket bar chart):
+
+```text
+[ DurationCompareChart 1 ]   [ DurationCompareChart 2 ]   <- NEW
+[ Performance By Trade Duration ]                          (existing)
+[ TradeCount | WinRate ]                                   (existing)
+```
+
+- Use the same `grid grid-cols-1 lg:grid-cols-2 gap-4` pattern already used on the page
+- Left chart defaults to `dollar` with `useGlobalDefault=true`; right chart defaults to `winrate` with `useGlobalDefault=false` (matching Performance by Time)
+
+### What stays untouched
+
+- Existing scatter chart, metrics cards, and the three legacy bucket charts (`PerformanceByDurationChart`, `TradeCountByDurationChart`, `WinRateByDurationChart`) — no edits
+- `PerformanceByTimeChart.tsx` — not modified
+- All metric formulas in `tradingActivityStats`, `riskDrawdownStats`, `calculateTradeMetrics` — reused as-is
+
+### Naming conflict note
+
+The existing legacy bar chart is exported as `PerformanceByDurationChart` from `TradeDurationBucketCharts.tsx`. The new comparison component will be named `**PerformanceByDurationCompareChart**` to avoid the collision.
+
+### Files
+
+- **Create:** `src/components/chartroom/PerformanceByDurationCompareChart.tsx`
+- **Edit:** `src/pages/chartroom/HoldingTime.tsx` (add the 2-column row above the existing duration chart)
+  &nbsp;
