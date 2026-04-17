@@ -27,6 +27,7 @@ import {
   TradeCountByDurationChart,
   WinRateByDurationChart,
 } from '@/components/chartroom/TradeDurationBucketCharts';
+import { PerformanceByDurationCompareChart } from '@/components/chartroom/PerformanceByDurationCompareChart';
 
 type TimeUnit = 'days' | 'hours' | 'minutes';
 // Privacy removed from dropdown - handled via global filter
@@ -381,6 +382,12 @@ const HoldingTime = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* New: Two-column comparison charts (mirrors Performance by Time) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <PerformanceByDurationCompareChart useGlobalDefault={true} />
+        <PerformanceByDurationCompareChart defaultDisplayType="winrate" useGlobalDefault={false} />
       </div>
 
       {/* Trade Duration Charts Section */}
