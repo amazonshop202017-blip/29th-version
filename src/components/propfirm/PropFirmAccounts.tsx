@@ -178,7 +178,7 @@ function FundedAccountCard({ onSelect, actions }: { onSelect: () => void; action
   );
 }
 
-export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount: () => void }) {
+export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount: (id?: string) => void }) {
   const [activeTab, setActiveTab] = useState<AccountTab>("Evaluations");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [failedDialog, setFailedDialog] = useState<{ open: boolean; name: string; subtitle: string; accountId: string | null }>({ open: false, name: "", subtitle: "", accountId: null });
