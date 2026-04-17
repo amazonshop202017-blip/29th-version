@@ -41,7 +41,7 @@ export interface ChallengeRulesSchema {
 }
 
 export type ChallengeSteps = 0 | 1 | 2; // 0 = Instant Funded, 1 = 1 Step, 2 = 2 Steps
-export type ChallengeStatus = 'active' | 'breached';
+export type ChallengeStatus = 'active' | 'breached' | 'funded';
 
 export interface Challenge {
   challengeId: string;
@@ -142,8 +142,11 @@ function migrateSteps(val: unknown): ChallengeSteps {
 
 /** Convert legacy capitalized status to lowercase */
 function migrateStatus(val: unknown): ChallengeStatus {
-  if (val === 'active' || val === 'breached') return val;
-  if (typeof val === 'string') return val.toLowerCase() as ChallengeStatus;
+  if (val === 'active' || val === 'breached' || val === 'funded') return val;
+  if (typeof val === 'string') {
+    const lower = val.toLowerCase();
+    if (lower === 'active' || lower === 'breached' || lower === 'funded') return lower;
+  }
   return 'active';
 }
 
