@@ -408,14 +408,22 @@ export const MonthlyPerformanceCalendar = () => {
                       : 'hsl(var(--loss) / 0.15)';
                   }
 
+                  const otherMonthStyle: React.CSSProperties = !isCurrentMonth
+                    ? {
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, hsl(var(--muted-foreground) / 0.18) 0, hsl(var(--muted-foreground) / 0.18) 1px, transparent 1px, transparent 8px)',
+                        backgroundColor: 'hsl(var(--muted) / 0.2)',
+                      }
+                    : {};
+
                   return (
                     <div
                       key={dayKey}
                       onClick={() => isCurrentMonth && handleDayClick(day)}
-                      style={isCurrentMonth && hasData ? bgStyle : undefined}
+                      style={isCurrentMonth && hasData ? bgStyle : !isCurrentMonth ? otherMonthStyle : undefined}
                       className={`
                         min-h-[68px] md:min-h-[80px] p-1 md:p-2 rounded-md md:rounded-lg border-transparent transition-colors
-                        ${isCurrentMonth ? bgClass : 'bg-muted/20 opacity-40'}
+                        ${isCurrentMonth ? bgClass : ''}
                         ${isCurrentMonth ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : ''}
                       `}
                     >
