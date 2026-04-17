@@ -1,65 +1,70 @@
 
 
-## Plan: Preserve +/- coloring for Return ($) and other P&L metrics in multi-metric mode
+## Plan: Prop Firm account menu actions + Edit/Mark-as-Failed flows
 
-### Problem
-When a user adds a 2nd or 3rd metric, the chart switches to the "multi-metric" code path. In that path each `<Bar>` is rendered with a single flat `fill={color}` (default `hsl(var(--chart-1))` blue). This loses the green/red profit/loss coloring that the single-metric path applies via `<Cell>` per data point — even when the user never customized the color.
+### Goal
+Update the 3-dot menu on each Prop Firm account (table + grid views) and wire two new flows: an **Edit Challenge** flow that reuses the existing TrackAccountModal in edit mode, and a **Mark as Failed** confirmation popup matching the provided screenshot. Disable Delete for now. Add a new **Move to Funding** menu item under "View Details".
 
-The single-metric path already has the correct logic:
-```ts
-if (isPnlMetric) fillColor = getFill(entry.displayValue >= 0)        // +/- coloring
-else if (config.color !== DEFAULT_METRIC_COLORS[0]) fillColor = ...   // user's custom color
+### Menu changes (`src/components/propfirm/PropFirmAccounts.tsx`)
+New menu order:
+1. **View Details** — keeps current behavior (opens account details)
+2. **Move to Funding** — *(new)* placeholder, no action yet (UI only as scope is unspecified — will show a `toast.info("Coming soon")`)
+3. **Mark as Failed** — opens new confirmation popup
+4. **Edit Challenge** — opens TrackAccountModal in edit mode
+5. **Delete Challenge** — **disabled** (greyed out, non-clickable, tooltip "Disabled")
+
+`ThreeDotMenu` will be refactored to accept callbacks (`onViewDetails`, `onMoveToFunding`, `onMarkAsFailed`, `onEditChallenge`) and the `accountName` (e.g. "e8") for the failed-popup header.
+
+### TrackAccountModal — add edit mode (`src/components/propfirm/TrackAccountModal.tsx`)
+- Add optional prop: `mode?: 'create' | 'edit'` and `initialChallenge?: Partial<ChallengeFormData>` (or simpler: just initial values passed from parent: `nickname`, `firm`, `balance`, `phase`, `steps`, `status`, `startDate`, `fees`, `rules`).
+- When `mode === 'edit'`:
+  - Modal title: **"Edit Challenge"** (instead of "Add Challenge")
+  - Footer button: **"Save"** (instead of "Create challenge")
+  - On save: call a new `updateChallenge` path that overwrites the existing challenge values (reuse `useChallengesContext().updateChallenge`) and shows `toast.success('Challenge updated')`
+- A `useEffect` will hydrate all form state when `initialChallenge` changes / modal opens in edit mode.
+
+Since the demo accounts in `PropFirmAccounts.tsx` are hard-coded (not yet linked to `ChallengesContext`), edit mode will pre-fill from a small mock object derived from the row clicked (firm name, step, balance, status). The "save" action will call `updateChallenge` if the row maps to a real challenge, otherwise just close + toast — keeping the UI fully functional for the demo data.
+
+### New component: MarkAsFailedDialog (`src/components/propfirm/MarkAsFailedDialog.tsx`)
+Match the attached screenshot exactly using existing shadcn Dialog primitives:
+
+```text
+┌────────────────────────────────────────────┐
+│ Mark Evaluation Account as failed?     [×] │
+│ This will mark this Evaluation Account as  │
+│ failed and lock the current phase.         │
+│ ┌────────────────────────────────────────┐ │
+│ │ Account: e8 • Use "e8 markets"         │ │  ← muted card
+│ └────────────────────────────────────────┘ │
+│ Why did this Evaluation Account fail?      │
+│  ○ Broke max drawdown                      │
+│  ○ Overtrading / Forcing trades            │
+│  ○ Time pressure                           │
+│  ○ Lack of risk management                 │
+│  ○ Other: [ Enter custom reason ]          │
+│ ┌────────────────────────────────────────┐ │
+│ │ ℹ This reason will be used in your    │ │  ← blue info card
+│ │   analytics and insights to help you   │ │
+│ │   improve your passing rate.           │ │
+│ └────────────────────────────────────────┘ │
+│                  [Cancel] [Mark as failed] │
+└────────────────────────────────────────────┘
 ```
-We need the same logic in the multi-metric path, applied per-Bar.
 
-### Affected files (5 charts)
-1. `src/components/chartroom/PerformanceByTimeChart.tsx` (Performance by Time)
-2. `src/components/chartroom/InstrumentPerformanceChart.tsx` (Performance by Symbol)
-3. `src/components/chartroom/SetupPerformanceChart.tsx` (Performance by Setup)
-4. `src/components/chartroom/TagsCommentsChart.tsx` (Tags & Comments)
-5. `src/components/chartroom/PerformanceByDurationCompareChart.tsx` (Holding Time — comparison charts)
+Implementation details:
+- Built on `Dialog` + `RadioGroup` from `@/components/ui/*`
+- Local state: `selectedReason`, `customReason`. **No persistence** — clicking "Mark as failed" simply toasts and closes (per request: "don't store any value from this popup as of now").
+- "Mark as failed" button uses `bg-primary` (purple) matching the screenshot
+- Info banner uses `bg-blue-50 border-blue-200 text-blue-700` (or theme-aware `bg-primary/5 border-primary/20`) with `Info` lucide icon
+- Props: `open`, `onOpenChange`, `accountName`, `accountSubtitle`
 
-### Fix per file
-In each file's multi-metric `<Bar>` render (the one inside `selectedMetrics.map(...)`), replace the flat-color `<Bar>` with a `<Bar>` that contains `<Cell>` children when the metric is a "P&L metric" AND the color is still the default for that index.
+### Files
+- **Edit:** `src/components/propfirm/PropFirmAccounts.tsx` — refactor `ThreeDotMenu`, add Move to Funding + disabled Delete, wire dialogs/modal opening; track which row is acted upon for the failed/edit popups.
+- **Edit:** `src/components/propfirm/TrackAccountModal.tsx` — add `mode` + `initialChallenge` props, conditional title/button text, hydration effect.
+- **Create:** `src/components/propfirm/MarkAsFailedDialog.tsx` — the new confirmation popup.
 
-Reuse the existing `isPnlMetric` predicate already defined for the single-metric path:
-```
-['dollar','percent','avg_win','avg_loss','largest_win','largest_loss',
- 'trade_expectancy','avg_net_trade_pnl','avg_daily_drawdown','largest_daily_loss',
- 'avg_realized_r','avg_planned_r']
-```
-
-Pseudo-code for the multi-metric Bar (applied in all 5 files):
-```tsx
-const color = getMetricColor(index);
-const isPnlMetric = PNL_METRICS.includes(metric);
-const isDefaultColor = color === DEFAULT_METRIC_COLORS[index];
-const useSplitColors = isPnlMetric && isDefaultColor;
-
-return useSplitColors ? (
-  <Bar key={...} yAxisId={`y-${index}`} dataKey={`metric_${index}`} radius={[4,4,0,0]} maxBarSize={...}>
-    {chartData.map((entry, i) => (
-      <Cell key={i} fill={getFill(entry[`metric_${index}`] >= 0)} />
-    ))}
-  </Bar>
-) : (
-  <Bar key={...} yAxisId={`y-${index}`} dataKey={`metric_${index}`} fill={color} radius={[4,4,0,0]} maxBarSize={...} />
-);
-```
-
-The data array used by `<Cell>` mapping is the same `multiMetricChartData` already passed to the `<ComposedChart>`. The lookup `entry[\`metric_${index}\`]` reads the value for that specific metric series.
-
-### Behavior result
-- **Return ($)** as 1st, 2nd, or 3rd metric → still shows green up bars / red down bars by default
-- **Return (%), Avg Win, Avg Loss, Largest Win, Largest Loss, Trade Expectancy, Avg Net P&L, Avg Daily DD, Largest Daily Loss, Avg Realized R, Avg Planned R** → same treatment (already classified as P&L metrics in the existing single-metric code)
-- The moment the user opens the **Chart Display Settings** popover and picks a custom color for a P&L metric, `color !== DEFAULT_METRIC_COLORS[index]` becomes true and we switch to the flat custom color — exactly as requested
-- Line type unchanged (lines stay as a single stroke color — splitting a continuous line per segment isn't meaningful and matches industry convention)
-- Non-P&L metrics (winrate, tradecount, hold time, etc.) unchanged — they keep using the assigned palette color in multi-metric mode
-
-### Out of scope (not changed)
-- Single-metric rendering paths (already correct)
-- Metric calculation logic
-- Tooltip rendering
-- Y-axis label/tick colors (already use the metric's `getMetricColor`)
-- Legend swatches (already use `getMetricColor`)
+### Out of scope
+- Persistence of the failure reason (explicitly excluded by user)
+- Real "Move to Funding" flow (placeholder only)
+- Wiring delete (disabled per request)
 
