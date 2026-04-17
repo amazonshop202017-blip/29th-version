@@ -1211,6 +1211,15 @@ export const SetupPerformanceChart = ({
                       );
                     })}
                   </>
+                ) : metricConfigs[0]?.type === 'line' ? (
+                  <Line
+                    type="monotone"
+                    dataKey="displayValue"
+                    stroke={metricConfigs[0]?.color || 'hsl(var(--chart-1))'}
+                    strokeWidth={2}
+                    dot={{ fill: metricConfigs[0]?.color || 'hsl(var(--chart-1))', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
                 ) : (
                   <Bar 
                     dataKey="displayValue" 
