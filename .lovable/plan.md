@@ -1,71 +1,65 @@
-## Plan: Add Two Comparison Charts to Holding Time Page
-
-### Goal
-
-Add 2 side-by-side comparison charts above the existing "Performance By Trade Duration" section on the Holding Time page. They mirror the Performance by Time chart system, but the X-axis groups trades by **Holding Duration buckets** instead of timestamp buckets.
-
-### Approach
-
-Create a new reusable component `PerformanceByDurationChart.tsx` that mirrors `PerformanceByTimeChart.tsx` 1-to-1. Same metric system, same dropdown ("Add Metric", up to 3), same column/line toggle, same color customization, same legend/responsiveness. The ONLY change is bucketing logic and the period selector.
-
-### What changes
-
-**1. New component:** `src/components/chartroom/PerformanceByDurationChart.tsx`
-
-- Same UI shell, dropdowns, settings popover, multi-metric (max 3), column/line toggle, per-metric colors, legend
-- Reuses the SAME metric calculations (`getMetricValue`, `calculateTradingActivityStatsFromCounts`, `calculateRiskDrawdownStats`, `classifyTradeOutcome`, `calculateTradeMetrics`) — no metric formulas changed
-- Replaces `dateSetting` (Entry/Exit) dropdown — not relevant for duration
-- Replaces `period` (weekday/month/hour/etc.) with **Bucket Size** dropdown driven by trade duration
-
-**2. Bucket Size options (period control)**
 
 
-| Option         | Buckets generated                                                    |
-| -------------- | -------------------------------------------------------------------- |
-| 5 min          | 0–5m, 5–10m, 10–15m, …, up to max trade duration                     |
-| 15 min         | 0–15m, 15–30m, …                                                     |
-| 30 min         | 0–30m, 30m–1h, …                                                     |
-| 1 hour         | 0–1h, 1–2h, 2–3h, …                                                  |
-| 2 hour         | 0–2h, 2–4h, …                                                        |
-| 4 hour         | 0–4h, 4–8h, …                                                        |
-| 1 day          | 0–1d, 1–2d, …                                                        |
-| Default preset | Mixed buckets matching existing `DURATION_BUCKETS` (0s–15s … 4h–24h) |
+## Plan: Preserve +/- coloring for Return ($) and other P&L metrics in multi-metric mode
 
+### Problem
+When a user adds a 2nd or 3rd metric, the chart switches to the "multi-metric" code path. In that path each `<Bar>` is rendered with a single flat `fill={color}` (default `hsl(var(--chart-1))` blue). This loses the green/red profit/loss coloring that the single-metric path applies via `<Cell>` per data point — even when the user never customized the color.
 
-X-axis label format auto-derived: minutes shown as `Xm–Ym`, hours as `Xh–Yh`, days as `Xd–Yd`. Bucket sortOrder = bucket lower bound for natural ordering.
+The single-metric path already has the correct logic:
+```ts
+if (isPnlMetric) fillColor = getFill(entry.displayValue >= 0)        // +/- coloring
+else if (config.color !== DEFAULT_METRIC_COLORS[0]) fillColor = ...   // user's custom color
+```
+We need the same logic in the multi-metric path, applied per-Bar.
 
-**3. Bucketing logic**
+### Affected files (5 charts)
+1. `src/components/chartroom/PerformanceByTimeChart.tsx` (Performance by Time)
+2. `src/components/chartroom/InstrumentPerformanceChart.tsx` (Performance by Symbol)
+3. `src/components/chartroom/SetupPerformanceChart.tsx` (Performance by Setup)
+4. `src/components/chartroom/TagsCommentsChart.tsx` (Tags & Comments)
+5. `src/components/chartroom/PerformanceByDurationCompareChart.tsx` (Holding Time — comparison charts)
 
-- For each closed trade, compute `metrics.durationMinutes`
-- Assign to a bucket whose `[min, max)` range contains the duration
-- Group all metrics (PnL, win/loss, R, profit factor, expectancy, etc.) per bucket — identical aggregation pipeline as Performance by Time
-- "Trading activity per day" stats are kept (still use calendar day inside each duration bucket) so all metric options keep working
+### Fix per file
+In each file's multi-metric `<Bar>` render (the one inside `selectedMetrics.map(...)`), replace the flat-color `<Bar>` with a `<Bar>` that contains `<Cell>` children when the metric is a "P&L metric" AND the color is still the default for that index.
 
-**4. Page integration:** edit `src/pages/chartroom/HoldingTime.tsx`
-
-- Insert a new row above the existing `<PerformanceByDurationChart />` (the legacy bucket bar chart):
-
-```text
-[ DurationCompareChart 1 ]   [ DurationCompareChart 2 ]   <- NEW
-[ Performance By Trade Duration ]                          (existing)
-[ TradeCount | WinRate ]                                   (existing)
+Reuse the existing `isPnlMetric` predicate already defined for the single-metric path:
+```
+['dollar','percent','avg_win','avg_loss','largest_win','largest_loss',
+ 'trade_expectancy','avg_net_trade_pnl','avg_daily_drawdown','largest_daily_loss',
+ 'avg_realized_r','avg_planned_r']
 ```
 
-- Use the same `grid grid-cols-1 lg:grid-cols-2 gap-4` pattern already used on the page
-- Left chart defaults to `dollar` with `useGlobalDefault=true`; right chart defaults to `winrate` with `useGlobalDefault=false` (matching Performance by Time)
+Pseudo-code for the multi-metric Bar (applied in all 5 files):
+```tsx
+const color = getMetricColor(index);
+const isPnlMetric = PNL_METRICS.includes(metric);
+const isDefaultColor = color === DEFAULT_METRIC_COLORS[index];
+const useSplitColors = isPnlMetric && isDefaultColor;
 
-### What stays untouched
+return useSplitColors ? (
+  <Bar key={...} yAxisId={`y-${index}`} dataKey={`metric_${index}`} radius={[4,4,0,0]} maxBarSize={...}>
+    {chartData.map((entry, i) => (
+      <Cell key={i} fill={getFill(entry[`metric_${index}`] >= 0)} />
+    ))}
+  </Bar>
+) : (
+  <Bar key={...} yAxisId={`y-${index}`} dataKey={`metric_${index}`} fill={color} radius={[4,4,0,0]} maxBarSize={...} />
+);
+```
 
-- Existing scatter chart, metrics cards, and the three legacy bucket charts (`PerformanceByDurationChart`, `TradeCountByDurationChart`, `WinRateByDurationChart`) — no edits
-- `PerformanceByTimeChart.tsx` — not modified
-- All metric formulas in `tradingActivityStats`, `riskDrawdownStats`, `calculateTradeMetrics` — reused as-is
+The data array used by `<Cell>` mapping is the same `multiMetricChartData` already passed to the `<ComposedChart>`. The lookup `entry[\`metric_${index}\`]` reads the value for that specific metric series.
 
-### Naming conflict note
+### Behavior result
+- **Return ($)** as 1st, 2nd, or 3rd metric → still shows green up bars / red down bars by default
+- **Return (%), Avg Win, Avg Loss, Largest Win, Largest Loss, Trade Expectancy, Avg Net P&L, Avg Daily DD, Largest Daily Loss, Avg Realized R, Avg Planned R** → same treatment (already classified as P&L metrics in the existing single-metric code)
+- The moment the user opens the **Chart Display Settings** popover and picks a custom color for a P&L metric, `color !== DEFAULT_METRIC_COLORS[index]` becomes true and we switch to the flat custom color — exactly as requested
+- Line type unchanged (lines stay as a single stroke color — splitting a continuous line per segment isn't meaningful and matches industry convention)
+- Non-P&L metrics (winrate, tradecount, hold time, etc.) unchanged — they keep using the assigned palette color in multi-metric mode
 
-The existing legacy bar chart is exported as `PerformanceByDurationChart` from `TradeDurationBucketCharts.tsx`. The new comparison component will be named `**PerformanceByDurationCompareChart**` to avoid the collision.
+### Out of scope (not changed)
+- Single-metric rendering paths (already correct)
+- Metric calculation logic
+- Tooltip rendering
+- Y-axis label/tick colors (already use the metric's `getMetricColor`)
+- Legend swatches (already use `getMetricColor`)
 
-### Files
-
-- **Create:** `src/components/chartroom/PerformanceByDurationCompareChart.tsx`
-- **Edit:** `src/pages/chartroom/HoldingTime.tsx` (add the 2-column row above the existing duration chart)
-  &nbsp;
