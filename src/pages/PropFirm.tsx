@@ -10,6 +10,7 @@ import { TrackAccountModal } from "@/components/propfirm/TrackAccountModal";
 import PropFirmAccounts from "@/components/propfirm/PropFirmAccounts";
 import PropFirmTransactions from "@/components/propfirm/PropFirmTransactions";
 import PropFirmAccountDetails from "@/components/propfirm/PropFirmAccountDetails";
+import RealPropFirmAccountDetails from "@/components/propfirm/RealPropFirmAccountDetails";
 import { SlidersHorizontal, Receipt, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,10 +21,18 @@ const PropFirm = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [trackAccountOpen, setTrackAccountOpen] = useState(false);
-  const [showAccountDetails, setShowAccountDetails] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  if (showAccountDetails) {
-    return <PropFirmAccountDetails onBack={() => setShowAccountDetails(false)} />;
+  if (selectedAccountId === "demo") {
+    return <PropFirmAccountDetails onBack={() => setSelectedAccountId(null)} />;
+  }
+  if (selectedAccountId) {
+    return (
+      <RealPropFirmAccountDetails
+        accountId={selectedAccountId}
+        onBack={() => setSelectedAccountId(null)}
+      />
+    );
   }
 
   return (
@@ -113,7 +122,9 @@ const PropFirm = () => {
       )}
 
       {activeTab === "accounts" && (
-        <PropFirmAccounts onSelectAccount={() => setShowAccountDetails(true)} />
+        <PropFirmAccounts
+          onSelectAccount={(id) => setSelectedAccountId(id ?? "demo")}
+        />
       )}
 
       {activeTab === "transactions" && <PropFirmTransactions />}
