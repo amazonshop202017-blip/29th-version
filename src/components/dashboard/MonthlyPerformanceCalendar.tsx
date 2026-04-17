@@ -466,12 +466,11 @@ export const MonthlyPerformanceCalendar = () => {
         </div>
 
         {/* Weekly Summaries - hidden on mobile */}
-        <div className="hidden md:block w-32 space-y-1 pt-8">
+        <div className="hidden md:flex md:flex-col w-32 gap-1 pt-8">
           {weeklySummaries.map((summary, index) => (
-            <div 
-              key={index} 
-              className="h-[80px] flex flex-col justify-center items-start px-3 py-2 rounded-lg bg-secondary/30"
-              style={{ marginTop: index === 0 ? '0' : '4px' }}
+            <div
+              key={index}
+              className="flex-1 min-h-[80px] flex flex-col justify-center items-start px-3 py-2 rounded-lg bg-secondary/30"
             >
               <div className="text-xs text-muted-foreground mb-1">Week {summary.weekNumber}</div>
               <div className={`text-sm font-bold font-mono ${isPrivacyMode ? 'text-foreground' : summary.pnl >= 0 ? 'profit-text' : 'loss-text'}`}>
