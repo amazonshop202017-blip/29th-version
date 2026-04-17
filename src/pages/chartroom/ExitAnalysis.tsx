@@ -96,46 +96,24 @@ const ExitAnalysis = () => {
       if (riskRange <= 0) riskRange = 0.0001;
 
       // Calculate Updraw (Favorable Move) - POSITIVE bar
+      // Reflects the actual MFE relative to TP distance, may exceed 100% if price went past TP
       let updraw = 0;
-      
       if (side === 'LONG') {
-        // Check if TP was hit
-        if (farthestPriceInProfit >= takeProfit) {
-          updraw = 100;
-        } else {
-          updraw = ((farthestPriceInProfit - entryPrice) / rewardRange) * 100;
-          updraw = Math.max(0, Math.min(99, updraw)); // Clamp 0-99
-        }
+        updraw = ((farthestPriceInProfit - entryPrice) / rewardRange) * 100;
       } else {
-        // SHORT
-        if (farthestPriceInProfit <= takeProfit) {
-          updraw = 100;
-        } else {
-          updraw = ((entryPrice - farthestPriceInProfit) / rewardRange) * 100;
-          updraw = Math.max(0, Math.min(99, updraw)); // Clamp 0-99
-        }
+        updraw = ((entryPrice - farthestPriceInProfit) / rewardRange) * 100;
       }
+      updraw = Math.max(0, updraw); // Only floor at 0, no upper clamp
 
       // Calculate Drawdown (Adverse Move) - NEGATIVE bar
+      // Reflects the actual MAE relative to SL distance, may exceed -100% if price went past SL
       let drawdown = 0;
-
       if (side === 'LONG') {
-        // Check if SL was hit
-        if (farthestPriceInLoss <= stopLoss) {
-          drawdown = -100;
-        } else {
-          drawdown = -((entryPrice - farthestPriceInLoss) / riskRange) * 100;
-          drawdown = Math.max(-99, Math.min(0, drawdown)); // Clamp -99 to 0
-        }
+        drawdown = -((entryPrice - farthestPriceInLoss) / riskRange) * 100;
       } else {
-        // SHORT
-        if (farthestPriceInLoss >= stopLoss) {
-          drawdown = -100;
-        } else {
-          drawdown = -((farthestPriceInLoss - entryPrice) / riskRange) * 100;
-          drawdown = Math.max(-99, Math.min(0, drawdown)); // Clamp -99 to 0
-        }
+        drawdown = -((farthestPriceInLoss - entryPrice) / riskRange) * 100;
       }
+      drawdown = Math.min(0, drawdown); // Only ceil at 0, no lower clamp
 
       // Calculate Exit Percent
       let exitPercent: number;
