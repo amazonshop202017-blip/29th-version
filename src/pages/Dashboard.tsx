@@ -30,6 +30,7 @@ import { SymbolAnalysisChart } from '@/components/dashboard/InstrumentAnalysisCh
 import { LongShortAnalysisChart } from '@/components/dashboard/LongShortAnalysisChart';
 import { ExternalLinksWidget } from '@/components/dashboard/ExternalLinksWidget';
 import { InstrumentTradeDistribution } from '@/components/dashboard/InstrumentTradeDistribution';
+import { DirectionSplit } from '@/components/dashboard/DirectionSplit';
 import { DraggableChartWrapper } from '@/components/dashboard/DraggableChartWrapper';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -65,6 +66,7 @@ const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   longShortAnalysis: { component: LongShortAnalysisChart, colSpan: 1, rowSpan: 1 },
   externalLinks: { component: ExternalLinksWidget, colSpan: 1, rowSpan: 1 },
   instrumentDistribution: { component: InstrumentTradeDistribution, colSpan: 2, rowSpan: 1 },
+  directionSplit: { component: DirectionSplit, colSpan: 2, rowSpan: 1 },
 };
 
 const Dashboard = () => {
