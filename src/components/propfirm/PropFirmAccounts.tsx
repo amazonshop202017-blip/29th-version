@@ -166,7 +166,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
       setFailedDialog({
         open: true,
         name: acc.firm,
-        subtitle: `Use "${acc.firm} ${acc.firm === "e8" ? "markets" : ""}".trim()`.replace(/\s+"/, ' "').replace('".trim()', '"'),
+        subtitle: acc.firm === "e8" ? 'Use "e8 markets"' : `Use "${acc.firm}"`,
       }),
     onEditChallenge: () => setEditModalOpen(true),
   });

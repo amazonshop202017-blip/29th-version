@@ -7,7 +7,7 @@ import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, generateChallengeId, createDefaultStepRules, createDefaultFundedRules, type Challenge, type ChallengeRulesSchema, type StepRules as NewStepRules, type FundedRules as NewFundedRules } from "@/contexts/ChallengesContext";
 import { toast } from "sonner";
 
-type TrackAccountModalProps = { open: boolean; onClose: () => void };
+type TrackAccountModalProps = { open: boolean; onClose: () => void; mode?: 'create' | 'edit' };
 type Phase = "Evaluation" | "Funded";
 type Steps = "1 Step" | "2 Steps";
 type DrawdownType = "Static" | "EOD" | "Trailing";
@@ -338,7 +338,8 @@ function EditRulesPanel({ onDone, phase, steps, rules, onRulesChange }: {
 
 // ─── Main Modal ──────────────────────────────────────────────────
 
-export function TrackAccountModal({ open, onClose }: TrackAccountModalProps) {
+export function TrackAccountModal({ open, onClose, mode = 'create' }: TrackAccountModalProps) {
+  const isEdit = mode === 'edit';
   const { user } = useAuth();
   const { addAccount } = useAccountsContext();
   const { addChallenge } = useChallengesContext();
