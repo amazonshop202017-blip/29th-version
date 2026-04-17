@@ -144,8 +144,13 @@ const TableWithStickyHorizontalScroll = ({
             {paginatedTrades.map((trade) => {
               const metrics = calculateTradeMetrics(trade);
               const isSelected = selectedTrades.has(trade.id);
-              const isProfit = metrics.netPnl > 0;
-              const isLoss = metrics.netPnl < 0;
+              const outcome = classifyTradeOutcome(
+                metrics.netPnl,
+                trade.savedReturnPercent ?? metrics.returnPercent,
+                trade.breakEven
+              );
+              const isProfit = outcome === 'win';
+              const isLoss = outcome === 'loss';
 
               return (
                 <TableRow
