@@ -18,9 +18,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   accountName?: string;
   accountSubtitle?: string;
+  onConfirm?: (reason: string) => void;
 };
 
-export function MarkAsFailedDialog({ open, onOpenChange, accountName = "e8", accountSubtitle = 'Use "e8 markets"' }: Props) {
+export function MarkAsFailedDialog({ open, onOpenChange, accountName = "e8", accountSubtitle = 'Use "e8 markets"', onConfirm }: Props) {
   const [reason, setReason] = useState<string>("max_drawdown");
   const [customReason, setCustomReason] = useState<string>("");
 
@@ -32,6 +33,8 @@ export function MarkAsFailedDialog({ open, onOpenChange, accountName = "e8", acc
   }, [open]);
 
   const handleConfirm = () => {
+    const finalReason = reason === "other" ? (customReason.trim() || "Other") : (REASONS.find(r => r.value === reason)?.label || reason);
+    onConfirm?.(finalReason);
     toast.success(`${accountName} marked as failed`);
     onOpenChange(false);
   };
