@@ -1,25 +1,26 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MoreHorizontal, Clock, CheckCircle2, LayoutList, LayoutGrid } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { MarkAsFailedDialog } from "./MarkAsFailedDialog";
 import { TrackAccountModal } from "./TrackAccountModal";
+import { RealAccountCard } from "./RealAccountCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAccountsContext, type Account } from "@/contexts/AccountsContext";
+import { useChallengesContext } from "@/contexts/ChallengesContext";
+import { useTradesContext } from "@/contexts/TradesContext";
+import { computeAccountStats, accountToRow } from "@/lib/propFirmStats";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
 
-const accountTabs: { label: AccountTab; count: number }[] = [
-  { label: "Evaluations", count: 1 },
-  { label: "Funded", count: 1 },
-  { label: "Breached", count: 0 },
-];
-
-const evaluationAccounts = [
+const demoEvaluationAccounts = [
   { id: "e8-eval", firm: "e8", step: "Step 1", status: "Active", balance: "$10,486.03", pnl: "+$486.03", pnlPositive: true, target: "8%", pnlBarValue: 60, tradingDays: "—", drawdown: "$0 / Max $800", consistency: "—" },
 ];
 
-const fundedAccounts = [
+const demoFundedAccounts = [
   { id: "mffu-funded", firm: "mffu", step: "Funded", status: "Active", balance: "$64,742", pnl: "+$14,742", pnlPositive: true, target: "—", pnlBarValue: 100, tradingDays: "35", drawdown: "—", consistency: "—" },
 ];
 
@@ -28,9 +29,10 @@ type AccountActions = {
   onMoveToFunding: () => void;
   onMarkAsFailed: () => void;
   onEditChallenge: () => void;
+  onDeleteChallenge: () => void;
 };
 
-function ThreeDotMenu({ actions }: { actions: AccountActions }) {
+function ThreeDotMenu({ actions, allowDelete = false }: { actions: AccountActions; allowDelete?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -42,28 +44,47 @@ function ThreeDotMenu({ actions }: { actions: AccountActions }) {
         <DropdownMenuItem onSelect={actions.onMarkAsFailed}>Mark as Failed</DropdownMenuItem>
         <DropdownMenuItem onSelect={actions.onEditChallenge}>Edit Challenge</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <DropdownMenuItem
-                  disabled
-                  className="text-rose-500/60 focus:text-rose-500/60 cursor-not-allowed opacity-60"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  Delete Challenge
-                </DropdownMenuItem>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Disabled</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {allowDelete ? (
+          <DropdownMenuItem onSelect={actions.onDeleteChallenge} className="text-rose-500 focus:text-rose-500">
+            Delete Challenge
+          </DropdownMenuItem>
+        ) : (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenuItem
+                    disabled
+                    className="text-rose-500/60 focus:text-rose-500/60 cursor-not-allowed opacity-60"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    Delete Challenge
+                  </DropdownMenuItem>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left">Disabled</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-function TableView({ accounts, onSelect, makeActions }: { accounts: typeof evaluationAccounts; onSelect: () => void; makeActions: (acc: typeof evaluationAccounts[number]) => AccountActions }) {
+type RowShape = typeof demoEvaluationAccounts[number];
+type RealRow = ReturnType<typeof accountToRow>;
+
+function TableView({
+  rows,
+  onSelect,
+  makeActionsForRow,
+  realIds,
+}: {
+  rows: (RowShape | RealRow)[];
+  onSelect: (id: string) => void;
+  makeActionsForRow: (id: string) => AccountActions;
+  realIds: Set<string>;
+}) {
   return (
     <table className="w-full min-w-[620px] text-sm">
       <thead>
@@ -78,29 +99,34 @@ function TableView({ accounts, onSelect, makeActions }: { accounts: typeof evalu
         </tr>
       </thead>
       <tbody>
-        {accounts.map((acc) => (
-          <tr key={acc.id} onClick={onSelect} className="border-b border-border last:border-0 cursor-pointer transition-all duration-150 hover:bg-primary/[0.03] hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] active:scale-[0.995]">
-            <td className="py-4 pr-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-foreground">{acc.firm}</span>
-                <span className="text-[10px] font-semibold text-muted-foreground border border-border rounded px-1.5 py-0.5 whitespace-nowrap">{acc.step}</span>
-                <span className="text-[10px] font-semibold text-emerald-500 bg-emerald-500/15 rounded px-1.5 py-0.5 whitespace-nowrap">{acc.status}</span>
-              </div>
-            </td>
-            <td className="py-4 pr-4 text-sm text-foreground font-medium whitespace-nowrap">{acc.balance}</td>
-            <td className="py-4 pr-8 min-w-[140px]">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className={`text-sm font-semibold ${acc.pnlPositive ? "text-primary" : "text-rose-500"}`}>{acc.pnl}</span>
-                <span className="text-xs text-muted-foreground">{acc.target !== "—" ? `/ ${acc.target}` : "—"}</span>
-              </div>
-              {acc.pnlBarValue > 0 && (<div className="h-1 bg-muted rounded-full overflow-hidden w-24"><div className="h-full rounded-full bg-primary" style={{ width: `${acc.pnlBarValue}%` }} /></div>)}
-            </td>
-            <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.tradingDays}</td>
-            <td className="py-4 pr-4 text-sm text-muted-foreground whitespace-nowrap">{acc.drawdown}</td>
-            <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.consistency}</td>
-            <td className="py-4 relative"><ThreeDotMenu actions={makeActions(acc)} /></td>
-          </tr>
-        ))}
+        {rows.map((acc) => {
+          const isReal = realIds.has(acc.id);
+          return (
+            <tr key={acc.id} onClick={() => onSelect(acc.id)} className="border-b border-border last:border-0 cursor-pointer transition-all duration-150 hover:bg-primary/[0.03] hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] active:scale-[0.995]">
+              <td className="py-4 pr-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-foreground">{acc.firm}</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground border border-border rounded px-1.5 py-0.5 whitespace-nowrap">{acc.step}</span>
+                  <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 whitespace-nowrap ${
+                    acc.status === "Breached" ? "text-rose-500 bg-rose-500/15" : "text-emerald-500 bg-emerald-500/15"
+                  }`}>{acc.status}</span>
+                </div>
+              </td>
+              <td className="py-4 pr-4 text-sm text-foreground font-medium whitespace-nowrap">{acc.balance}</td>
+              <td className="py-4 pr-8 min-w-[140px]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className={`text-sm font-semibold ${acc.pnlPositive ? "text-primary" : "text-rose-500"}`}>{acc.pnl}</span>
+                  <span className="text-xs text-muted-foreground">{acc.target !== "—" ? `/ ${acc.target}` : "—"}</span>
+                </div>
+                {acc.pnlBarValue > 0 && (<div className="h-1 bg-muted rounded-full overflow-hidden w-24"><div className="h-full rounded-full bg-primary" style={{ width: `${acc.pnlBarValue}%` }} /></div>)}
+              </td>
+              <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.tradingDays}</td>
+              <td className="py-4 pr-4 text-sm text-muted-foreground whitespace-nowrap">{acc.drawdown}</td>
+              <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.consistency}</td>
+              <td className="py-4 relative"><ThreeDotMenu actions={makeActionsForRow(acc.id)} allowDelete={isReal} /></td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
@@ -155,11 +181,38 @@ function FundedAccountCard({ onSelect, actions }: { onSelect: () => void; action
 export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount: () => void }) {
   const [activeTab, setActiveTab] = useState<AccountTab>("Evaluations");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [failedDialog, setFailedDialog] = useState<{ open: boolean; name: string; subtitle: string }>({ open: false, name: "", subtitle: "" });
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const currentAccounts = activeTab === "Evaluations" ? evaluationAccounts : fundedAccounts;
+  const [failedDialog, setFailedDialog] = useState<{ open: boolean; name: string; subtitle: string; accountId: string | null }>({ open: false, name: "", subtitle: "", accountId: null });
+  const [editModal, setEditModal] = useState<{ open: boolean; challengeId?: string }>({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; account: Account | null }>({ open: false, account: null });
 
-  const makeActions = (acc: typeof evaluationAccounts[number]): AccountActions => ({
+  const { user } = useAuth();
+  const { accounts, removeAccount, patchAccount } = useAccountsContext();
+  const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
+  const { trades } = useTradesContext();
+
+  // Filter real propfirm accounts for current user
+  const realPropfirmAccounts = useMemo(
+    () => accounts.filter(a => a.accountMode === 'propfirm' && a.userId === (user?.userId || '') && !a.isArchived),
+    [accounts, user?.userId]
+  );
+
+  // Bucket per tab
+  const realByTab = useMemo(() => {
+    return {
+      Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status === 'active'),
+      Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status === 'active'),
+      Breached: realPropfirmAccounts.filter(a => a.status === 'breached'),
+    };
+  }, [realPropfirmAccounts]);
+
+  const accountTabs: { label: AccountTab; count: number }[] = [
+    { label: "Evaluations", count: demoEvaluationAccounts.length + realByTab.Evaluations.length },
+    { label: "Funded", count: demoFundedAccounts.length + realByTab.Funded.length },
+    { label: "Breached", count: 0 + realByTab.Breached.length },
+  ];
+
+  // Demo actions (toast/dialog only — no persistence)
+  const demoActions = (acc: typeof demoEvaluationAccounts[number]): AccountActions => ({
     onViewDetails: onSelectAccount,
     onMoveToFunding: () => toast.info("Coming soon"),
     onMarkAsFailed: () =>
@@ -167,9 +220,101 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
         open: true,
         name: acc.firm,
         subtitle: acc.firm === "e8" ? 'Use "e8 markets"' : `Use "${acc.firm}"`,
+        accountId: null,
       }),
-    onEditChallenge: () => setEditModalOpen(true),
+    onEditChallenge: () => setEditModal({ open: true }),
+    onDeleteChallenge: () => {},
   });
+
+  // Real actions (fully wired)
+  const realActions = (account: Account): AccountActions => ({
+    onViewDetails: onSelectAccount,
+    onMoveToFunding: () => {
+      patchAccount(account.id, { phase: 'funded', step: 'funded', status: 'active' });
+      if (account.challengeId) updateChallenge(account.challengeId, { status: 'funded' });
+      toast.success(`${account.name} moved to Funding`);
+    },
+    onMarkAsFailed: () => {
+      const challenge = account.challengeId ? getChallengeById(account.challengeId) : undefined;
+      setFailedDialog({
+        open: true,
+        name: challenge?.firm || account.name,
+        subtitle: `Use "${challenge?.firm || account.name}"`,
+        accountId: account.id,
+      });
+    },
+    onEditChallenge: () => {
+      if (account.challengeId) setEditModal({ open: true, challengeId: account.challengeId });
+      else toast.error("No challenge linked to this account");
+    },
+    onDeleteChallenge: () => setDeleteDialog({ open: true, account }),
+  });
+
+  const handleConfirmFailed = (reason: string) => {
+    if (!failedDialog.accountId) return;
+    const acc = accounts.find(a => a.id === failedDialog.accountId);
+    if (!acc) return;
+    patchAccount(acc.id, { status: 'breached', breachReason: reason, breachedAt: new Date().toISOString() });
+    if (acc.challengeId) updateChallenge(acc.challengeId, { status: 'breached' });
+  };
+
+  const handleConfirmDelete = () => {
+    const acc = deleteDialog.account;
+    if (!acc) return;
+    if (acc.challengeId) removeChallenge(acc.challengeId);
+    removeAccount(acc.id);
+    toast.success(`Challenge deleted`);
+    setDeleteDialog({ open: false, account: null });
+  };
+
+  // Build rows for table view (real first, then demo)
+  const tableRows = useMemo(() => {
+    if (activeTab === "Breached") {
+      return realByTab.Breached.map(acc => {
+        const ch = acc.challengeId ? getChallengeById(acc.challengeId) : undefined;
+        return accountToRow(acc, ch, computeAccountStats(acc, ch, trades));
+      });
+    }
+    const realList = activeTab === "Evaluations" ? realByTab.Evaluations : realByTab.Funded;
+    const realRows = realList.map(acc => {
+      const ch = acc.challengeId ? getChallengeById(acc.challengeId) : undefined;
+      return accountToRow(acc, ch, computeAccountStats(acc, ch, trades));
+    });
+    const demoList = activeTab === "Evaluations" ? demoEvaluationAccounts : demoFundedAccounts;
+    return [...realRows, ...demoList];
+  }, [activeTab, realByTab, getChallengeById, trades]);
+
+  const realIds = useMemo(() => new Set(realPropfirmAccounts.map(a => a.id)), [realPropfirmAccounts]);
+
+  const handleRowSelect = (id: string) => {
+    onSelectAccount();
+  };
+
+  const makeActionsForRow = (id: string): AccountActions => {
+    const realAcc = realPropfirmAccounts.find(a => a.id === id);
+    if (realAcc) return realActions(realAcc);
+    // demo row
+    const demoAcc =
+      demoEvaluationAccounts.find(d => d.id === id) ?? demoFundedAccounts.find(d => d.id === id);
+    return demoAcc ? demoActions(demoAcc) : demoActions(demoEvaluationAccounts[0]);
+  };
+
+  const renderGridRealCards = (list: Account[]) =>
+    list.map(acc => {
+      const ch = acc.challengeId ? getChallengeById(acc.challengeId) : undefined;
+      if (!ch) return null;
+      return (
+        <RealAccountCard
+          key={acc.id}
+          account={acc}
+          challenge={ch}
+          trades={trades}
+          onSelect={onSelectAccount}
+          ThreeDotMenu={ThreeDotMenu}
+          actions={realActions(acc)}
+        />
+      );
+    });
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm">
@@ -189,7 +334,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
       </div>
       <div className="border-b border-border" />
       <div className="p-5">
-        {activeTab === "Breached" ? (
+        {activeTab === "Breached" && tableRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-muted-foreground/50" strokeWidth="1.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -198,11 +343,22 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
             <p className="text-xs text-muted-foreground/60 mt-1">Keep your risk in check</p>
           </div>
         ) : viewMode === "list" ? (
-          <div className="overflow-x-auto"><TableView accounts={currentAccounts} onSelect={onSelectAccount} makeActions={makeActions} /></div>
+          <div className="overflow-x-auto"><TableView rows={tableRows} onSelect={handleRowSelect} makeActionsForRow={makeActionsForRow} realIds={realIds} /></div>
         ) : (
           <div className="flex flex-wrap gap-4">
-            {activeTab === "Evaluations" && <EvalAccountCard onSelect={onSelectAccount} actions={makeActions(evaluationAccounts[0])} />}
-            {activeTab === "Funded" && <FundedAccountCard onSelect={onSelectAccount} actions={makeActions(fundedAccounts[0])} />}
+            {activeTab === "Evaluations" && (
+              <>
+                {renderGridRealCards(realByTab.Evaluations)}
+                <EvalAccountCard onSelect={onSelectAccount} actions={demoActions(demoEvaluationAccounts[0])} />
+              </>
+            )}
+            {activeTab === "Funded" && (
+              <>
+                {renderGridRealCards(realByTab.Funded)}
+                <FundedAccountCard onSelect={onSelectAccount} actions={demoActions(demoFundedAccounts[0])} />
+              </>
+            )}
+            {activeTab === "Breached" && renderGridRealCards(realByTab.Breached)}
           </div>
         )}
       </div>
@@ -212,9 +368,30 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
         onOpenChange={(o) => setFailedDialog((s) => ({ ...s, open: o }))}
         accountName={failedDialog.name}
         accountSubtitle={failedDialog.subtitle}
+        onConfirm={failedDialog.accountId ? handleConfirmFailed : undefined}
       />
 
-      <TrackAccountModal open={editModalOpen} onClose={() => setEditModalOpen(false)} mode="edit" />
+      <TrackAccountModal
+        open={editModal.open}
+        onClose={() => setEditModal({ open: false })}
+        mode="edit"
+        challengeId={editModal.challengeId}
+      />
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(o) => !o && setDeleteDialog({ open: false, account: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this challenge?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the challenge and its linked account ({deleteDialog.account?.name}). This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-rose-500 hover:bg-rose-500/90 text-white">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
