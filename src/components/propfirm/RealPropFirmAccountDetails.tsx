@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
-import { ChevronLeft, ChevronDown, ChevronRight, Paperclip, BookOpen, CheckCircle2, RefreshCcw, Settings2, Upload } from "lucide-react";
+import { ChevronLeft, ChevronDown, Paperclip, BookOpen, CheckCircle2, RefreshCcw } from "lucide-react";
+import { TradesTableCard } from "@/components/trades/TradesTableCard";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, type StepRules } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
