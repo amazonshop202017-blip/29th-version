@@ -1,14 +1,33 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, DollarSign, Receipt, Search, SlidersHorizontal, Pencil, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Receipt, Search, SlidersHorizontal, Pencil, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, EyeOff, Eye, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const transactions = [
-  { id: 1, date: "Apr 13, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Income" as const, category: "Payout", amount: 500, status: "Reviewed" },
-  { id: 2, date: "Apr 7, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Expense" as const, category: "Evaluation Fee", amount: -120, status: "Reviewed" },
-  { id: 3, date: "Feb 3, 2025", description: "-", account: "-", challenge: "-", firm: "e8", type: "Expense" as const, category: "Evaluation Fee", amount: -47, status: "Reviewed" },
+const transactions: Array<{ id: number; date: string; description: string; account: string; challenge: string; firm: string; type: "Income" | "Expense"; category: string; amount: number; status: TxStatus }> = [
+  { id: 1, date: "Apr 13, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Income", category: "Payout", amount: 500, status: "Reviewed" },
+  { id: 2, date: "Apr 7, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Expense", category: "Evaluation Fee", amount: -120, status: "Not reviewed" },
+  { id: 3, date: "Feb 3, 2025", description: "-", account: "-", challenge: "-", firm: "e8", type: "Expense", category: "Evaluation Fee", amount: -47, status: "Reviewed" },
 ];
 
 type FilterTab = "All transactions" | "Income" | "Expenses" | "Needs review";
 const filterTabs: FilterTab[] = ["All transactions", "Income", "Expenses", "Needs review"];
+
+type TxStatus = "Reviewed" | "Not reviewed" | "Ignored";
+
+function StatusBadge({ status }: { status: TxStatus }) {
+  const cls =
+    status === "Reviewed"
+      ? "bg-emerald-500/15 text-emerald-500"
+      : status === "Ignored"
+      ? "bg-muted text-muted-foreground"
+      : "bg-amber-500/15 text-amber-500";
+  return <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${cls}`}>{status}</span>;
+}
 
 function TxMetricCards() {
   return (
@@ -95,8 +114,45 @@ export default function PropFirmTransactions() {
                   <td className="px-3 py-3.5"><TypeBadge type={tx.type} /></td>
                   <td className="px-3 py-3.5"><div className="flex items-center gap-1.5"><span className="text-xs text-foreground">{tx.category}</span><Pencil className="w-3 h-3 text-muted-foreground/50" /></div></td>
                   <td className="px-3 py-3.5 text-right whitespace-nowrap"><span className={`text-sm font-semibold ${tx.amount > 0 ? "text-emerald-500" : "text-rose-500"}`}>{tx.amount > 0 ? `+$${tx.amount.toFixed(2)}` : `-$${Math.abs(tx.amount).toFixed(2)}`}</span></td>
-                  <td className="px-3 py-3.5"><span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Reviewed</span></td>
-                  <td className="px-3 py-3.5"><button className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground"><MoreHorizontal className="w-4 h-4" /></button></td>
+                  <td className="px-3 py-3.5"><StatusBadge status={tx.status} /></td>
+                  <td className="px-3 py-3.5">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        {tx.status === "Reviewed" ? (
+                          <DropdownMenuItem>
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Mark as not reviewed
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Mark as reviewed
+                          </DropdownMenuItem>
+                        )}
+                        {tx.status === "Ignored" ? (
+                          <DropdownMenuItem>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Mark as unignored
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem>
+                            <EyeOff className="w-4 h-4 mr-2" />
+                            Mark as ignored
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))}
             </tbody>
