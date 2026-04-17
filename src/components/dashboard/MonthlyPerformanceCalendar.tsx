@@ -330,14 +330,14 @@ export const MonthlyPerformanceCalendar = () => {
             >
               {formatCurrencyDecimal(monthlyStats.pnl)}
             </span>
-            <span className="bg-secondary px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
+            <span className="bg-secondary dark:bg-[#1f1f1f] px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
               <span className="text-muted-foreground">{monthlyStats.tradingDays}d</span>
               <span className="text-border">|</span>
               <span className={monthlyStats.daysWinRate >= 50 ? 'text-profit' : 'text-loss'}>
                 {monthlyStats.daysWinRate.toFixed(0)}%
               </span>
             </span>
-            <span className="bg-secondary px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
+            <span className="bg-secondary dark:bg-[#1f1f1f] px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
               <span className="text-muted-foreground">{monthlyStats.totalTrades} trades</span>
               <span className="text-border">|</span>
               <span className={monthlyStats.monthlyWinRate >= 50 ? 'text-profit' : 'text-loss'}>
@@ -411,7 +411,7 @@ export const MonthlyPerformanceCalendar = () => {
                       : 'hsl(var(--loss) / 0.15)';
                   }
 
-                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.18)' : 'hsl(0 0% 0% / 0.063)';
+                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.4)' : 'hsl(0 0% 0% / 0.063)';
                   const otherMonthClass = !isCurrentMonth ? 'bg-[#fcfcfe] dark:bg-[#171717]' : '';
                   const otherMonthStyle: React.CSSProperties = !isCurrentMonth
                     ? {
