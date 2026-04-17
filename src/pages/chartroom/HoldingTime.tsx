@@ -27,6 +27,7 @@ import {
   TradeCountByDurationChart,
   WinRateByDurationChart,
 } from '@/components/chartroom/TradeDurationBucketCharts';
+import { PerformanceByDurationCompareChart } from '@/components/chartroom/PerformanceByDurationCompareChart';
 
 type TimeUnit = 'days' | 'hours' | 'minutes';
 // Privacy removed from dropdown - handled via global filter
