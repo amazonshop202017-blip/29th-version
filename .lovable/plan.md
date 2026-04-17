@@ -1,70 +1,98 @@
 
-
-## Plan: Prop Firm account menu actions + Edit/Mark-as-Failed flows
+## Plan: Real data-driven Prop Firm account cards (alongside demo cards)
 
 ### Goal
-Update the 3-dot menu on each Prop Firm account (table + grid views) and wire two new flows: an **Edit Challenge** flow that reuses the existing TrackAccountModal in edit mode, and a **Mark as Failed** confirmation popup matching the provided screenshot. Disable Delete for now. Add a new **Move to Funding** menu item under "View Details".
+Render **real** Prop Firm accounts on the Accounts page in the same Evaluations / Funded / Breached tabs, using existing `AccountsContext` + `ChallengesContext` + `TradesContext` data. Demo cards stay completely untouched as visual reference.
 
-### Menu changes (`src/components/propfirm/PropFirmAccounts.tsx`)
-New menu order:
-1. **View Details** — keeps current behavior (opens account details)
-2. **Move to Funding** — *(new)* placeholder, no action yet (UI only as scope is unspecified — will show a `toast.info("Coming soon")`)
-3. **Mark as Failed** — opens new confirmation popup
-4. **Edit Challenge** — opens TrackAccountModal in edit mode
-5. **Delete Challenge** — **disabled** (greyed out, non-clickable, tooltip "Disabled")
+### Approach
+Create a single new component `RealAccountCard.tsx` that mirrors the existing `EvalAccountCard` / `FundedAccountCard` design 1:1, but takes a real `Account` + `Challenge` + computed stats. In `PropFirmAccounts.tsx`, add a real-accounts row above the demo cards in **both views**:
+- **Grid view:** real cards rendered first via `flex flex-wrap gap-4` (same wrapper) followed by the existing demo card
+- **List view:** real rows appended/prepended into the same `TableView` (extend `accounts` array passed in)
 
-`ThreeDotMenu` will be refactored to accept callbacks (`onViewDetails`, `onMoveToFunding`, `onMarkAsFailed`, `onEditChallenge`) and the `accountName` (e.g. "e8") for the failed-popup header.
+### Data flow
 
-### TrackAccountModal — add edit mode (`src/components/propfirm/TrackAccountModal.tsx`)
-- Add optional prop: `mode?: 'create' | 'edit'` and `initialChallenge?: Partial<ChallengeFormData>` (or simpler: just initial values passed from parent: `nickname`, `firm`, `balance`, `phase`, `steps`, `status`, `startDate`, `fees`, `rules`).
-- When `mode === 'edit'`:
-  - Modal title: **"Edit Challenge"** (instead of "Add Challenge")
-  - Footer button: **"Save"** (instead of "Create challenge")
-  - On save: call a new `updateChallenge` path that overwrites the existing challenge values (reuse `useChallengesContext().updateChallenge`) and shows `toast.success('Challenge updated')`
-- A `useEffect` will hydrate all form state when `initialChallenge` changes / modal opens in edit mode.
+1. **Pull**:
+   ```ts
+   const { user } = useAuth();
+   const { accounts, removeAccount } = useAccountsContext();
+   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
+   const { trades } = useTradesContext();
+   ```
+2. **Filter** real accounts:
+   ```ts
+   const realPropfirm = accounts.filter(a =>
+     a.accountMode === 'propfirm' &&
+     a.userId === user?.userId &&
+     !a.isArchived
+   );
+   ```
+3. **Bucket per active tab**:
+   - Evaluations → `phase === 'evaluation' && status === 'active'`
+   - Funded → `phase === 'funded' && status === 'active'`
+   - Breached → `status === 'breached'`
 
-Since the demo accounts in `PropFirmAccounts.tsx` are hard-coded (not yet linked to `ChallengesContext`), edit mode will pre-fill from a small mock object derived from the row clicked (firm name, step, balance, status). The "save" action will call `updateChallenge` if the row maps to a real challenge, otherwise just close + toast — keeping the UI fully functional for the demo data.
+4. **Compute per-card stats** (memoized helper `computeAccountStats(account, challenge, trades)`):
+   - `accountTrades = trades.filter(t => t.accountId === account.id)`
+   - `pnl = sum(calculateTradeMetrics(t).netPnl)`
+   - `currentBalance = challenge.balanceAmount + pnl`
+   - `tradingDays = new Set(accountTrades.map(t => t.closeDate.slice(0,10))).size`
+   - `profitTargetAmount` derived from `challenge.rules.step{N}.profitTarget` (`%` → `balanceAmount * value/100`, `$` → `value`); `progressPct = clamp(pnl / target * 100)`
+   - `maxDD` derived from `challenge.rules.step{N}.maxDrawdown` (same %/$ resolution)
+   - `currentDD = max(0, peakBalance - currentBalance)` where `peakBalance` walks accountTrades chronologically
+   - `consistencyTarget = challenge.rules.step{N}.consistency`
+   - For Funded phase use `challenge.rules.funded` (resolving `sameAsStep1` → `step1`)
 
-### New component: MarkAsFailedDialog (`src/components/propfirm/MarkAsFailedDialog.tsx`)
-Match the attached screenshot exactly using existing shadcn Dialog primitives:
+### New component: `RealAccountCard.tsx`
+Single component (not split eval/funded) — renders the right progress rows based on `phase`. Visual structure copied verbatim from `EvalAccountCard` / `FundedAccountCard`:
+- Header row: `firm` (large bold) + step badge ("STEP 1" / "STEP 2" / "FUNDED") + 3-dot menu
+- Balance line: `Balance: $X (+/-$Y)` + right-side `Use "{firm}"` hint (uses `challenge.firm`)
+- Time-limit pill (Clock icon): "No time limit" if `rules.step1.isUnlimited` else "{tradingPeriodDays} days limit", subline "Started on {createdAt formatted}"
+- Account meta line: `Account: {account.name}`
+- `<ProgressRow>` rows (reuse existing component) for: Profit Target, Max Daily Loss, Max Drawdown (eval) — or Min Trading Days + Max Daily Loss (funded)
 
-```text
-┌────────────────────────────────────────────┐
-│ Mark Evaluation Account as failed?     [×] │
-│ This will mark this Evaluation Account as  │
-│ failed and lock the current phase.         │
-│ ┌────────────────────────────────────────┐ │
-│ │ Account: e8 • Use "e8 markets"         │ │  ← muted card
-│ └────────────────────────────────────────┘ │
-│ Why did this Evaluation Account fail?      │
-│  ○ Broke max drawdown                      │
-│  ○ Overtrading / Forcing trades            │
-│  ○ Time pressure                           │
-│  ○ Lack of risk management                 │
-│  ○ Other: [ Enter custom reason ]          │
-│ ┌────────────────────────────────────────┐ │
-│ │ ℹ This reason will be used in your    │ │  ← blue info card
-│ │   analytics and insights to help you   │ │
-│ │   improve your passing rate.           │ │
-│ └────────────────────────────────────────┘ │
-│                  [Cancel] [Mark as failed] │
-└────────────────────────────────────────────┘
-```
+### List-view row reuse
+Extend the `accounts` array shape passed into `TableView` so real accounts produce the same row structure (`firm`, `step`, `status`, `balance`, `pnl`, `pnlPositive`, `target`, `pnlBarValue`, `tradingDays`, `drawdown`, `consistency`). A small `accountToRow(account, challenge, stats)` adapter does the mapping. Real rows render **above** the demo row inside the existing `<tbody>`.
 
-Implementation details:
-- Built on `Dialog` + `RadioGroup` from `@/components/ui/*`
-- Local state: `selectedReason`, `customReason`. **No persistence** — clicking "Mark as failed" simply toasts and closes (per request: "don't store any value from this popup as of now").
-- "Mark as failed" button uses `bg-primary` (purple) matching the screenshot
-- Info banner uses `bg-blue-50 border-blue-200 text-blue-700` (or theme-aware `bg-primary/5 border-primary/20`) with `Info` lucide icon
-- Props: `open`, `onOpenChange`, `accountName`, `accountSubtitle`
+### Menu actions wiring (real accounts only)
+Pass real callbacks through the same `ThreeDotMenu`:
+- **View Details** → `onSelectAccount()` (existing handler — uses the same hard-coded `PropFirmAccountDetails` page; out of scope to wire details to real data per the "don't modify" rule)
+- **Move to Funding** → `updateAccount` step→'funded' & phase→'funded' & `updateChallenge(challengeId, { status: 'funded' })`, toast success
+- **Mark as Failed** → opens existing `MarkAsFailedDialog`; on confirm: `updateAccount` status→'breached' + write `breachReason` + `breachedAt` (need a small extension to `updateAccount` OR direct context patch — see Technical Notes)
+- **Edit Challenge** → opens `TrackAccountModal` in `mode="edit"` pre-loaded with the selected challenge (requires extending modal — see Technical Notes)
+- **Delete Challenge** → `removeChallenge(challengeId)` + `removeAccount(accountId)`, with `AlertDialog` confirm (replaces the currently-disabled menu item ONLY for real accounts; demo card keeps it disabled)
+
+### Technical Notes / small required extensions
+
+1. **`AccountsContext.updateAccount`** currently only accepts `(id, name, startingBalance, accountMode)`. Add an overload / new method:
+   ```ts
+   patchAccount: (id: string, patch: Partial<Pick<Account, 'phase'|'step'|'status'|'breachReason'|'breachedAt'|'name'>>) => void;
+   ```
+   Used by Mark-as-Failed and Move-to-Funding.
+
+2. **`TrackAccountModal`** edit mode is currently a UI-only flag (title + button label). Extend it to actually load + save when `mode==='edit'`:
+   - New props: `challengeId?: string` (when edit)
+   - On open, hydrate all form fields from `getChallengeById(challengeId)` (reverse the schema → form converters)
+   - On Save: call `updateChallenge(challengeId, {...})` + `updateAccount` name if firm/nickname changed, instead of `addChallenge`+`addAccount`
+   - Reset behavior remains for create mode
+
+3. **Demo cards behavior**: leave `EvalAccountCard` / `FundedAccountCard` and the hard-coded `evaluationAccounts` / `fundedAccounts` arrays exactly as-is. Their `ThreeDotMenu` still uses the existing `makeActions` (toast placeholders + dialog opens with no persistence) — this satisfies "demo cards remain non-functional".
+
+4. **Tab counts**: update `accountTabs` counts to be `demoCount + realCount` per bucket so the tab label reflects total.
+
+5. **Empty states**: when a tab has 0 real accounts, no extra empty state is shown (the demo card is still there). When Breached has 0 real and the demo array is empty (current state), keep the existing empty-state block.
 
 ### Files
-- **Edit:** `src/components/propfirm/PropFirmAccounts.tsx` — refactor `ThreeDotMenu`, add Move to Funding + disabled Delete, wire dialogs/modal opening; track which row is acted upon for the failed/edit popups.
-- **Edit:** `src/components/propfirm/TrackAccountModal.tsx` — add `mode` + `initialChallenge` props, conditional title/button text, hydration effect.
-- **Create:** `src/components/propfirm/MarkAsFailedDialog.tsx` — the new confirmation popup.
+
+**Create**
+- `src/components/propfirm/RealAccountCard.tsx` — visual twin of demo cards driven by props
+- `src/lib/propFirmStats.ts` — `computeAccountStats(account, challenge, trades)` + helpers `resolveTarget`, `resolveDrawdown`, `accountToRow`
+
+**Edit**
+- `src/components/propfirm/PropFirmAccounts.tsx` — pull real data, build per-tab arrays, render real cards/rows above demo, wire real menu actions, update tab counts
+- `src/components/propfirm/TrackAccountModal.tsx` — accept `challengeId`, hydrate form on open in edit mode, branch to `updateChallenge` on save
+- `src/contexts/AccountsContext.tsx` — add `patchAccount(id, partial)` method (typed against safe subset)
 
 ### Out of scope
-- Persistence of the failure reason (explicitly excluded by user)
-- Real "Move to Funding" flow (placeholder only)
-- Wiring delete (disabled per request)
-
+- Changing `PropFirmAccountDetails.tsx` (still shows hard-coded data even when reached from a real card — explicitly preserved per "do not modify")
+- Migrating screenshots / fees / payouts to real data
+- Persisting `MarkAsFailedDialog` reasons globally beyond the breach fields on the account
