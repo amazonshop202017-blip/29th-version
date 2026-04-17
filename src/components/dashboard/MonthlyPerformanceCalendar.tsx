@@ -408,22 +408,32 @@ export const MonthlyPerformanceCalendar = () => {
                       : 'hsl(var(--loss) / 0.15)';
                   }
 
+                  const otherMonthStyle: React.CSSProperties = !isCurrentMonth
+                    ? {
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, hsl(var(--muted-foreground) / 0.18) 0, hsl(var(--muted-foreground) / 0.18) 1px, transparent 1px, transparent 8px)',
+                        backgroundColor: 'hsl(var(--muted) / 0.2)',
+                      }
+                    : {};
+
                   return (
                     <div
                       key={dayKey}
                       onClick={() => isCurrentMonth && handleDayClick(day)}
-                      style={isCurrentMonth && hasData ? bgStyle : undefined}
+                      style={isCurrentMonth && hasData ? bgStyle : !isCurrentMonth ? otherMonthStyle : undefined}
                       className={`
                         min-h-[68px] md:min-h-[80px] p-1 md:p-2 rounded-md md:rounded-lg border-transparent transition-colors
-                        ${isCurrentMonth ? bgClass : 'bg-muted/20 opacity-40'}
+                        ${isCurrentMonth ? bgClass : ''}
                         ${isCurrentMonth ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : ''}
                       `}
                     >
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-white dark:bg-slate-800 mb-0.5 md:mb-1">
-                        <span className={`text-[8px] md:text-[10px] font-semibold ${isCurrentMonth ? 'text-black dark:text-white' : 'text-muted-foreground'}`}>
-                          {format(day, 'd')}
-                        </span>
-                      </div>
+                      {isCurrentMonth && (
+                        <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-white dark:bg-slate-800 mb-0.5 md:mb-1">
+                          <span className="text-[8px] md:text-[10px] font-semibold text-black dark:text-white">
+                            {format(day, 'd')}
+                          </span>
+                        </div>
+                      )}
                       
                       {hasData && (
                         <div className="space-y-0.5">
