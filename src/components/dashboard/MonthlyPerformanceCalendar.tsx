@@ -1,45 +1,28 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useTheme } from "@/hooks/useTheme";
-import { useFilteredTrades } from "@/hooks/useFilteredTrades";
-import { useGlobalFilters } from "@/contexts/GlobalFiltersContext";
-import { usePrivacyMode, PRIVACY_MASK } from "@/hooks/usePrivacyMode";
-import { calculateTradeMetrics, Trade } from "@/types/trade";
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
+import { useFilteredTrades } from '@/hooks/useFilteredTrades';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+import { usePrivacyMode, PRIVACY_MASK } from '@/hooks/usePrivacyMode';
+import { calculateTradeMetrics, Trade } from '@/types/trade';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, getDay, parseISO, startOfDay } from 'date-fns';
+import { ChevronLeft, ChevronRight, ChevronDown, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  addMonths,
-  subMonths,
-  isSameMonth,
-  getDay,
-  parseISO,
-  startOfDay,
-} from "date-fns";
-import { ChevronLeft, ChevronRight, ChevronDown, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
-import { DayDetailsModal } from "@/components/dayview/DayDetailsModal";
-import { cn } from "@/lib/utils";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { motion } from 'framer-motion';
+import { DayDetailsModal } from '@/components/dayview/DayDetailsModal';
+import { cn } from '@/lib/utils';
 
 const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
-const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const currentYearConst = new Date().getFullYear();
 const YEARS = Array.from({ length: 21 }, (_, i) => currentYearConst - 10 + i);
 
@@ -75,8 +58,8 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
       if (monthRef.current && !monthRef.current.contains(e.target as Node)) setMonthOpen(false);
       if (yearRef.current && !yearRef.current.contains(e.target as Node)) setYearOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   return (
@@ -84,10 +67,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
       <div ref={monthRef} className="relative">
         <button
           type="button"
-          onClick={() => {
-            setMonthOpen(!monthOpen);
-            setYearOpen(false);
-          }}
+          onClick={() => { setMonthOpen(!monthOpen); setYearOpen(false); }}
           className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
         >
           {MONTH_SHORT[month.getMonth()]}
@@ -99,16 +79,8 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
               <button
                 key={i}
                 type="button"
-                onClick={() => {
-                  const d = new Date(month);
-                  d.setMonth(i);
-                  onChange(d);
-                  setMonthOpen(false);
-                }}
-                className={cn(
-                  "w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors",
-                  i === month.getMonth() && "bg-accent font-medium",
-                )}
+                onClick={() => { const d = new Date(month); d.setMonth(i); onChange(d); setMonthOpen(false); }}
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", i === month.getMonth() && "bg-accent font-medium")}
               >
                 {name}
               </button>
@@ -119,10 +91,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
       <div ref={yearRef} className="relative">
         <button
           type="button"
-          onClick={() => {
-            setYearOpen(!yearOpen);
-            setMonthOpen(false);
-          }}
+          onClick={() => { setYearOpen(!yearOpen); setMonthOpen(false); }}
           className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
         >
           {month.getFullYear()}
@@ -134,16 +103,8 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
               <button
                 key={y}
                 type="button"
-                onClick={() => {
-                  const d = new Date(month);
-                  d.setFullYear(y);
-                  onChange(d);
-                  setYearOpen(false);
-                }}
-                className={cn(
-                  "w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors",
-                  y === month.getFullYear() && "bg-accent font-medium",
-                )}
+                onClick={() => { const d = new Date(month); d.setFullYear(y); onChange(d); setYearOpen(false); }}
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", y === month.getFullYear() && "bg-accent font-medium")}
               >
                 {y}
               </button>
@@ -160,7 +121,7 @@ export const MonthlyPerformanceCalendar = () => {
   const { currencyConfig } = useGlobalFilters();
   const { isPrivacyMode } = usePrivacyMode();
   const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = theme === 'dark';
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>({
     dailyPnl: true,
@@ -168,28 +129,28 @@ export const MonthlyPerformanceCalendar = () => {
     winRate: true,
     rMultiple: false,
   });
-
+  
   // Day details modal state
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
   const [selectedDayTrades, setSelectedDayTrades] = useState<Trade[]>([]);
 
   // Week starts on Saturday (6), so order is: Sat, Sun, Mon, Tue, Wed, Thu, Fri
-  const weekDays = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+  const weekDays = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   // Calculate day stats from trades
   const dayStatsMap = useMemo(() => {
     const map: Record<string, DayStats> = {};
-
-    trades.forEach((trade) => {
+    
+    trades.forEach(trade => {
       const metrics = calculateTradeMetrics(trade);
       if (!metrics.closeDate) return;
-
-      const dayKey = format(new Date(metrics.closeDate), "yyyy-MM-dd");
-
+      
+      const dayKey = format(new Date(metrics.closeDate), 'yyyy-MM-dd');
+      
       if (!map[dayKey]) {
         map[dayKey] = { pnl: 0, trades: 0, winRate: 0, rMultiple: 0, hasData: true };
       }
-
+      
       map[dayKey].pnl += metrics.netPnl;
       map[dayKey].trades += 1;
       // Use stored R-Multiple if available
@@ -199,13 +160,13 @@ export const MonthlyPerformanceCalendar = () => {
     });
 
     // Calculate win rates
-    Object.keys(map).forEach((dayKey) => {
-      const dayTrades = trades.filter((trade) => {
+    Object.keys(map).forEach(dayKey => {
+      const dayTrades = trades.filter(trade => {
         const metrics = calculateTradeMetrics(trade);
-        return metrics.closeDate && format(new Date(metrics.closeDate), "yyyy-MM-dd") === dayKey;
+        return metrics.closeDate && format(new Date(metrics.closeDate), 'yyyy-MM-dd') === dayKey;
       });
-
-      const winningTrades = dayTrades.filter((t) => calculateTradeMetrics(t).netPnl > 0).length;
+      
+      const winningTrades = dayTrades.filter(t => calculateTradeMetrics(t).netPnl > 0).length;
       map[dayKey].winRate = dayTrades.length > 0 ? (winningTrades / dayTrades.length) * 100 : 0;
     });
 
@@ -216,21 +177,21 @@ export const MonthlyPerformanceCalendar = () => {
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-
+    
     // Find the Saturday before or on the first day of the month
     const startDay = getDay(monthStart);
     // Saturday is 6, so we need to go back: if day is 0 (Sun), go back 1; if 1 (Mon), go back 2, etc.
     const daysToSubtract = startDay === 6 ? 0 : startDay + 1;
     const calendarStart = new Date(monthStart);
     calendarStart.setDate(monthStart.getDate() - daysToSubtract);
-
+    
     // Find the Friday after or on the last day of the month
     const endDay = getDay(monthEnd);
     // Friday is 5, so we need to go forward: if day is 6 (Sat), go forward 6; if 0 (Sun), go forward 5, etc.
     const daysToAdd = endDay === 5 ? 0 : (5 - endDay + 7) % 7;
     const calendarEnd = new Date(monthEnd);
     calendarEnd.setDate(monthEnd.getDate() + daysToAdd);
-
+    
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
@@ -249,9 +210,9 @@ export const MonthlyPerformanceCalendar = () => {
       let pnl = 0;
       let tradingDays = 0;
 
-      week.forEach((day) => {
+      week.forEach(day => {
         if (isSameMonth(day, currentMonth)) {
-          const dayKey = format(day, "yyyy-MM-dd");
+          const dayKey = format(day, 'yyyy-MM-dd');
           const stats = dayStatsMap[dayKey];
           if (stats?.hasData) {
             pnl += stats.pnl;
@@ -278,8 +239,8 @@ export const MonthlyPerformanceCalendar = () => {
 
     let winningDays = 0;
 
-    monthDays.forEach((day) => {
-      const dayKey = format(day, "yyyy-MM-dd");
+    monthDays.forEach(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
       const stats = dayStatsMap[dayKey];
       if (stats?.hasData) {
         pnl += stats.pnl;
@@ -308,20 +269,20 @@ export const MonthlyPerformanceCalendar = () => {
     return `${prefix}${Math.abs(value).toFixed(2)}`;
   };
 
-  const handlePrevMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
-  const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
+  const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleThisMonth = () => setCurrentMonth(new Date());
 
   const toggleSetting = (key: keyof DisplaySettings) => {
-    setDisplaySettings((prev) => ({ ...prev, [key]: !prev[key] }));
+    setDisplaySettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Handle day click to open modal
   const handleDayClick = (day: Date) => {
-    const dayKey = format(day, "yyyy-MM-dd");
-    const dayTrades = trades.filter((trade) => {
+    const dayKey = format(day, 'yyyy-MM-dd');
+    const dayTrades = trades.filter(trade => {
       const metrics = calculateTradeMetrics(trade);
-      return metrics.openDate && format(new Date(metrics.openDate), "yyyy-MM-dd") === dayKey;
+      return metrics.openDate && format(new Date(metrics.openDate), 'yyyy-MM-dd') === dayKey;
     });
     setSelectedDayDate(day);
     setSelectedDayTrades(dayTrades);
@@ -342,13 +303,13 @@ export const MonthlyPerformanceCalendar = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 md:mb-6">
         <div className="flex items-center gap-2 md:gap-3">
-          <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-7 w-7 md:h-8 md:w-8">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <MonthYearDropdowns month={currentMonth} onChange={setCurrentMonth} />
-          <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-7 w-7 md:h-8 md:w-8">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+           <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-7 w-7 md:h-8 md:w-8">
+             <ChevronLeft className="h-4 w-4" />
+           </Button>
+           <MonthYearDropdowns month={currentMonth} onChange={setCurrentMonth} />
+           <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-7 w-7 md:h-8 md:w-8">
+             <ChevronRight className="h-4 w-4" />
+           </Button>
           <Button variant="outline" size="sm" onClick={handleThisMonth} className="text-xs h-7">
             This month
           </Button>
@@ -359,12 +320,12 @@ export const MonthlyPerformanceCalendar = () => {
             <span className="font-semibold text-foreground">Monthly Stats:</span>
             <span
               className={cn(
-                "font-mono font-semibold px-2 md:px-2.5 py-0.5 rounded-full",
+                'font-mono font-semibold px-2 md:px-2.5 py-0.5 rounded-full',
                 isPrivacyMode
-                  ? "text-foreground bg-muted/50"
+                  ? 'text-foreground bg-muted/50'
                   : monthlyStats.pnl >= 0
-                    ? "profit-text bg-profit/15"
-                    : "loss-text bg-loss/15",
+                    ? 'profit-text bg-profit/15'
+                    : 'loss-text bg-loss/15'
               )}
             >
               {formatCurrencyDecimal(monthlyStats.pnl)}
@@ -372,14 +333,14 @@ export const MonthlyPerformanceCalendar = () => {
             <span className="bg-secondary dark:bg-[#1f1f1f] px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
               <span className="text-muted-foreground">{monthlyStats.tradingDays}d</span>
               <span className="text-border">|</span>
-              <span className={monthlyStats.daysWinRate >= 50 ? "text-profit" : "text-loss"}>
+              <span className={monthlyStats.daysWinRate >= 50 ? 'text-profit' : 'text-loss'}>
                 {monthlyStats.daysWinRate.toFixed(0)}%
               </span>
             </span>
             <span className="bg-secondary dark:bg-[#1f1f1f] px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5">
               <span className="text-muted-foreground">{monthlyStats.totalTrades} trades</span>
               <span className="text-border">|</span>
-              <span className={monthlyStats.monthlyWinRate >= 50 ? "text-profit" : "text-loss"}>
+              <span className={monthlyStats.monthlyWinRate >= 50 ? 'text-profit' : 'text-loss'}>
                 {monthlyStats.monthlyWinRate.toFixed(0)}%
               </span>
             </span>
@@ -395,13 +356,17 @@ export const MonthlyPerformanceCalendar = () => {
               <div className="space-y-3">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Display Options</p>
                 {[
-                  { key: "dailyPnl" as const, label: "Daily P/L" },
-                  { key: "numTrades" as const, label: "Number of Trades" },
-                  { key: "winRate" as const, label: "Day Win Rate" },
-                  { key: "rMultiple" as const, label: "R Multiple" },
+                  { key: 'dailyPnl' as const, label: 'Daily P/L' },
+                  { key: 'numTrades' as const, label: 'Number of Trades' },
+                  { key: 'winRate' as const, label: 'Day Win Rate' },
+                  { key: 'rMultiple' as const, label: 'R Multiple' },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center gap-2">
-                    <Checkbox id={key} checked={displaySettings[key]} onCheckedChange={() => toggleSetting(key)} />
+                    <Checkbox
+                      id={key}
+                      checked={displaySettings[key]}
+                      onCheckedChange={() => toggleSetting(key)}
+                    />
                     <Label htmlFor={key} className="text-sm cursor-pointer">
                       {label}
                     </Label>
@@ -419,11 +384,8 @@ export const MonthlyPerformanceCalendar = () => {
         <div className="flex-1 min-w-0">
           {/* Week day headers */}
           <div className="grid grid-cols-7 gap-0.5 md:gap-1 mb-1">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className="text-center text-[10px] md:text-xs font-medium text-muted-foreground py-1 md:py-2"
-              >
+            {weekDays.map(day => (
+              <div key={day} className="text-center text-[10px] md:text-xs font-medium text-muted-foreground py-1 md:py-2">
                 <span className="hidden sm:inline">{day}</span>
                 <span className="sm:hidden">{day.charAt(0)}</span>
               </div>
@@ -435,23 +397,26 @@ export const MonthlyPerformanceCalendar = () => {
             {weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="grid grid-cols-7 gap-0.5 md:gap-1">
                 {week.map((day, dayIndex) => {
-                  const dayKey = format(day, "yyyy-MM-dd");
+                  const dayKey = format(day, 'yyyy-MM-dd');
                   const stats = dayStatsMap[dayKey];
                   const isCurrentMonth = isSameMonth(day, currentMonth);
                   const hasData = stats?.hasData && isCurrentMonth;
 
                   const bgStyle: React.CSSProperties = {};
-                  let bgClass = "bg-secondary/30 dark:bg-[#1f1f1f]";
+                  let bgClass = 'bg-secondary/30 dark:bg-[#1f1f1f]';
                   if (hasData) {
-                    bgClass = "";
-                    bgStyle.backgroundColor = stats.pnl >= 0 ? "hsl(var(--profit) / 0.15)" : "hsl(var(--loss) / 0.15)";
+                    bgClass = '';
+                    bgStyle.backgroundColor = stats.pnl >= 0 
+                      ? 'hsl(var(--profit) / 0.15)' 
+                      : 'hsl(var(--loss) / 0.15)';
                   }
 
-                  const stripeColor = isDark ? "hsl(0 0% 100% / 0.06)" : "hsl(0 0% 0% / 0.063)";
-                  const otherMonthClass = !isCurrentMonth ? "bg-[#fcfcfe] dark:bg-[#171717]" : "";
+                  const stripeColor = isDark ? 'hsl(0 0% 100% / 0.108)' : 'hsl(0 0% 0% / 0.063)';
+                  const otherMonthClass = !isCurrentMonth ? 'bg-[#fcfcfe] dark:bg-[#171717]' : '';
                   const otherMonthStyle: React.CSSProperties = !isCurrentMonth
                     ? {
-                        backgroundImage: `repeating-linear-gradient(135deg, ${stripeColor} 0, ${stripeColor} 1px, transparent 1px, transparent 8px)`,
+                        backgroundImage:
+                          `repeating-linear-gradient(135deg, ${stripeColor} 0, ${stripeColor} 1px, transparent 1px, transparent 8px)`,
                       }
                     : {};
 
@@ -463,29 +428,25 @@ export const MonthlyPerformanceCalendar = () => {
                       className={`
                         min-h-[68px] md:min-h-[80px] p-1 md:p-2 rounded-md md:rounded-lg border-transparent transition-colors
                         ${isCurrentMonth ? bgClass : otherMonthClass}
-                        ${isCurrentMonth ? "cursor-pointer hover:ring-1 hover:ring-primary/50" : ""}
+                        ${isCurrentMonth ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : ''}
                       `}
                     >
                       <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-white dark:bg-slate-800 mb-0.5 md:mb-1">
-                        <span
-                          className={`text-[8px] md:text-[10px] font-semibold ${isCurrentMonth ? "text-black dark:text-white" : "text-muted-foreground"}`}
-                        >
-                          {format(day, "d")}
+                        <span className={`text-[8px] md:text-[10px] font-semibold ${isCurrentMonth ? 'text-black dark:text-white' : 'text-muted-foreground'}`}>
+                          {format(day, 'd')}
                         </span>
                       </div>
-
+                      
                       {hasData && (
                         <div className="space-y-0.5">
                           {displaySettings.dailyPnl && (
-                            <div
-                              className={`text-[9px] md:text-sm font-bold font-mono ${isPrivacyMode ? "text-foreground" : stats.pnl >= 0 ? "profit-text" : "loss-text"}`}
-                            >
+                            <div className={`text-[9px] md:text-sm font-bold font-mono ${isPrivacyMode ? 'text-foreground' : stats.pnl >= 0 ? 'profit-text' : 'loss-text'}`}>
                               {formatCurrencyDecimal(stats.pnl)}
                             </div>
                           )}
                           {displaySettings.numTrades && (
                             <div className="text-[8px] md:text-[10px] text-muted-foreground">
-                              {stats.trades} {stats.trades === 1 ? "trade" : "trades"}
+                              {stats.trades} {stats.trades === 1 ? 'trade' : 'trades'}
                             </div>
                           )}
                           {displaySettings.winRate && (
@@ -495,8 +456,7 @@ export const MonthlyPerformanceCalendar = () => {
                           )}
                           {displaySettings.rMultiple && (
                             <div className="text-[8px] md:text-[10px] text-muted-foreground">
-                              {stats.rMultiple >= 0 ? "+" : ""}
-                              {stats.rMultiple.toFixed(1)}R
+                              {stats.rMultiple >= 0 ? '+' : ''}{stats.rMultiple.toFixed(1)}R
                             </div>
                           )}
                         </div>
@@ -517,26 +477,18 @@ export const MonthlyPerformanceCalendar = () => {
               className="flex-1 min-h-[80px] flex flex-col justify-center items-start px-3 py-2 rounded-lg bg-secondary/30 dark:bg-[#1f1f1f]"
             >
               <div className="text-xs text-muted-foreground mb-1">Week {summary.weekNumber}</div>
-              <div
-                className={`text-sm font-bold font-mono ${isPrivacyMode ? "text-foreground" : summary.pnl >= 0 ? "profit-text" : "loss-text"}`}
-              >
+              <div className={`text-sm font-bold font-mono ${isPrivacyMode ? 'text-foreground' : summary.pnl >= 0 ? 'profit-text' : 'loss-text'}`}>
                 {formatCurrencyDecimal(summary.pnl)}
               </div>
-              <div
+              <div 
                 className={`text-[10px] px-1.5 py-0.5 rounded mt-0.5 ${
-                  summary.tradingDays > 0
-                    ? summary.pnl >= 0
-                      ? "profit-text"
-                      : "loss-text"
-                    : "bg-muted text-muted-foreground"
+                  summary.tradingDays > 0 
+                    ? summary.pnl >= 0 ? 'profit-text' : 'loss-text'
+                    : 'bg-muted text-muted-foreground'
                 }`}
-                style={
-                  summary.tradingDays > 0
-                    ? { backgroundColor: summary.pnl >= 0 ? "hsl(var(--profit) / 0.2)" : "hsl(var(--loss) / 0.2)" }
-                    : undefined
-                }
+                style={summary.tradingDays > 0 ? { backgroundColor: summary.pnl >= 0 ? 'hsl(var(--profit) / 0.2)' : 'hsl(var(--loss) / 0.2)' } : undefined}
               >
-                {summary.tradingDays} day{summary.tradingDays !== 1 ? "s" : ""}
+                {summary.tradingDays} day{summary.tradingDays !== 1 ? 's' : ''}
               </div>
             </div>
           ))}
