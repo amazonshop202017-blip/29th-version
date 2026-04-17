@@ -8,10 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const transactions = [
-  { id: 1, date: "Apr 13, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Income" as const, category: "Payout", amount: 500, status: "Reviewed" },
-  { id: 2, date: "Apr 7, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Expense" as const, category: "Evaluation Fee", amount: -120, status: "Reviewed" },
-  { id: 3, date: "Feb 3, 2025", description: "-", account: "-", challenge: "-", firm: "e8", type: "Expense" as const, category: "Evaluation Fee", amount: -47, status: "Reviewed" },
+const transactions: Array<{ id: number; date: string; description: string; account: string; challenge: string; firm: string; type: "Income" | "Expense"; category: string; amount: number; status: TxStatus }> = [
+  { id: 1, date: "Apr 13, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Income", category: "Payout", amount: 500, status: "Reviewed" },
+  { id: 2, date: "Apr 7, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Expense", category: "Evaluation Fee", amount: -120, status: "Not reviewed" },
+  { id: 3, date: "Feb 3, 2025", description: "-", account: "-", challenge: "-", firm: "e8", type: "Expense", category: "Evaluation Fee", amount: -47, status: "Reviewed" },
 ];
 
 type FilterTab = "All transactions" | "Income" | "Expenses" | "Needs review";
