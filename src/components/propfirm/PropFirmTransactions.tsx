@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, DollarSign, Receipt, Search, SlidersHorizontal, Pencil, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Receipt, Search, SlidersHorizontal, Pencil, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, EyeOff, Eye, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const transactions = [
   { id: 1, date: "Apr 13, 2026", description: "-", account: "-", challenge: "-", firm: "mffu", type: "Income" as const, category: "Payout", amount: 500, status: "Reviewed" },
