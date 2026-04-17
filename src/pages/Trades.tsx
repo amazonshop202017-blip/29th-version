@@ -346,7 +346,7 @@ const Trades = () => {
   const { filteredTrades, deleteTrades, bulkAddTrades, stats } = useFilteredTrades();
   const { openModal } = useTradeModal();
   const { accounts } = useAccountsContext();
-  const { formatCurrency } = useGlobalFilters();
+  const { formatCurrency, classifyTradeOutcome } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
   
