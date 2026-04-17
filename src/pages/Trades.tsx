@@ -92,6 +92,7 @@ const TableWithStickyHorizontalScroll = ({
   formatCurrency,
   accounts,
 }: TableWithStickyHorizontalScrollProps) => {
+  const { classifyTradeOutcome } = useGlobalFilters();
   if (paginatedTrades.length === 0) {
     return (
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -144,8 +145,13 @@ const TableWithStickyHorizontalScroll = ({
             {paginatedTrades.map((trade) => {
               const metrics = calculateTradeMetrics(trade);
               const isSelected = selectedTrades.has(trade.id);
-              const isProfit = metrics.netPnl > 0;
-              const isLoss = metrics.netPnl < 0;
+              const outcome = classifyTradeOutcome(
+                metrics.netPnl,
+                trade.savedReturnPercent ?? metrics.returnPercent,
+                trade.breakEven
+              );
+              const isProfit = outcome === 'win';
+              const isLoss = outcome === 'loss';
 
               return (
                 <TableRow
@@ -346,7 +352,7 @@ const Trades = () => {
   const { filteredTrades, deleteTrades, bulkAddTrades, stats } = useFilteredTrades();
   const { openModal } = useTradeModal();
   const { accounts } = useAccountsContext();
-  const { formatCurrency } = useGlobalFilters();
+  const { formatCurrency, classifyTradeOutcome } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
   
