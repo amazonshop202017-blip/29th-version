@@ -1100,6 +1100,24 @@ export const InstrumentPerformanceChart = ({
                             />
                           );
                         }
+                        const isPnlMetric = metric === 'dollar' || metric === 'percent' || metric === 'avg_win' || metric === 'avg_loss' || metric === 'largest_win' || metric === 'largest_loss' || metric === 'trade_expectancy' || metric === 'avg_net_trade_pnl' || metric === 'avg_daily_drawdown' || metric === 'largest_daily_loss' || metric === 'avg_realized_r' || metric === 'avg_planned_r';
+                        const useSplitColors = isPnlMetric && color === DEFAULT_METRIC_COLORS[index];
+                        if (useSplitColors) {
+                          return (
+                            <Bar
+                              key={metric}
+                              yAxisId={`y-${index}`}
+                              dataKey={`metric_${index}`}
+                              name={getDisplayLabel(metric)}
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={30}
+                            >
+                              {multiMetricChartData.map((entry, i) => (
+                                <Cell key={`cell-${metric}-${i}`} fill={getFill((entry[`metric_${index}`] as number) >= 0)} />
+                              ))}
+                            </Bar>
+                          );
+                        }
                         return (
                           <Bar
                             key={metric}
