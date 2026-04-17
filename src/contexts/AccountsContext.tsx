@@ -22,6 +22,8 @@ export interface Account {
   step?: PropFirmStepType;
   phase?: PropFirmPhase;
   status?: PropFirmStatus;
+  breachReason?: string;
+  breachedAt?: string;
 }
 
 export interface Transaction {
