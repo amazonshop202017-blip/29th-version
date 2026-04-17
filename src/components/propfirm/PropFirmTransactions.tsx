@@ -114,8 +114,45 @@ export default function PropFirmTransactions() {
                   <td className="px-3 py-3.5"><TypeBadge type={tx.type} /></td>
                   <td className="px-3 py-3.5"><div className="flex items-center gap-1.5"><span className="text-xs text-foreground">{tx.category}</span><Pencil className="w-3 h-3 text-muted-foreground/50" /></div></td>
                   <td className="px-3 py-3.5 text-right whitespace-nowrap"><span className={`text-sm font-semibold ${tx.amount > 0 ? "text-emerald-500" : "text-rose-500"}`}>{tx.amount > 0 ? `+$${tx.amount.toFixed(2)}` : `-$${Math.abs(tx.amount).toFixed(2)}`}</span></td>
-                  <td className="px-3 py-3.5"><span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Reviewed</span></td>
-                  <td className="px-3 py-3.5"><button className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground"><MoreHorizontal className="w-4 h-4" /></button></td>
+                  <td className="px-3 py-3.5"><StatusBadge status={tx.status} /></td>
+                  <td className="px-3 py-3.5">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        {tx.status === "Reviewed" ? (
+                          <DropdownMenuItem>
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Mark as not reviewed
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Mark as reviewed
+                          </DropdownMenuItem>
+                        )}
+                        {tx.status === "Ignored" ? (
+                          <DropdownMenuItem>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Mark as unignored
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem>
+                            <EyeOff className="w-4 h-4 mr-2" />
+                            Mark as ignored
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))}
             </tbody>
