@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { X, Search, ChevronDown, ChevronUp, CalendarDays, Settings, ArrowRight, Check } from "lucide-react";
@@ -7,7 +7,7 @@ import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, generateChallengeId, createDefaultStepRules, createDefaultFundedRules, type Challenge, type ChallengeRulesSchema, type StepRules as NewStepRules, type FundedRules as NewFundedRules } from "@/contexts/ChallengesContext";
 import { toast } from "sonner";
 
-type TrackAccountModalProps = { open: boolean; onClose: () => void; mode?: 'create' | 'edit' };
+type TrackAccountModalProps = { open: boolean; onClose: () => void; mode?: 'create' | 'edit'; challengeId?: string };
 type Phase = "Evaluation" | "Funded";
 type Steps = "1 Step" | "2 Steps";
 type DrawdownType = "Static" | "EOD" | "Trailing";
