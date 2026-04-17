@@ -5,7 +5,7 @@ import { calculateTradeMetrics } from '@/types/trade';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
-export type PropFirmStatus = 'active' | 'breached';
+export type PropFirmStatus = 'active' | 'breached' | 'funded';
 export type PropFirmStepType = '1' | '2' | 'funded';
 
 export interface Account {
