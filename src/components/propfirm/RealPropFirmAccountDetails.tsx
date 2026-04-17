@@ -5,6 +5,7 @@ import { TradesTableCard } from "@/components/trades/TradesTableCard";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, type StepRules } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
+import { useAccountScopedFilteredTrades } from "@/hooks/useAccountScopedFilteredTrades";
 import { calculateTradeMetrics } from "@/types/trade";
 import {
   computeAccountStats,
