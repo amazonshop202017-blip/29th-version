@@ -84,10 +84,9 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   const account = getAccountById(accountId);
   const challenge = account?.challengeId ? getChallengeById(account.challengeId) : undefined;
 
-  const accountTrades = useMemo(
-    () => (account ? trades.filter((t) => t.accountId === account.id) : []),
-    [trades, account?.id]
-  );
+  // Account-scoped trades: locked to this accountId, with all global filters
+  // (date range, symbols, outcomes, tags, etc.) applied EXCEPT the account filter.
+  const accountTrades = useAccountScopedFilteredTrades(account?.id);
 
   const enriched = useMemo(
     () =>
