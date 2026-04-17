@@ -427,11 +427,13 @@ export const MonthlyPerformanceCalendar = () => {
                         ${isCurrentMonth ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : ''}
                       `}
                     >
-                      <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-white dark:bg-slate-800 mb-0.5 md:mb-1">
-                        <span className={`text-[8px] md:text-[10px] font-semibold ${isCurrentMonth ? 'text-black dark:text-white' : 'text-muted-foreground'}`}>
-                          {format(day, 'd')}
-                        </span>
-                      </div>
+                      {isCurrentMonth && (
+                        <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-white dark:bg-slate-800 mb-0.5 md:mb-1">
+                          <span className="text-[8px] md:text-[10px] font-semibold text-black dark:text-white">
+                            {format(day, 'd')}
+                          </span>
+                        </div>
+                      )}
                       
                       {hasData && (
                         <div className="space-y-0.5">
