@@ -13,6 +13,7 @@ const WIDGET_LIST = [
   { id: 'longShortAnalysis', name: 'Long/Short Analysis', description: 'Long vs short trade comparison' },
   { id: 'externalLinks', name: 'External Links', description: 'Quick access to your favorite external links' },
   { id: 'instrumentDistribution', name: 'Instrument Trade Distribution', description: 'Donut chart showing trade distribution across symbols' },
+  { id: 'directionSplit', name: 'Direction Split', description: 'Long vs Short breakdown with profit factor, R, expectancy and best/worst' },
 ];
 
 interface ChartLibraryModalProps {
