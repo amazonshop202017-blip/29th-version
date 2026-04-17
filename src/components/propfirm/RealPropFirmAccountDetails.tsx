@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronDown, Paperclip, BookOpen, CheckCircle2, RefreshCcw
 import { TradesTableCard } from "@/components/trades/TradesTableCard";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, type StepRules } from "@/contexts/ChallengesContext";
-import { useTradesContext } from "@/contexts/TradesContext";
 import { useAccountScopedFilteredTrades } from "@/hooks/useAccountScopedFilteredTrades";
 import { calculateTradeMetrics } from "@/types/trade";
 import {
@@ -79,7 +78,7 @@ const clamp = (v: number, min = 0, max = 100) => Math.max(min, Math.min(max, v))
 export default function RealPropFirmAccountDetails({ accountId, onBack }: Props) {
   const { getAccountById } = useAccountsContext();
   const { getChallengeById } = useChallengesContext();
-  const { trades } = useTradesContext();
+  
 
   const account = getAccountById(accountId);
   const challenge = account?.challengeId ? getChallengeById(account.challengeId) : undefined;
