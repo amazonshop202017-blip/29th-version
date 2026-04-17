@@ -84,6 +84,51 @@ function convertFundedRules(form: FundingRules, sameAsStep1: boolean): NewFunded
   };
 }
 
+// ─── Schema-to-Form converters (for edit hydration) ─────────────
+
+function fromUnitType(u: "percent" | "amount"): "%" | "$" {
+  return u === "percent" ? "%" : "$";
+}
+
+function fromDrawdownType(d: "static" | "eod" | "trailing"): DrawdownType {
+  if (d === "eod") return "EOD";
+  if (d === "trailing") return "Trailing";
+  return "Static";
+}
+
+function numToStr(n: number | null | undefined): string {
+  return n == null ? "" : String(n);
+}
+
+function hydrateStepRules(s: NewStepRules): StepRules {
+  return {
+    minTradingDays: numToStr(s.minTradingDays),
+    tradingPeriodEnd: numToStr(s.tradingPeriodDays),
+    tradingPeriodUnlimited: !!s.isUnlimited,
+    profitTarget: numToStr(s.profitTarget.value),
+    profitTargetUnit: fromUnitType(s.profitTarget.type),
+    maxDailyLoss: numToStr(s.maxDailyLoss.value),
+    maxDailyLossUnit: fromUnitType(s.maxDailyLoss.type),
+    maxDrawdown: numToStr(s.maxDrawdown.value),
+    maxDrawdownUnit: fromUnitType(s.maxDrawdown.mode),
+    maxDrawdownType: fromDrawdownType(s.maxDrawdown.type),
+    bestDayConsistency: numToStr(s.consistency),
+  };
+}
+
+function hydrateFundingRules(f: NewFundedRules): FundingRules {
+  if (f.sameAsStep1 || !f.maxDailyLoss || !f.maxDrawdown) return defaultFundingRules();
+  return {
+    minTradingDays: numToStr(f.minTradingDays),
+    maxDailyLoss: numToStr(f.maxDailyLoss.value),
+    maxDailyLossUnit: fromUnitType(f.maxDailyLoss.type),
+    maxDrawdown: numToStr(f.maxDrawdown.value),
+    maxDrawdownUnit: fromUnitType(f.maxDrawdown.mode),
+    maxDrawdownType: fromDrawdownType(f.maxDrawdown.type),
+    bestDayConsistency: numToStr(f.consistency),
+  };
+}
+
 const defaultStepRules = (): StepRules => ({
   minTradingDays: "", tradingPeriodEnd: "", tradingPeriodUnlimited: false,
   profitTarget: "", profitTargetUnit: "$", maxDailyLoss: "", maxDailyLossUnit: "$",
