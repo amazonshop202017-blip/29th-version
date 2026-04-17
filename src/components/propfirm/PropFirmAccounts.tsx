@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { MoreHorizontal, Clock, CheckCircle2, LayoutList, LayoutGrid } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { MarkAsFailedDialog } from "./MarkAsFailedDialog";
+import { TrackAccountModal } from "./TrackAccountModal";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
@@ -19,29 +23,47 @@ const fundedAccounts = [
   { id: "mffu-funded", firm: "mffu", step: "Funded", status: "Active", balance: "$64,742", pnl: "+$14,742", pnlPositive: true, target: "—", pnlBarValue: 100, tradingDays: "35", drawdown: "—", consistency: "—" },
 ];
 
-const menuItems = [
-  { label: "View Details", danger: false },
-  { label: "Mark as breached", danger: false },
-  { label: "Edit Challenge", danger: false },
-  { label: "Delete Challenge", danger: true },
-];
+type AccountActions = {
+  onViewDetails: () => void;
+  onMoveToFunding: () => void;
+  onMarkAsFailed: () => void;
+  onEditChallenge: () => void;
+};
 
-function ThreeDotMenu() {
+function ThreeDotMenu({ actions }: { actions: AccountActions }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
         <button className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground"><MoreHorizontal className="w-4 h-4" /></button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[170px]">
-        {menuItems.map((item, i) => (
-          <DropdownMenuItem key={i} className={item.danger ? "text-rose-500 focus:text-rose-500" : ""}>{item.label}</DropdownMenuItem>
-        ))}
+      <DropdownMenuContent align="end" className="min-w-[190px]" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onSelect={actions.onViewDetails}>View Details</DropdownMenuItem>
+        <DropdownMenuItem onSelect={actions.onMoveToFunding}>Move to Funding</DropdownMenuItem>
+        <DropdownMenuItem onSelect={actions.onMarkAsFailed}>Mark as Failed</DropdownMenuItem>
+        <DropdownMenuItem onSelect={actions.onEditChallenge}>Edit Challenge</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DropdownMenuItem
+                  disabled
+                  className="text-rose-500/60 focus:text-rose-500/60 cursor-not-allowed opacity-60"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  Delete Challenge
+                </DropdownMenuItem>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Disabled</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-function TableView({ accounts, onSelect }: { accounts: typeof evaluationAccounts; onSelect: () => void }) {
+function TableView({ accounts, onSelect, makeActions }: { accounts: typeof evaluationAccounts; onSelect: () => void; makeActions: (acc: typeof evaluationAccounts[number]) => AccountActions }) {
   return (
     <table className="w-full min-w-[620px] text-sm">
       <thead>
@@ -76,7 +98,7 @@ function TableView({ accounts, onSelect }: { accounts: typeof evaluationAccounts
             <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.tradingDays}</td>
             <td className="py-4 pr-4 text-sm text-muted-foreground whitespace-nowrap">{acc.drawdown}</td>
             <td className="py-4 pr-4 text-sm text-muted-foreground">{acc.consistency}</td>
-            <td className="py-4 relative"><ThreeDotMenu /></td>
+            <td className="py-4 relative"><ThreeDotMenu actions={makeActions(acc)} /></td>
           </tr>
         ))}
       </tbody>
@@ -99,10 +121,10 @@ function ProgressRow({ icon, label, sublabel, value, barValue, percentage, barCo
   );
 }
 
-function EvalAccountCard({ onSelect }: { onSelect: () => void }) {
+function EvalAccountCard({ onSelect, actions }: { onSelect: () => void; actions: AccountActions }) {
   return (
     <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">e8</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">STEP 1</span></div><ThreeDotMenu /></div>
+      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">e8</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">STEP 1</span></div><ThreeDotMenu actions={actions} /></div>
       <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $10,486.03 <span className="text-sm font-semibold text-emerald-500">(+$486.03)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "e8 markets"</span></div>
       <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Feb 03, 2025</div></div></div>
       <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> MetaTrader 5</div>
@@ -115,10 +137,10 @@ function EvalAccountCard({ onSelect }: { onSelect: () => void }) {
   );
 }
 
-function FundedAccountCard({ onSelect }: { onSelect: () => void }) {
+function FundedAccountCard({ onSelect, actions }: { onSelect: () => void; actions: AccountActions }) {
   return (
     <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">mffu</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">FUNDED</span></div><ThreeDotMenu /></div>
+      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">mffu</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">FUNDED</span></div><ThreeDotMenu actions={actions} /></div>
       <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $64,742 <span className="text-sm font-semibold text-emerald-500">(+$14,742)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "mffu"</span></div>
       <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Apr 07, 2026</div></div></div>
       <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> Demo account</div>
@@ -133,7 +155,21 @@ function FundedAccountCard({ onSelect }: { onSelect: () => void }) {
 export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount: () => void }) {
   const [activeTab, setActiveTab] = useState<AccountTab>("Evaluations");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [failedDialog, setFailedDialog] = useState<{ open: boolean; name: string; subtitle: string }>({ open: false, name: "", subtitle: "" });
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const currentAccounts = activeTab === "Evaluations" ? evaluationAccounts : fundedAccounts;
+
+  const makeActions = (acc: typeof evaluationAccounts[number]): AccountActions => ({
+    onViewDetails: onSelectAccount,
+    onMoveToFunding: () => toast.info("Coming soon"),
+    onMarkAsFailed: () =>
+      setFailedDialog({
+        open: true,
+        name: acc.firm,
+        subtitle: acc.firm === "e8" ? 'Use "e8 markets"' : `Use "${acc.firm}"`,
+      }),
+    onEditChallenge: () => setEditModalOpen(true),
+  });
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm">
@@ -162,14 +198,23 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
             <p className="text-xs text-muted-foreground/60 mt-1">Keep your risk in check</p>
           </div>
         ) : viewMode === "list" ? (
-          <div className="overflow-x-auto"><TableView accounts={currentAccounts} onSelect={onSelectAccount} /></div>
+          <div className="overflow-x-auto"><TableView accounts={currentAccounts} onSelect={onSelectAccount} makeActions={makeActions} /></div>
         ) : (
           <div className="flex flex-wrap gap-4">
-            {activeTab === "Evaluations" && <EvalAccountCard onSelect={onSelectAccount} />}
-            {activeTab === "Funded" && <FundedAccountCard onSelect={onSelectAccount} />}
+            {activeTab === "Evaluations" && <EvalAccountCard onSelect={onSelectAccount} actions={makeActions(evaluationAccounts[0])} />}
+            {activeTab === "Funded" && <FundedAccountCard onSelect={onSelectAccount} actions={makeActions(fundedAccounts[0])} />}
           </div>
         )}
       </div>
+
+      <MarkAsFailedDialog
+        open={failedDialog.open}
+        onOpenChange={(o) => setFailedDialog((s) => ({ ...s, open: o }))}
+        accountName={failedDialog.name}
+        accountSubtitle={failedDialog.subtitle}
+      />
+
+      <TrackAccountModal open={editModalOpen} onClose={() => setEditModalOpen(false)} mode="edit" />
     </div>
   );
 }
