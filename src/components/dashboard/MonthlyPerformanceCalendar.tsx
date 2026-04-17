@@ -399,12 +399,8 @@ export const MonthlyPerformanceCalendar = () => {
                   const isCurrentMonth = isSameMonth(day, currentMonth);
                   const hasData = stats?.hasData && isCurrentMonth;
 
-                  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
                   const bgStyle: React.CSSProperties = {};
-                  let bgClass = isDark ? '' : 'bg-secondary/30';
-                  if (isDark && !hasData && isCurrentMonth) {
-                    bgStyle.backgroundColor = '#1f1f1f';
-                  }
+                  let bgClass = 'bg-secondary/30';
                   if (hasData) {
                     bgClass = '';
                     bgStyle.backgroundColor = stats.pnl >= 0 
@@ -413,24 +409,18 @@ export const MonthlyPerformanceCalendar = () => {
                   }
 
                   const otherMonthStyle: React.CSSProperties = !isCurrentMonth
-                    ? isDark
-                      ? {
-                          backgroundColor: '#171717',
-                          backgroundImage:
-                            'repeating-linear-gradient(135deg, hsl(0 0% 100% / 0.05) 0, hsl(0 0% 100% / 0.05) 1px, transparent 1px, transparent 8px)',
-                        }
-                      : {
-                          backgroundColor: '#fcfcfe',
-                          backgroundImage:
-                            'repeating-linear-gradient(135deg, hsl(var(--muted-foreground) / 0.063) 0, hsl(var(--muted-foreground) / 0.063) 1px, transparent 1px, transparent 8px)',
-                        }
+                    ? {
+                        backgroundColor: '#fcfcfe',
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, hsl(var(--muted-foreground) / 0.063) 0, hsl(var(--muted-foreground) / 0.063) 1px, transparent 1px, transparent 8px)',
+                      }
                     : {};
 
                   return (
                     <div
                       key={dayKey}
                       onClick={() => isCurrentMonth && handleDayClick(day)}
-                      style={!isCurrentMonth ? otherMonthStyle : bgStyle}
+                      style={isCurrentMonth && hasData ? bgStyle : !isCurrentMonth ? otherMonthStyle : undefined}
                       className={`
                         min-h-[68px] md:min-h-[80px] p-1 md:p-2 rounded-md md:rounded-lg border-transparent transition-colors
                         ${isCurrentMonth ? bgClass : ''}
