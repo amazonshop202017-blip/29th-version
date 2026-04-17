@@ -1,98 +1,149 @@
+## Plan: Real data-driven Account Details page (preserves demo)
 
-## Plan: Real data-driven Prop Firm account cards (alongside demo cards)
+### Strategy
 
-### Goal
-Render **real** Prop Firm accounts on the Accounts page in the same Evaluations / Funded / Breached tabs, using existing `AccountsContext` + `ChallengesContext` + `TradesContext` data. Demo cards stay completely untouched as visual reference.
+Keep `PropFirmAccountDetails.tsx` (demo) **completely untouched**. Create a **new** `RealPropFirmAccountDetails.tsx` that mirrors its layout/UI but is driven by real `Account` + `Challenge` + `Trade` data. Route to it only when the user opens a **real** account; demo cards still open the existing demo page.
 
-### Approach
-Create a single new component `RealAccountCard.tsx` that mirrors the existing `EvalAccountCard` / `FundedAccountCard` design 1:1, but takes a real `Account` + `Challenge` + computed stats. In `PropFirmAccounts.tsx`, add a real-accounts row above the demo cards in **both views**:
-- **Grid view:** real cards rendered first via `flex flex-wrap gap-4` (same wrapper) followed by the existing demo card
-- **List view:** real rows appended/prepended into the same `TableView` (extend `accounts` array passed in)
+### Routing change (`src/pages/PropFirm.tsx`)
 
-### Data flow
+- Replace boolean `showAccountDetails` with `selectedAccountId: string | null` (`null` → demo, real id → real).
+- Render:
+  - `selectedAccountId === 'demo'` → existing `PropFirmAccountDetails` (unchanged)
+  - else if matches a real account → new `RealPropFirmAccountDetails accountId=...`
+- `PropFirmAccounts` receives `onSelectAccount(id?: string)`. Demo cards/rows pass nothing (defaults to `'demo'`); real cards/rows pass the real `account.id`.
 
-1. **Pull**:
-   ```ts
-   const { user } = useAuth();
-   const { accounts, removeAccount } = useAccountsContext();
-   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
-   const { trades } = useTradesContext();
-   ```
-2. **Filter** real accounts:
-   ```ts
-   const realPropfirm = accounts.filter(a =>
-     a.accountMode === 'propfirm' &&
-     a.userId === user?.userId &&
-     !a.isArchived
-   );
-   ```
-3. **Bucket per active tab**:
-   - Evaluations → `phase === 'evaluation' && status === 'active'`
-   - Funded → `phase === 'funded' && status === 'active'`
-   - Breached → `status === 'breached'`
+### `PropFirmAccounts.tsx` minor wiring
 
-4. **Compute per-card stats** (memoized helper `computeAccountStats(account, challenge, trades)`):
-   - `accountTrades = trades.filter(t => t.accountId === account.id)`
-   - `pnl = sum(calculateTradeMetrics(t).netPnl)`
-   - `currentBalance = challenge.balanceAmount + pnl`
-   - `tradingDays = new Set(accountTrades.map(t => t.closeDate.slice(0,10))).size`
-   - `profitTargetAmount` derived from `challenge.rules.step{N}.profitTarget` (`%` → `balanceAmount * value/100`, `$` → `value`); `progressPct = clamp(pnl / target * 100)`
-   - `maxDD` derived from `challenge.rules.step{N}.maxDrawdown` (same %/$ resolution)
-   - `currentDD = max(0, peakBalance - currentBalance)` where `peakBalance` walks accountTrades chronologically
-   - `consistencyTarget = challenge.rules.step{N}.consistency`
-   - For Funded phase use `challenge.rules.funded` (resolving `sameAsStep1` → `step1`)
+- Change handler signatures so `onViewDetails` for real rows/cards calls `onSelectAccount(account.id)`. Demo unchanged (passes nothing).
+- `handleRowSelect(id)` → if `realIds.has(id)` pass real id, else `'demo'`.
 
-### New component: `RealAccountCard.tsx`
-Single component (not split eval/funded) — renders the right progress rows based on `phase`. Visual structure copied verbatim from `EvalAccountCard` / `FundedAccountCard`:
-- Header row: `firm` (large bold) + step badge ("STEP 1" / "STEP 2" / "FUNDED") + 3-dot menu
-- Balance line: `Balance: $X (+/-$Y)` + right-side `Use "{firm}"` hint (uses `challenge.firm`)
-- Time-limit pill (Clock icon): "No time limit" if `rules.step1.isUnlimited` else "{tradingPeriodDays} days limit", subline "Started on {createdAt formatted}"
-- Account meta line: `Account: {account.name}`
-- `<ProgressRow>` rows (reuse existing component) for: Profit Target, Max Daily Loss, Max Drawdown (eval) — or Min Trading Days + Max Daily Loss (funded)
+### New file: `src/components/propfirm/RealPropFirmAccountDetails.tsx`
 
-### List-view row reuse
-Extend the `accounts` array shape passed into `TableView` so real accounts produce the same row structure (`firm`, `step`, `status`, `balance`, `pnl`, `pnlPositive`, `target`, `pnlBarValue`, `tradingDays`, `drawdown`, `consistency`). A small `accountToRow(account, challenge, stats)` adapter does the mapping. Real rows render **above** the demo row inside the existing `<tbody>`.
+Same JSX skeleton as the demo (header, Step/Funding tabs, balance chart card + path-to-funding side card, stats block, then the **trades table copied verbatim from the demo**). Driven by:
 
-### Menu actions wiring (real accounts only)
-Pass real callbacks through the same `ThreeDotMenu`:
-- **View Details** → `onSelectAccount()` (existing handler — uses the same hard-coded `PropFirmAccountDetails` page; out of scope to wire details to real data per the "don't modify" rule)
-- **Move to Funding** → `updateAccount` step→'funded' & phase→'funded' & `updateChallenge(challengeId, { status: 'funded' })`, toast success
-- **Mark as Failed** → opens existing `MarkAsFailedDialog`; on confirm: `updateAccount` status→'breached' + write `breachReason` + `breachedAt` (need a small extension to `updateAccount` OR direct context patch — see Technical Notes)
-- **Edit Challenge** → opens `TrackAccountModal` in `mode="edit"` pre-loaded with the selected challenge (requires extending modal — see Technical Notes)
-- **Delete Challenge** → `removeChallenge(challengeId)` + `removeAccount(accountId)`, with `AlertDialog` confirm (replaces the currently-disabled menu item ONLY for real accounts; demo card keeps it disabled)
+```tsx
+const account = getAccountById(accountId);
+const challenge = account?.challengeId ? getChallengeById(account.challengeId) : undefined;
+const accountTrades = trades.filter(t => t.accountId === accountId);
+const stats = computeAccountStats(account, challenge, trades);
+```
 
-### Technical Notes / small required extensions
+#### 1. Header
 
-1. **`AccountsContext.updateAccount`** currently only accepts `(id, name, startingBalance, accountMode)`. Add an overload / new method:
-   ```ts
-   patchAccount: (id: string, patch: Partial<Pick<Account, 'phase'|'step'|'status'|'breachReason'|'breachedAt'|'name'>>) => void;
-   ```
-   Used by Mark-as-Failed and Move-to-Funding.
+- Title: `account.name`
+- Pill text: `phase === 'funded' ? 'Funded Account' : 'Evaluation Account'`
 
-2. **`TrackAccountModal`** edit mode is currently a UI-only flag (title + button label). Extend it to actually load + save when `mode==='edit'`:
-   - New props: `challengeId?: string` (when edit)
-   - On open, hydrate all form fields from `getChallengeById(challengeId)` (reverse the schema → form converters)
-   - On Save: call `updateChallenge(challengeId, {...})` + `updateAccount` name if firm/nickname changed, instead of `addChallenge`+`addAccount`
-   - Reset behavior remains for create mode
+#### 2. Step / Funding tabs
 
-3. **Demo cards behavior**: leave `EvalAccountCard` / `FundedAccountCard` and the hard-coded `evaluationAccounts` / `fundedAccounts` arrays exactly as-is. Their `ThreeDotMenu` still uses the existing `makeActions` (toast placeholders + dialog opens with no persistence) — this satisfies "demo cards remain non-functional".
+- Tabs `STEP 1`, `STEP 2` (only if `challenge.steps === 2`), `FUNDING`.
+- Default selected: `account.step === 'funded' ? 'FUNDING' : account.step === '2' ? 'STEP 2' : 'STEP 1'`.
+- Tab is visual highlight only — content beneath uses the rules of the selected tab so users can inspect any step.
 
-4. **Tab counts**: update `accountTabs` counts to be `demoCount + realCount` per bucket so the tab label reflects total.
+#### 3. Balance chart (equity curve)
 
-5. **Empty states**: when a tab has 0 real accounts, no extra empty state is shown (the demo card is still there). When Breached has 0 real and the demo array is empty (current state), keep the existing empty-state block.
+Build `balanceData` from real trades:
+
+```ts
+const sorted = [...accountTrades].sort((a,b) => closeDate(a) - closeDate(b));
+let running = account.startingBalance;
+const series = [{ date: formatStartedOn(account.createdAt), balance: running }];
+for (const t of sorted) {
+  running += calculateTradeMetrics(t).netPnl;
+  series.push({ date: format(closeDate), balance: running });
+}
+```
+
+- Group/format X-axis based on `chartView` (`Daily` → group by day, `Hourly` → group by hour, `Per Trade` → one point per trade).
+- Y-axis domain: `[min*0.98, max*1.02]` with safe fallback when no trades.
+- `ReferenceLine` (Profit Target): `account.startingBalance + stats.profitTargetAmount` (only when defined and not in funded view).
+- `ReferenceLine` (Drawdown Floor): `account.startingBalance - stats.maxDrawdownAmount` (when defined).
+- Empty state when `accountTrades.length === 0`: render the chart with just the starting point + a centered "No trades yet" overlay.
+
+#### 4. Path to funding panel — uses rules of currently selected tab
+
+Helpers from `propFirmStats.ts`: `resolveTargetAmount`, `resolveDrawdownAmount`. For the selected step (or funded), compute:
+
+- **Profit**: `value = "Profit: ${fmtUsd(stats.pnl, sign)}"`, `label = "Target: {fmtUsd(targetAmount)}"`, `barValue = stats.progressPct`, `percentage = "{progressPct.toFixed(2)}%"`. Hidden in FUNDING tab if no target.
+- **Daily Loss**: compute today's PnL:
+  ```ts
+  const today = new Date().toISOString().slice(0,10);
+  const dailyLoss = Math.max(0, -accountTrades
+    .filter(t => calculateTradeMetrics(t).closeDate?.slice(0,10) === today)
+    .reduce((s,t) => s + calculateTradeMetrics(t).netPnl, 0));
+  ```
+  Display `value = "${fmtUsd(dailyLoss)}"`, `label = "Maximum daily loss: {fmtUsd(maxDailyLossAmount)}"`, `barValue = clamp(dailyLoss / maxDailyLossAmount * 100)`.
+- **Drawdown**: from `stats.currentDrawdown / stats.maxDrawdownAmount`. Sublabel: `Floor: {fmtUsd(startingBalance - maxDrawdownAmount)}`.
+- **Consistency** (per the user's definition): "largest single-day profit must be ≤ X% of total profits".
+  ```ts
+  const dailyTotals = new Map<string, number>(); // date -> sum netPnl that day
+  // ...accumulate
+  const profitDays = [...dailyTotals.values()].filter(v => v > 0);
+  const totalProfit = profitDays.reduce((s,v) => s + v, 0);
+  const bestDay = Math.max(0, ...profitDays);
+  const currentConsistencyPct = totalProfit > 0 ? (bestDay / totalProfit) * 100 : 0;
+  const target = stats.consistencyTarget; // e.g. 50
+  ```
+  Display:
+  - `value = "Consistency: ${target}%"`
+  - `sublabel = "Current Consistency: ${currentConsistencyPct.toFixed(0)}%"`
+  - `percentage = "${currentConsistencyPct.toFixed(0)}%"`
+  - `barValue = currentConsistencyPct` (capped at 100)
+  - `threshold = target`, `thresholdLabel = "${target}%"` (vertical marker like demo)
+  - Pass status: green check icon when `currentConsistencyPct <= target`, hollow circle otherwise.
+
+#### 5. Stats section (from `accountTrades`)
+
+```ts
+const metrics = accountTrades.map(calculateTradeMetrics);
+const wins = metrics.filter(m => m.netPnl > 0);
+const losses = metrics.filter(m => m.netPnl < 0);
+const winRate = metrics.length ? (wins.length / metrics.length) * 100 : 0;
+const avgWin = wins.length ? wins.reduce((s,m)=>s+m.netPnl,0) / wins.length : 0;
+const avgLoss = losses.length ? losses.reduce((s,m)=>s+m.netPnl,0) / losses.length : 0;
+// dailyTotals reused from consistency calc
+const bestDay = Math.max(0, ...dailyTotals.values());
+const worstDay = Math.min(0, ...dailyTotals.values());
+```
+
+Render same 5 rows as demo with computed values (or `—` when no data).
+
+#### 6. Trades table — UNCHANGED
+
+Copy the demo's trades table JSX verbatim, including the hard-coded `trades` array. **Per request: no changes at all to this section**, so the table on the real details page shows identical demo trades. (Will be replaced in a follow-up.)
 
 ### Files
 
 **Create**
-- `src/components/propfirm/RealAccountCard.tsx` — visual twin of demo cards driven by props
-- `src/lib/propFirmStats.ts` — `computeAccountStats(account, challenge, trades)` + helpers `resolveTarget`, `resolveDrawdown`, `accountToRow`
+
+- `src/components/propfirm/RealPropFirmAccountDetails.tsx` — full real details page (header, tabs, chart, path-to-funding, stats, demo trades table copied as-is).
 
 **Edit**
-- `src/components/propfirm/PropFirmAccounts.tsx` — pull real data, build per-tab arrays, render real cards/rows above demo, wire real menu actions, update tab counts
-- `src/components/propfirm/TrackAccountModal.tsx` — accept `challengeId`, hydrate form on open in edit mode, branch to `updateChallenge` on save
-- `src/contexts/AccountsContext.tsx` — add `patchAccount(id, partial)` method (typed against safe subset)
+
+- `src/pages/PropFirm.tsx` — switch state to `selectedAccountId`, route to demo vs real details.
+- `src/components/propfirm/PropFirmAccounts.tsx` — `onSelectAccount` accepts optional `id`; pass real `account.id` from real card/row, nothing from demo.
 
 ### Out of scope
-- Changing `PropFirmAccountDetails.tsx` (still shows hard-coded data even when reached from a real card — explicitly preserved per "do not modify")
-- Migrating screenshots / fees / payouts to real data
-- Persisting `MarkAsFailedDialog` reasons globally beyond the breach fields on the account
+
+- Real trades inside the trades table (explicitly excluded)
+- Demo `PropFirmAccountDetails.tsx` (untouched)
+- Attach Strategy / Journal / Upload trades buttons (UI only, no behavior change) 
+
+&nbsp;
+
+"make sure whatever data is capturing in backend is only of that particular account, it doesnt get any other account data, as it may crash system in case of large trades data and inconsistent data"
+
+&nbsp;
+
+and also 
+
+Optimize performance by adding useMemo only to expensive computations such as:
+
+- trade filtering
+
+- stats calculation
+
+- chart data generation
+
+Do not add useMemo to simple values or UI logic.
+
+&nbsp;
