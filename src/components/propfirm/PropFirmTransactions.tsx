@@ -17,6 +17,18 @@ const transactions = [
 type FilterTab = "All transactions" | "Income" | "Expenses" | "Needs review";
 const filterTabs: FilterTab[] = ["All transactions", "Income", "Expenses", "Needs review"];
 
+type TxStatus = "Reviewed" | "Not reviewed" | "Ignored";
+
+function StatusBadge({ status }: { status: TxStatus }) {
+  const cls =
+    status === "Reviewed"
+      ? "bg-emerald-500/15 text-emerald-500"
+      : status === "Ignored"
+      ? "bg-muted text-muted-foreground"
+      : "bg-amber-500/15 text-amber-500";
+  return <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${cls}`}>{status}</span>;
+}
+
 function TxMetricCards() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
