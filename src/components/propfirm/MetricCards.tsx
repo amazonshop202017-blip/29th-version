@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, CircleDot, Trophy, Clock, Activit
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useTransactionsContext } from "@/contexts/TransactionsContext";
 import { useTradesContext } from "@/contexts/TradesContext";
+import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { calculateTradeMetrics } from "@/types/trade";
 import { getNonIgnoredTxs } from "@/lib/propfirmDashboardStats";
 
