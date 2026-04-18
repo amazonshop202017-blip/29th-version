@@ -212,12 +212,6 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
       // Breached tab includes archived breached accounts too
       Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
     };
-    if (typeof window !== 'undefined') {
-      console.log('[PropFirmAccounts] buckets', {
-        all: allRealPropfirmAccounts.map(a => ({ id: a.id, name: a.name, status: a.status, phase: a.phase, isArchived: a.isArchived, userId: a.userId })),
-        breachedCount: buckets.Breached.length,
-      });
-    }
     return buckets;
   }, [realPropfirmAccounts, allRealPropfirmAccounts]);
 
