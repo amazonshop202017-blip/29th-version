@@ -27,6 +27,7 @@ import {
 import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { AddEditTransactionModal } from "./AddEditTransactionModal";
+import { TransactionsFilterPanel, TransactionsFilters, UNCATEGORIZED_CATEGORIES } from "./TransactionsFilterPanel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
