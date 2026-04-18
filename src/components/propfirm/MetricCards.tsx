@@ -183,7 +183,7 @@ export function MetricCards() {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground tracking-tight">
-                {m.avgDays != null ? `${Math.round(m.avgDays)}d` : "—"}
+                {m.fundedTotal > 0 ? `${Math.round(m.avgDays)}d` : "—"}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">Across {m.fundedTotal} funded</div>
             </div>
