@@ -114,7 +114,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
-      accountId: generateUniqueAccountId(),
+      accountId: '', // filled below using latest state to avoid collisions
       userId: user?.userId || '',
       name: name.trim(),
       startingBalance,
@@ -128,9 +128,20 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
         status: propFirmFields.status,
       } : {}),
     };
-    saveAccounts([...accounts, newAccount]);
+    // Use functional update so we merge with the latest (post-patch) state, not stale closure state.
+    setAccounts(prev => {
+      const existing = new Set(prev.map(a => a.accountId).filter(Boolean));
+      let id: string;
+      do {
+        id = String(Math.floor(10000000 + Math.random() * 90000000));
+      } while (existing.has(id));
+      newAccount.accountId = id;
+      const next = [...prev, newAccount];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
     return newAccount;
-  }, [accounts, saveAccounts, generateUniqueAccountId]);
+  }, [user?.userId]);
 
   const removeAccount = useCallback((id: string) => {
     saveAccounts(accounts.filter(a => a.id !== id));
