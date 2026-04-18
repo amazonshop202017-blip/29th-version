@@ -1,220 +1,193 @@
-# Account Lifecycle Status + Hierarchy Display
+# Prop Firm Transactions — Full Implementation Plan
 
-## 1. Type updates (`AccountsContext.tsx`)
+## 1. New context — `TransactionsContext.tsx`
 
-Extend `PropFirmStatus`:
-
-```ts
-export type PropFirmStatus = 'active' | 'completed' | 'breached' | 'funded';
-```
-
-Also widen the `patchAccount` signature so `status` can be patched (currently it isn't in the `Pick<>` allowlist):
+Create `src/contexts/TransactionsContext.tsx` (separate from the existing deposit/withdraw `Transaction` in `AccountsContext`, which we'll leave untouched).
 
 ```ts
-patchAccount: (id, patch: Partial<Pick<Account,
-  'name'|'phase'|'step'|'status'|'breachReason'|'breachedAt'|'isArchived'>>) => void;
-```
+export type TxType = 'income' | 'expense';
+export type TxStatus = 'reviewed' | 'not_reviewed' | 'ignored';
+export type TxCategory =
+  | 'evaluation_fee' | 'activation_fee' | 'payout'
+  | 'refund' | 'commission' | 'other_income' | 'other_expense';
 
-(`status` is already there — verify, no change if so.)
-
-## 2. Step transition logic (`PropFirmAccounts.tsx`)
-
-### `moveToStep2(account)` — replace current body
-
-- `patchAccount(account.id, { status: 'completed', isArchived: true })` (instead of just `archiveAccount`)
-- `addAccount(... { step:'2', phase:'evaluation', status:'active' })`
-- Navigate to new account.
-
-### `moveToFunding(account)` — rewrite the loop
-
-For every account where `challengeId === account.challengeId`:
-
-- If current `status === 'active'` → `patchAccount(a.id, { status: 'completed', isArchived: true })`
-- Else (`completed` or `breached`) → `patchAccount(a.id, { isArchived: true })` (preserve status)
-
-Then create the funded account with `status: 'funded'` (not `'active'`):
-
-```ts
-addAccount(..., { step:'funded', phase:'funded', status:'funded' })
-```
-
-Then `updateChallenge(challengeId, { status: 'funded' })`.
-
-## 3. Breach logic — already correct
-
-Existing `handleConfirmFailed` already:
-
-- sets status `breached`, archives target + all siblings,
-- updates challenge to `breached`.
-No flow change. Progression button is already hidden when `account.status === 'breached'`. Add an extra guard so progression is also hidden if the **challenge** itself is `'breached'` (defensive — covers archived breached + later actions).
-
-## 4. Accounts page — top-level hierarchy display
-
-Currently `realByTab.Evaluations / Funded` filter by `!isArchived`, so the latest active per challenge is naturally what's shown. But to satisfy the explicit "one row per challenge by priority" rule and handle edge cases (e.g. funded account with `status:'funded'` not being filtered out), refactor the buckets:
-
-Add a helper inside `PropFirmAccounts.tsx`:
-
-```ts
-function pickLatestForChallenge(group: Account[]): Account {
-  // Priority: breached > active funded > active step 2 > active step 1 > newest
-  const breached = group.find(a => a.status === 'breached');
-  if (breached) return breached;
-  const fundedActive = group.find(a => a.step === 'funded' && (a.status === 'active' || a.status === 'funded'));
-  if (fundedActive) return fundedActive;
-  const step2Active = group.find(a => a.step === '2' && a.status === 'active');
-  if (step2Active) return step2Active;
-  const step1Active = group.find(a => a.step === '1' && a.status === 'active');
-  if (step1Active) return step1Active;
-  return [...group].sort((a,b)=>+new Date(b.createdAt)-+new Date(a.createdAt))[0];
+export interface PropFirmTransaction {
+  id: string; userId: string;
+  accountId?: string; challengeId?: string;
+  firm: string;
+  type: TxType; category: TxCategory;
+  description?: string;
+  amount: number;       // ALWAYS positive
+  date: string;         // ISO
+  status: TxStatus;
+  createdAt: string; updatedAt: string;
 }
 ```
 
-Group `allRealPropfirmAccounts` by `challengeId`, pick one per group, then bucket:
+Storage key: `propfirm-transactions-v1` (localStorage). All mutations use functional `setState(prev => …)` like `AccountsContext`.
 
-- **Evaluations** tab: picks where chosen account `phase === 'evaluation' && status !== 'breached'`
-- **Funded** tab: picks where `phase === 'funded' && status !== 'breached'`
-- **Breached** tab: picks where `status === 'breached'`
+API:
 
-Stand-alone (no challengeId) accounts fall through unchanged.
+- `transactions`, `addTransaction(input)`, `updateTransaction(id, patch)`, `deleteTransaction(id)`, `bulkUpdateStatus(ids, status)`, `bulkDelete(ids)`
+- `getByChallengeId(id)`, `getByAccountId(id)`
 
-This guarantees:
+Wire provider in `App.tsx` inside `<ChallengesProvider>` (after, since transactions reference challenges).
 
-- One row per challenge.
-- Funded account (status `funded`) appears in Funded tab.
-- After breach, only the breached row shows (in Breached tab).
-- `completed` accounts are never shown on the accounts list — only inside detail tabs.
+## 2. Auto-transactions hook — `useChallengeAutoTransactions`
 
-## 5. Detail page tabs (`RealPropFirmAccountDetails.tsx`)
+A small effect-based reconciler that runs once on app load + on challenge add. For every challenge:
 
-No structural change — tabs already derive from all challenge accounts (incl. archived) and show "Archived" pill. The new `'completed'` status will simply appear as an archived tab; full historical data still loads. Verify the `phasePill` text still makes sense (`Evaluation Account` / `Funded Account` based on `phase`, which is unchanged).
+- If `evaluationFee > 0` and no transaction with `(challengeId, category:'evaluation_fee')` exists → create one (`type:'expense'`, `status:'reviewed'`, date = `challenge.createdAt`).
+- If `activationFee > 0` and no transaction with `(challengeId, category:'activation_fee')` exists → create one similarly.
 
-## 6. Files touched
+Place the hook inside a small wrapper component `<TransactionsAutoSync/>` rendered once below the providers, so it never re-creates duplicates (idempotent via the existence check).
 
-- `src/contexts/AccountsContext.tsx` — add `'completed'` to `PropFirmStatus`.
-- `src/components/propfirm/PropFirmAccounts.tsx` — update `moveToStep2`, `moveToFunding`, add `pickLatestForChallenge`, regroup buckets.
+## 3. Update `PayoutModal.tsx` — make it functional
 
-No DB/storage migration needed: existing accounts keep their current status; `'completed'` only appears for newly-progressed accounts going forward.
+Wire it to real state instead of static UI:
 
-## Edge cases
+- Challenge dropdown (from `useChallengesContext`)
+- Amount (positive number, validated)
+- Date (uses Shadcn DatePicker → existing pattern in repo)
+- On confirm → `addTransaction({ type:'income', category:'payout', amount, challengeId, firm: challenge.firm, accountId: latestAccountForChallenge?.id, status:'reviewed', date })`
 
-- **Instant Funded** (`steps === 0`): single funded account with `status:'funded'` — appears in Funded tab via priority fallback.
-- **Breached mid-Step-2**: Step 1 may be `'completed'` and Step 2 `'breached'` → Breached tab shows the Step 2 row only.
-- **Already-funded challenge then Mark as Failed**: existing breach loop archives all and sets the funded account to breached → Breached tab shows it. 
+## 4. Rewrite `PropFirmTransactions.tsx`
+
+Replace the mock array + UI with a fully wired implementation. Keep current visual design (cards, tabs, table, pagination).
+
+### State
+
+- `filterTab: 'all' | 'income' | 'expense' | 'needs_review'`
+- `search: string`
+- `selectedIds: Set<string>` (bulk)
+- `page`, `pageSize` (default 10)
+- `editingTx`, `addOpen` (modal)
+
+### Derived data
+
+1. `visibleTxs` = transactions where `status !== 'ignored'` (the "ignored" filter is reachable only via a future tab; per spec, ignored are excluded from cards & tabs).
+2. Apply tab filter:
+  - `all` → visibleTxs
+  - `income` → `type==='income'`
+  - `expense` → `type==='expense'`
+  - `needs_review` → `status==='not_reviewed'`
+3. Apply search across challenge nickname, account name, firm, category label, description.
+
+### Summary cards (reactive, not hard-coded)
+
+Computed from filtered (post-tab, post-search) but always excluding `ignored`:
+
+- Total Transactions: count, volume = Σ amounts (any type)
+- Total Income: Σ where type income
+- Total Spent: Σ where type expense
+- Net Cash Flow: income − expense (color-coded green/red)
+
+### Table
+
+Columns from spec. Account/challenge resolved via `getAccountById` and `getChallengeById`. Empty resolution shows `—`.
+
+- Type badge (income/expense)
+- Status badge (reviewed = green, not_reviewed = amber, ignored = grey)
+- Amount: green `+$x` for income, red `−$x` for expense
+- Row checkbox + master checkbox
+- Action menu: Edit / Mark reviewed / Mark not reviewed / Mark ignored / Mark unignored / Delete (with confirm)
+
+### Empty states
+
+- Zero transactions overall → centered "No transactions yet" + "Add transaction" CTA
+- Zero after filter → "No matching transactions"
+
+### Bulk actions
+
+Bar visible when `selectedIds.size > 0`: Mark reviewed, Mark not reviewed, Mark ignored, Delete.
+
+### Pagination
+
+Slice on `page * pageSize`. Page-size dropdown (10 / 25 / 50). Prev/Next + "1 – N of M".
+
+## 5. New `AddEditTransactionModal.tsx`
+
+Single modal handles both create + edit (mirrors `TrackAccountModal` styling).
+
+Fields:
+
+- **Type** segmented toggle (Income / Expense)
+- **Challenge** dropdown (from challenges)
+- **Account** dropdown — populated from `getAccountsByChallengeId(challengeId)` after challenge selected (optional)
+- **Firm** auto-filled from challenge, editable
+- **Category** dropdown — Income: payout / refund / commission / other_income; Expense: evaluation_fee / activation_fee / other_expense
+- **Amount** numeric (positive only)
+- **Date** Shadcn DatePicker (`pointer-events-auto`)
+- **Description** textarea (optional, ≤500 chars)
+- **Status** segmented (default `reviewed`)
+
+Validation (zod):
+
+- `type` required, `amount > 0`, `date` required, `firm.trim()` required
+- `description.max(500)`, `amount.max(1_000_000)`
+
+Submit → `addTransaction(...)` or `updateTransaction(id, ...)`.
+
+## 6. Files touched / created
+
+Created:
+
+- `src/contexts/TransactionsContext.tsx`
+- `src/components/propfirm/AddEditTransactionModal.tsx`
+- `src/components/propfirm/TransactionsAutoSync.tsx`
+
+Modified:
+
+- `src/components/propfirm/PropFirmTransactions.tsx` — full rewrite per above
+- `src/components/propfirm/PayoutModal.tsx` — wire to TransactionsContext
+- `src/App.tsx` — add `<TransactionsProvider>` + `<TransactionsAutoSync/>`
+
+## 7. Edge cases handled
+
+- **Existing challenges** at first run: auto-sync creates eval/activation fee transactions retroactively (idempotent).
+- **Challenge deleted** (`removeChallenge` exists): transactions remain but show `—` for challenge name; user can delete or re-link via edit.
+- **No accounts on challenge** (e.g. all archived in detail view): account dropdown still allows selection from full account list filtered by `challengeId`.
+- **Negative amount entry**: rejected by zod; type controls direction.
+- **Ignored rows**: hidden from cards & non-"All" tabs; visible in `All` (greyed badge) so user can unignore.
+- **Bulk delete**: confirms via `AlertDialog` before deletion.
 
 &nbsp;
 
-## FINAL IMPLEMENTATION NOTES (IMPORTANT)
+## “Ignored visibility” contradiction
 
-1. STATE UPDATE SAFETY
+Your plan says:
 
-- Ensure all account updates use functional state updates:
+```
+visibleTxs = status !== 'ignored'
+```
 
-  setAccounts(prev => ...)
+But later:
 
-- Do NOT use stale state when calling patchAccount multiple times in sequence.
+```
+Ignored rows visible in All tab
+```
 
------------------------------------
+---
 
-2. NO OVERWRITING OF STATUS
+### ❗ Conflict
 
-- Never overwrite:
+You can’t both:
 
-  - 'breached' → should remain breached
+-   
+exclude ignored  
 
-  - 'completed' → should remain completed
+-   
+and show them in “All”  
 
-- Only update:
 
-  - 'active' → 'completed' during progression
+---
 
------------------------------------
+### ✅ Fix
 
-3. FUNDED ACCOUNT CONSISTENCY
+```
+const visibleTxs = transactions; // include all
 
-- Funded accounts must ALWAYS have:
-
-  - step = 'funded'
-
-  - phase = 'funded'
-
-  - status = 'funded'
-
-- Do NOT treat funded accounts as 'active'
-
------------------------------------
-
-4. BREACHED ACCOUNT SELECTION (IMPORTANT)
-
-- When selecting breached account in pickLatestForChallenge:
-
-  - If multiple exist, select the MOST RECENT (by createdAt)
-
-- Do NOT rely on .find() alone
-
------------------------------------
-
-5. PREVENT DUPLICATE ACCOUNT CREATION
-
-- Before creating:
-
-  - Step 2 account → check if one already exists for this challenge
-
-  - Funded account → check if one already exists
-
-- If already exists → do NOT create another
-
------------------------------------
-
-6. IDENTITY & RELATIONSHIP RULE
-
-- Always use [account.id](http://account.id) (UUID) for relationships
-
-- Never rely on account name or step text for matching
-
------------------------------------
-
-7. ACCOUNTS PAGE DISPLAY GUARANTEE
-
-- Ensure exactly ONE account per challenge is rendered
-
-- Do NOT allow multiple rows for the same challenge
-
------------------------------------
-
-8. COMPLETED ACCOUNTS VISIBILITY
-
-- Accounts with status 'completed':
-
-  - must NOT appear in Accounts page lists
-
-  - must ONLY appear in detailed page tabs
-
------------------------------------
-
-9. SORTING CONSISTENCY
-
-- When grouping accounts:
-
-  - Always sort by createdAt DESC before fallback selection
-
------------------------------------
-
-10. NO BREAKING EXISTING DATA
-
-- Existing accounts without 'completed' status should continue working
-
-- Do NOT mutate historical data unexpectedly
-
-- Only apply 'completed' status during new transitions
-
------------------------------------
-
-GOAL OF THESE RULES
-
-- Prevent inconsistent states
-
-- Avoid duplicate accounts
-
-- Ensure clean UI hierarchy
-
-- Maintain reliable lifecycle transitions
+// then filter:
+if (tab === 'all') → include ALL (including ignored)
+if (tab !== 'all') → exclude ignored
+```
