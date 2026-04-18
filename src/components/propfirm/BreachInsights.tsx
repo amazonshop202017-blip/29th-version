@@ -155,12 +155,12 @@ export function BreachInsights() {
         <div className="space-y-5">
           {/* Top breach reasons */}
           <div>
-            <p className="text-[14px] font-semibold tracking-wider text-foreground/80 mb-3">TOP BREACH REASONS</p>
+            <p className="text-[12px] font-semibold tracking-wider text-foreground/80 mb-3">TOP BREACH REASONS</p>
             <div className="space-y-3">
               {stats.topReasons.map((r) => (
                 <div key={r.reason}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[13px] text-foreground">{formatBreachReason(r.reason)}</span>
+                    <span className="text-[14px] text-foreground">{formatBreachReason(r.reason)}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {r.count} ({r.pct}%)
                     </span>
