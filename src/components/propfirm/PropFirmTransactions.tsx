@@ -230,7 +230,32 @@ export default function PropFirmTransactions() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} placeholder="Search by firm, challenge, account, or category" className="w-full pl-9 pr-3 py-2 text-xs border border-border rounded-lg bg-card focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/60" />
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-border rounded-lg bg-card text-muted-foreground hover:text-foreground transition-colors"><SlidersHorizontal className="w-3.5 h-3.5" />Filters</button>
+          <div className="relative">
+            <button
+              onClick={() => setFiltersOpen(o => !o)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-medium border rounded-lg transition-colors",
+                activeFilterCount > 0 || filtersOpen
+                  ? "border-foreground/40 bg-card text-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            <TransactionsFilterPanel
+              open={filtersOpen}
+              onClose={() => setFiltersOpen(false)}
+              firmOptions={firmOptions}
+              filters={filters}
+              onChange={(next) => { setFilters(next); setPage(0); }}
+            />
+          </div>
         </div>
       </div>
 
