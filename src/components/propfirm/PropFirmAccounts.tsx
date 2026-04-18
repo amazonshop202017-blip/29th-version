@@ -16,14 +16,6 @@ import { computeAccountStats, accountToRow } from "@/lib/propFirmStats";
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
 
-const demoEvaluationAccounts = [
-  { id: "e8-eval", firm: "e8", step: "Step 1", status: "Active", balance: "$10,486.03", pnl: "+$486.03", pnlPositive: true, target: "8%", pnlBarValue: 60, tradingDays: "—", drawdown: "$0 / Max $800", consistency: "—" },
-];
-
-const demoFundedAccounts = [
-  { id: "mffu-funded", firm: "mffu", step: "Funded", status: "Active", balance: "$64,742", pnl: "+$14,742", pnlPositive: true, target: "—", pnlBarValue: 100, tradingDays: "35", drawdown: "—", consistency: "—" },
-];
-
 type AccountActions = {
   onViewDetails: () => void;
   onMarkAsFailed: () => void;
