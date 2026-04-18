@@ -300,7 +300,8 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     return [...realRows, ...demoList];
   }, [activeTab, realByTab, getChallengeById, trades]);
 
-  const realIds = useMemo(() => new Set(realPropfirmAccounts.map(a => a.id)), [realPropfirmAccounts]);
+  // Include archived breached accounts so Breached tab rows resolve to real accounts/actions
+  const realIds = useMemo(() => new Set(allRealPropfirmAccounts.map(a => a.id)), [allRealPropfirmAccounts]);
 
   const handleRowSelect = (id: string) => {
     if (realIds.has(id)) onSelectAccount(id);
@@ -308,7 +309,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   };
 
   const makeActionsForRow = (id: string): AccountActions => {
-    const realAcc = realPropfirmAccounts.find(a => a.id === id);
+    const realAcc = allRealPropfirmAccounts.find(a => a.id === id);
     if (realAcc) return realActions(realAcc);
     // demo row
     const demoAcc =
