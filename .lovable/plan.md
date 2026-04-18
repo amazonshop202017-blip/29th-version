@@ -1,63 +1,71 @@
 
 
-## Plan: Replace demo trades table with real Trades-page table (account-scoped)
+## Plan: Wire Up Breach Flow with Archive + Detail UI
 
-### Goal
-Swap the bottom demo trades table card in `RealPropFirmAccountDetails.tsx` with the **same trades table experience** used on the `/trades` page (full action bar, column settings, pagination, row interactions, privacy mode, outcome coloring, click-to-edit) — but filtered to **only show trades belonging to the current account**.
+### 1. `MarkAsFailedDialog.tsx` — return raw value
+Change `handleConfirm` to pass the raw enum (`max_drawdown`, `overtrading`, `time_pressure`, `risk_management`) or the trimmed custom string when `Other` is selected. Drop the label lookup — formatting moves to display layer.
 
-### Approach
-Extract the Trades-page table card into a **reusable component** `TradesTableCard.tsx`, then use it in two places:
-- `src/pages/Trades.tsx` (no behavior change — uses globally filtered trades)
-- `src/components/propfirm/RealPropFirmAccountDetails.tsx` (passes account-scoped trades)
+### 2. New helper `src/lib/breachReason.ts`
+Tiny module exporting:
+```ts
+const BREACH_REASON_LABELS: Record<string,string> = {
+  max_drawdown: "Broke max drawdown",
+  overtrading: "Overtrading / Forcing trades",
+  time_pressure: "Time pressure",
+  risk_management: "Lack of risk management",
+};
+formatBreachReason(raw) → label or raw passthrough
+formatBreachDate(iso) → "Feb 10, 2026"
+```
 
-This avoids code duplication and guarantees the prop-firm details table stays in sync with future Trades-page improvements.
+### 3. `PropFirmAccounts.tsx` — `handleConfirmFailed`
+Update flow to:
+1. `patchAccount(acc.id, { status: 'breached', breachReason: rawReason, breachedAt: new Date().toISOString() })` — already stores correctly, just receives raw value now.
+2. If `acc.challengeId` → `updateChallenge(challengeId, { status: 'breached' })` (already done).
+3. **NEW**: Archive ALL accounts linked to that challenge:
+   ```ts
+   accounts
+     .filter(a => a.challengeId === acc.challengeId)
+     .forEach(a => patchAccount(a.id, { isArchived: true }))
+   ```
+   (Requires extending `patchAccount`'s allowed keys to include `isArchived`, OR call existing `archiveAccount` per id — simpler.)
 
-### Files
+Use `archiveAccount(id)` from context — already exists.
 
-**Create**
-- `src/components/trades/TradesTableCard.tsx` — extracted card containing:
-  - Action bar (Select All, Delete, Import, Merge, Duplicate, mobile dropdown, Column settings, Download)
-  - `TableWithStickyHorizontalScroll` (moved here)
-  - Pagination footer
-  - `AccountImportModal` mount
-  - `formatDurationMinutes` helper
-  
-  Props:
-  ```ts
-  type Props = {
-    trades: Trade[];                  // pre-filtered input
-    showImport?: boolean;             // default true; false in propfirm context to hide bulk import
-    emptyState?: { title: string; subtitle: string };
-  };
-  ```
-  Internally uses: `useTradeModal`, `useGlobalFilters`, `usePrivacyMode`, `useTradesColumnVisibility`, `useAccountsContext`, plus the existing `deleteTrades` / `bulkAddTrades` from `useFilteredTrades` (these are global mutations, fine to call regardless of which subset is displayed).
+### 4. `AccountsContext.tsx` — Breached tab visibility
+Currently `realPropfirmAccounts` filters out `isArchived`. The Breached tab needs to **show breached-archived accounts**. Two options:
+- **Chosen**: split filtering — keep `isArchived` filter only for Evaluations/Funded buckets; for `Breached` bucket, include archived breached accounts.
 
-**Edit**
-- `src/pages/Trades.tsx` — replace the inline JSX (lines ~485–710) with `<TradesTableCard trades={sortedTrades} />`. Keep `DashboardMetrics` row above. Remove now-unused state moved into the component.
+Update the bucketing in `PropFirmAccounts.tsx`:
+```ts
+const allPropfirm = accounts.filter(a => a.accountMode === 'propfirm' && a.userId === userId);
+Evaluations: allPropfirm.filter(a => a.phase==='evaluation' && a.status==='active' && !a.isArchived)
+Funded:      allPropfirm.filter(a => a.phase==='funded' && a.status==='active' && !a.isArchived)
+Breached:    allPropfirm.filter(a => a.status==='breached')   // include archived
+```
 
-- `src/components/propfirm/RealPropFirmAccountDetails.tsx` — replace the entire bottom card (lines 511–567) and remove `demoTrades` constant (lines 20–31) and unused imports (`Upload`, `Settings2`, etc. that are no longer used). Insert:
-  ```tsx
-  <TradesTableCard
-    trades={accountTrades}
-    emptyState={{
-      title: "No trades for this account yet",
-      subtitle: "Trades placed on this account will appear here",
-    }}
-  />
-  ```
-  `accountTrades` is already memoized and strictly filtered by `t.accountId === account.id` (existing code, line 98–101) — guarantees data isolation.
+### 5. `RealPropFirmAccountDetails.tsx` — breach banner
+At the top of the **"Path to funding"** card (line ~382), if `account.status === 'breached'`, render a small destructive-themed block above all `FundingItem` rows:
+```
+┌─────────────────────────────────────┐
+│ Account Breached                    │
+│ Reason: Broke max drawdown          │
+│ Date:   Feb 10, 2026                │
+└─────────────────────────────────────┘
+```
+Styling: `border-rose-500/30 bg-rose-500/5 rounded-lg p-3 mb-4`, AlertTriangle icon. Uses `formatBreachReason` + `formatBreachDate`.
 
-### Data isolation (per safety requirement)
-- `accountTrades` is built from `trades.filter(t => t.accountId === account.id)` and passed as the **only** trade source to the card.
-- The card itself never re-fetches global trades for display — it renders exactly what's passed in.
-- Mutations (`deleteTrades`, `bulkAddTrades`, `openModal`) operate on individual trade IDs that are already in the filtered set, so they cannot affect other accounts' data.
+Detail page remains fully accessible (no gating). Three-dot actions stay as-is for now (Move to Funding still visible — user marked it optional to disable).
 
-### Performance
-- Sorting by close date (desc) and pagination slicing inside `TradesTableCard` stay wrapped in `useMemo`.
-- `accountTrades` and `enriched` in details page already memoized — no recomputation per render.
+### 6. Files touched
+- `src/components/propfirm/MarkAsFailedDialog.tsx` — return raw value
+- `src/lib/breachReason.ts` — NEW helper
+- `src/components/propfirm/PropFirmAccounts.tsx` — archive linked accounts on breach, adjust Breached bucket filter
+- `src/components/propfirm/RealPropFirmAccountDetails.tsx` — breach banner in Path to funding
 
-### Out of scope
-- Changing the demo `PropFirmAccountDetails.tsx` (untouched).
-- Adding account-specific column defaults (uses the global `useTradesColumnVisibility` so user's preferred columns persist across both pages).
-- Per-account metrics row above the table (the existing path-to-funding panel already covers this).
+### Acceptance
+- Marking failed stores raw enum (or raw custom string) on the account
+- Linked challenge flips to `breached`; all linked accounts archive
+- Breached tab shows the account; Evaluations/Funded tabs do not
+- Detail page opens normally with banner showing formatted reason + date
 
