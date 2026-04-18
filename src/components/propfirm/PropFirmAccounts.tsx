@@ -279,7 +279,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onDeleteChallenge: () => {},
   });
 
-  // Move current Step 1 account to Step 2: archive Step 1, create new Step 2 account.
+  // Move current Step 1 account to Step 2: mark Step 1 completed+archived, create new Step 2.
   const moveToStep2 = (account: Account) => {
     if (!account.challengeId) {
       toast.error("No challenge linked to this account");
@@ -287,7 +287,17 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     }
     const challenge = getChallengeById(account.challengeId);
     if (!challenge) return;
-    archiveAccount(account.id);
+    // Guard: do not duplicate Step 2
+    const existingStep2 = accounts.find(
+      a => a.challengeId === account.challengeId && a.step === '2'
+    );
+    if (existingStep2) {
+      toast.error("Step 2 account already exists for this challenge");
+      onSelectAccount(existingStep2.id);
+      return;
+    }
+    // Mark current step as completed (preserve history) and archive
+    patchAccount(account.id, { status: 'completed', isArchived: true });
     const newAcc = addAccount(
       `${challenge.nickname} (Step 2)`,
       challenge.balanceAmount ?? account.startingBalance,
@@ -298,7 +308,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onSelectAccount(newAcc.id);
   };
 
-  // Move to Funding: archive ALL accounts under this challenge, create new Funded account.
+  // Move to Funding: mark active accounts as completed, archive all, create new Funded account.
   const moveToFunding = (account: Account) => {
     if (!account.challengeId) {
       toast.error("No challenge linked to this account");
@@ -306,14 +316,30 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     }
     const challenge = getChallengeById(account.challengeId);
     if (!challenge) return;
+    // Guard: do not duplicate Funded
+    const existingFunded = accounts.find(
+      a => a.challengeId === account.challengeId && a.step === 'funded'
+    );
+    if (existingFunded) {
+      toast.error("Funded account already exists for this challenge");
+      onSelectAccount(existingFunded.id);
+      return;
+    }
+    // For each linked account: never overwrite breached/completed; promote 'active' → 'completed'
     accounts
       .filter(a => a.challengeId === account.challengeId)
-      .forEach(a => patchAccount(a.id, { isArchived: true }));
+      .forEach(a => {
+        if (a.status === 'active') {
+          patchAccount(a.id, { status: 'completed', isArchived: true });
+        } else {
+          patchAccount(a.id, { isArchived: true });
+        }
+      });
     const newAcc = addAccount(
       `${challenge.nickname} (Funded)`,
       challenge.balanceAmount ?? account.startingBalance,
       'propfirm',
-      { challengeId: account.challengeId, step: 'funded', phase: 'funded', status: 'active' }
+      { challengeId: account.challengeId, step: 'funded', phase: 'funded', status: 'funded' }
     );
     updateChallenge(account.challengeId, { status: 'funded' });
     toast.success(`${challenge.nickname} moved to Funding`);
@@ -323,7 +349,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   // Real actions (fully wired). View Details opens the REAL details page for this account.
   const realActions = (account: Account): AccountActions => {
     const challenge = account.challengeId ? getChallengeById(account.challengeId) : undefined;
-    const isBreached = account.status === 'breached';
+    const isBreached = account.status === 'breached' || challenge?.status === 'breached';
     const isFundedPhase = account.step === 'funded' || account.phase === 'funded';
 
     let progression: AccountActions['progression'];
