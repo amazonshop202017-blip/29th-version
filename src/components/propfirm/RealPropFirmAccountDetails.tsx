@@ -77,15 +77,54 @@ function FundingItem({
 const clamp = (v: number, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
 export default function RealPropFirmAccountDetails({ accountId, onBack }: Props) {
-  const { getAccountById } = useAccountsContext();
+  const { getAccountById, getAccountsByChallengeId } = useAccountsContext();
   const { getChallengeById } = useChallengesContext();
-  
 
-  const account = getAccountById(accountId);
-  const challenge = account?.challengeId ? getChallengeById(account.challengeId) : undefined;
+  const urlAccount = getAccountById(accountId);
+  const challenge = urlAccount?.challengeId ? getChallengeById(urlAccount.challengeId) : undefined;
 
-  // Account-scoped trades: locked to this accountId, with all global filters
-  // (date range, symbols, outcomes, tags, etc.) applied EXCEPT the account filter.
+  // All accounts (active + archived) under this challenge — drives the tabs.
+  const challengeAccounts = useMemo(() => {
+    if (urlAccount?.challengeId) return getAccountsByChallengeId(urlAccount.challengeId);
+    return urlAccount ? [urlAccount] : [];
+  }, [urlAccount, getAccountsByChallengeId]);
+
+  const accountByStep = useMemo(() => {
+    const m: Record<'1' | '2' | 'funded', typeof challengeAccounts[number] | undefined> = {
+      '1': undefined, '2': undefined, funded: undefined,
+    };
+    for (const a of challengeAccounts) {
+      if (a.step === '1' || a.step === '2' || a.step === 'funded') m[a.step] = a;
+    }
+    return m;
+  }, [challengeAccounts]);
+
+  const availableTabs: AccountTab[] = useMemo(() => {
+    const tabs: AccountTab[] = [];
+    if (accountByStep['1']) tabs.push("STEP 1");
+    if (accountByStep['2']) tabs.push("STEP 2");
+    if (accountByStep.funded) tabs.push("FUNDING");
+    if (tabs.length === 0) tabs.push("STEP 1");
+    return tabs;
+  }, [accountByStep]);
+
+  const defaultTab: AccountTab = useMemo(() => {
+    if (urlAccount?.step === 'funded' && availableTabs.includes("FUNDING")) return "FUNDING";
+    if (urlAccount?.step === '2' && availableTabs.includes("STEP 2")) return "STEP 2";
+    if (urlAccount?.step === '1' && availableTabs.includes("STEP 1")) return "STEP 1";
+    return availableTabs[0];
+  }, [urlAccount, availableTabs]);
+
+  const [accountTab, setAccountTab] = useState<AccountTab>(defaultTab);
+  const [chartView, setChartView] = useState<ChartView>("Daily");
+
+  // Active account driving this tab's data
+  const account = useMemo(() => {
+    if (accountTab === "FUNDING") return accountByStep.funded ?? urlAccount;
+    if (accountTab === "STEP 2") return accountByStep['2'] ?? urlAccount;
+    return accountByStep['1'] ?? urlAccount;
+  }, [accountTab, accountByStep, urlAccount]);
+
   const accountTrades = useAccountScopedFilteredTrades(account?.id);
 
   const enriched = useMemo(
@@ -122,23 +161,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     if (!account) return null;
     return computeAccountStats(account, challenge, accountTrades);
   }, [account, challenge, accountTrades]);
-
-  const availableTabs: AccountTab[] = useMemo(() => {
-    const base: AccountTab[] = ["STEP 1"];
-    if (challenge?.steps === 2) base.push("STEP 2");
-    base.push("FUNDING");
-    return base;
-  }, [challenge?.steps]);
-
-  const defaultTab: AccountTab =
-    account?.step === "funded" || account?.phase === "funded"
-      ? "FUNDING"
-      : account?.step === "2"
-      ? "STEP 2"
-      : "STEP 1";
-
-  const [accountTab, setAccountTab] = useState<AccountTab>(defaultTab);
-  const [chartView, setChartView] = useState<ChartView>("Daily");
 
   const selectedRules = useMemo(() => {
     if (!challenge || !account) return null;
