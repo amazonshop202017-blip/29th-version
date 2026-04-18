@@ -495,14 +495,15 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
         </div>
       </div>
 
-      <TradesTableCard
-        trades={accountTrades}
-        className="min-h-[400px]"
-        emptyState={{
-          title: "No trades for this account yet",
-          subtitle: "Trades placed on this account will appear here",
-        }}
-      />
+      <div className="flex flex-col h-[calc(100vh-10vh)] md:h-[calc(100vh-280px)] min-h-[400px]">
+        <TradesTableCard
+          trades={accountTrades}
+          emptyState={{
+            title: "No trades for this account yet",
+            subtitle: "Trades placed on this account will appear here",
+          }}
+        />
+      </div>
     </div>
   );
 }
