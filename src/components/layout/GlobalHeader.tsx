@@ -141,6 +141,7 @@ export const GlobalHeader = () => {
     // Handle sub-routes like /strategies/:id or /reports/*
     if (path.startsWith('/strategies/')) return 'Setup Detail';
     if (path.startsWith('/reports')) return 'Reports';
+    if (path.startsWith('/prop-firm')) return 'Prop Firm';
     return '';
   }, [location.pathname]);
 
