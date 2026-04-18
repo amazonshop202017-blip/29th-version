@@ -18,6 +18,8 @@ import { SymbolTickSizeProvider } from "@/contexts/SymbolTickSizeContext";
 import { InterfaceThemeProvider } from "@/contexts/InterfaceThemeContext";
 import { DashboardEditProvider } from "@/contexts/DashboardEditContext";
 import { ChallengesProvider } from "@/contexts/ChallengesContext";
+import { TransactionsProvider } from "@/contexts/TransactionsContext";
+import { TransactionsAutoSync } from "@/components/propfirm/TransactionsAutoSync";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TradeModal } from "@/components/trades/TradeModal";
 import Dashboard from "./pages/Dashboard";
@@ -86,6 +88,8 @@ const AuthenticatedApp = () => {
             <TradesProvider>
               <AccountsProvider>
                 <ChallengesProvider>
+                <TransactionsProvider>
+                <TransactionsAutoSync />
                 <GlobalFiltersProvider>
                   <CustomStatsProvider>
                     <SymbolTickSizeProvider>
@@ -135,6 +139,7 @@ const AuthenticatedApp = () => {
                     </SymbolTickSizeProvider>
                   </CustomStatsProvider>
                 </GlobalFiltersProvider>
+                </TransactionsProvider>
                 </ChallengesProvider>
               </AccountsProvider>
             </TradesProvider>
