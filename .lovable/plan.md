@@ -1,105 +1,69 @@
-## Fix Avg Days to Funded — multi-step aware
+## Bug
 
-Update `src/components/propfirm/MetricCards.tsx` to follow the new spec.
-
-### Logic per funded account
-
-1. Filter funded: `step === 'funded' && status === 'funded'`.
-2. Look up `challenge` via `getChallengeById(fa.challengeId)`. Skip if missing or `challenge.steps === 0` (instant funded).
-3. Find Step 1 account in same challenge: `accounts.find(x => x.challengeId === fa.challengeId && x.step === '1')`. Skip if missing → `startDate = step1.createdAt`.
-4. Determine completion step account based on `challenge.steps`:
-  - `1` → step 1 account
-  - `2` → step 2 account (`accounts.find(... step === '2')`); skip if missing
-5. Get trades for that completion step account: `trades.filter(t => t.accountId === stepAcct.id)`, compute each `closeDate` via `calculateTradeMetrics`, take max timestamp = `endDate`.
-6. Fallback: if no valid trade closeDates, `endDate = fa.createdAt`.
-7. `days = (endTs - startTs) / 86400000`. Push if finite & ≥ 0.
-8. `avgDays = sum/count`.
-
-### Imports to add
-
-- `useChallengesContext` from `@/contexts/ChallengesContext`.
-
-### Code change
-
-Replace the Avg Days block (lines ~46–77). `avgTrades` block stays as-is (separate metric, unchanged scope). Render unchanged — already shows `0d` when funded exist.
+In `src/contexts/TradesContext.tsx` (lines 141–145), when "All accounts" is selected (`selectedAccounts.length === 0`), filtering by active account IDs is **skipped entirely** if there are zero active accounts:
 
 ```ts
-const fundedAll = accounts.filter(a => a.step === "funded" && a.status === "funded");
-const daysList: number[] = [];
-
-for (const fa of fundedAll) {
-  if (!fa.challengeId) continue;
-  const challenge = getChallengeById(fa.challengeId);
-  if (!challenge || challenge.steps === 0) continue;
-
-  const step1 = accounts.find(x => x.challengeId === fa.challengeId && x.step === "1");
-  if (!step1) continue;
-  const startTs = new Date(step1.createdAt).getTime();
-  if (!isFinite(startTs)) continue;
-
-  const completionAcct = challenge.steps === 2
-    ? accounts.find(x => x.challengeId === fa.challengeId && x.step === "2")
-    : step1;
-  if (!completionAcct) continue;
-
-  const closeTimes = trades
-    .filter(t => t.accountId === completionAcct.id)
-    .map(t => {
-      const cd = calculateTradeMetrics(t).closeDate;
-      return cd ? new Date(cd).getTime() : NaN;
-    })
-    .filter(ts => isFinite(ts));
-
-  const endTs = closeTimes.length
-    ? Math.max(...closeTimes)
-    : new Date(fa.createdAt).getTime();
-  if (!isFinite(endTs)) continue;
-
-  const days = (endTs - startTs) / 86400000;
-  if (isFinite(days) && days >= 0) daysList.push(days);
+if (accountIds.length > 0) {
+  const activeSet = new Set(accountIds);
+  filtered = filtered.filter(trade => activeSet.has(trade.accountId));
 }
-
-const avgDays = daysList.length ? daysList.reduce((s, n) => s + n, 0) / daysList.length : 0;
 ```
 
-Add `getChallengeById` to memo deps.
+When the user has 0 active accounts (only archived ones), `accountIds.length === 0`, so the `if` is false and **all trades pass through unfiltered** — including trades from the archived account. That's why dashboard analytics still show data.
 
-### Files
+The same defensive bug exists for the explicit-selection branch (lines 149–153): `activeSet` is `null` when no active accounts exist, allowing archived selections through.
 
-- `src/components/propfirm/MetricCards.tsx`
+## Fix
+
+Remove the `accountIds.length > 0` guard. If there are zero active accounts, the result should be **zero trades**, not all trades.
+
+In `src/contexts/TradesContext.tsx`, replace the block:
+
+```ts
+if (selectedAccounts.length === 0) {
+  if (accountIds.length > 0) {
+    const activeSet = new Set(accountIds);
+    filtered = filtered.filter(trade => activeSet.has(trade.accountId));
+  }
+} else {
+  const activeSet = accountIds.length > 0 ? new Set(accountIds) : null;
+  const selectedSet = new Set(selectedAccounts);
+  filtered = filtered.filter(trade =>
+    selectedSet.has(trade.accountId) && (!activeSet || activeSet.has(trade.accountId))
+  );
+}
+```
+
+with:
+
+```ts
+const activeSet = new Set(accountIds);
+if (selectedAccounts.length === 0) {
+  // "All accounts" = all ACTIVE accounts only (never archived).
+  // If there are zero active accounts, result is zero trades.
+  filtered = filtered.filter(trade => activeSet.has(trade.accountId));
+} else {
+  // Explicit selection — intersect with active accounts so archived selections drop out.
+  const selectedSet = new Set(selectedAccounts);
+  filtered = filtered.filter(trade =>
+    selectedSet.has(trade.accountId) && activeSet.has(trade.accountId)
+  );
+}
+```
+
+## Files
+
+- `src/contexts/TradesContext.tsx` — fix filter guard so empty-active-set yields empty result.
+
+DayView already has the correct behavior (always intersects with `activeSet`), so no change needed there.
+
+## Result
+
+After this fix, with 0 active accounts:
+
+- Dashboard, Trades, Reports, Chartroom, Day View → all show 0 trades / empty stats.
+- The archived Step 1 account's data will no longer leak into analytics. 
+
+analytics on any page must be as per filter, and in all accounts, it should have shown by only non archive account means they are active could be status ('active'| 'completed' |'funded') but they definitely should not be archived. 
 
 &nbsp;
-
-# 🧠 ONLY 1 SMALL THING TO ADD (IMPORTANT)
-
-Right now:
-
-```
-trades.filter(...)
-```
-
-👉 If `trades` is large, this runs inside a loop → inefficient
-
----
-
-## 🟡 OPTIONAL (but good practice)
-
-Add this note at end of plan:
-
-```
-PERFORMANCE NOTE
-
-- Avoid filtering trades repeatedly inside loop
-- Pre-group trades by accountId before loop:
-
-  const tradesByAccount = groupBy(trades, t => t.accountId)
-
-- Then use:
-  const accountTrades = tradesByAccount[completionAcct.id] || []
-
-This improves performance for large datasets.
-```
-
----
-
-use this if you think it will be helpful with large trades. 
