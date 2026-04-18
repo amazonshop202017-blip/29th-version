@@ -48,7 +48,7 @@ interface AccountsContextType {
   addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => Account;
   removeAccount: (id: string) => void;
   updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode) => void;
-  patchAccount: (id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt'>>) => void;
+  patchAccount: (id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => void;
   getAccountById: (id: string) => Account | undefined;
   getAccountWithStats: (id: string) => AccountWithStats | undefined;
   getAllAccountsWithStats: () => AccountWithStats[];
@@ -142,9 +142,13 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     ));
   }, [accounts, saveAccounts]);
 
-  const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt'>>) => {
-    saveAccounts(accounts.map(a => a.id === id ? { ...a, ...patch } : a));
-  }, [accounts, saveAccounts]);
+  const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => {
+    setAccounts(prev => {
+      const next = prev.map(a => a.id === id ? { ...a, ...patch } : a);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const getAccountById = useCallback((id: string) => {
     return accounts.find(a => a.id === id);

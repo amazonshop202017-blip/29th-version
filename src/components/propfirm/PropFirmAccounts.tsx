@@ -212,12 +212,6 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
       // Breached tab includes archived breached accounts too
       Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
     };
-    if (typeof window !== 'undefined') {
-      console.log('[PropFirmAccounts] buckets', {
-        all: allRealPropfirmAccounts.map(a => ({ id: a.id, name: a.name, status: a.status, phase: a.phase, isArchived: a.isArchived, userId: a.userId })),
-        breachedCount: buckets.Breached.length,
-      });
-    }
     return buckets;
   }, [realPropfirmAccounts, allRealPropfirmAccounts]);
 
@@ -270,16 +264,21 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     if (!failedDialog.accountId) return;
     const acc = accounts.find(a => a.id === failedDialog.accountId);
     if (!acc) return;
-    patchAccount(acc.id, { status: 'breached', breachReason: reason, breachedAt: new Date().toISOString() });
+    const breachedAt = new Date().toISOString();
     if (acc.challengeId) {
-      updateChallenge(acc.challengeId, { status: 'breached' });
-      // Archive ALL accounts linked to this challenge
+      // Patch ALL accounts linked to this challenge in one go: mark target breached, archive all
       accounts
         .filter(a => a.challengeId === acc.challengeId)
-        .forEach(a => archiveAccount(a.id));
+        .forEach(a => {
+          if (a.id === acc.id) {
+            patchAccount(a.id, { status: 'breached', breachReason: reason, breachedAt, isArchived: true });
+          } else {
+            patchAccount(a.id, { isArchived: true });
+          }
+        });
+      updateChallenge(acc.challengeId, { status: 'breached' });
     } else {
-      // No linked challenge — archive just this account
-      archiveAccount(acc.id);
+      patchAccount(acc.id, { status: 'breached', breachReason: reason, breachedAt, isArchived: true });
     }
   };
 
