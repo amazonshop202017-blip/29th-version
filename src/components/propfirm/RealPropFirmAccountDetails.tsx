@@ -324,20 +324,32 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
       </div>
 
       <div className="flex items-center gap-0 border-b border-border">
-        {availableTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setAccountTab(tab)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-              accountTab === tab
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {accountTab === tab && <RefreshCcw className="w-3.5 h-3.5 text-muted-foreground" />}
-            {tab}
-          </button>
-        ))}
+        {availableTabs.map((tab) => {
+          const tabAccount =
+            tab === "FUNDING" ? accountByStep.funded :
+            tab === "STEP 2" ? accountByStep['2'] :
+            accountByStep['1'];
+          const isArchived = !!tabAccount?.isArchived;
+          return (
+            <button
+              key={tab}
+              onClick={() => setAccountTab(tab)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                accountTab === tab
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {accountTab === tab && <RefreshCcw className="w-3.5 h-3.5 text-muted-foreground" />}
+              {tab}
+              {isArchived && (
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                  Archived
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
