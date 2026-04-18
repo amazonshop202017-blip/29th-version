@@ -204,12 +204,21 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
 
   // Bucket per tab
   const realByTab = useMemo(() => {
-    return {
-      Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status === 'active'),
-      Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status === 'active'),
+    const buckets = {
+      // Evaluations: anything in evaluation phase that is NOT breached and not archived
+      Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status !== 'breached'),
+      // Funded: anything in funded phase that is NOT breached and not archived
+      Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status !== 'breached'),
       // Breached tab includes archived breached accounts too
       Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
     };
+    if (typeof window !== 'undefined') {
+      console.log('[PropFirmAccounts] buckets', {
+        all: allRealPropfirmAccounts.map(a => ({ id: a.id, name: a.name, status: a.status, phase: a.phase, isArchived: a.isArchived, userId: a.userId })),
+        breachedCount: buckets.Breached.length,
+      });
+    }
+    return buckets;
   }, [realPropfirmAccounts, allRealPropfirmAccounts]);
 
   const accountTabs: { label: AccountTab; count: number }[] = [
