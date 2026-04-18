@@ -26,10 +26,13 @@ const demoFundedAccounts = [
 
 type AccountActions = {
   onViewDetails: () => void;
-  onMoveToFunding: () => void;
   onMarkAsFailed: () => void;
   onEditChallenge: () => void;
   onDeleteChallenge: () => void;
+  // Dynamic progression (Move to Step 2 / Move to Funding). Undefined = hide.
+  progression?: { label: string; onClick: () => void };
+  // Hide Mark as Failed when account is already breached/funded
+  hideMarkAsFailed?: boolean;
 };
 
 function ThreeDotMenu({ actions, allowDelete = false }: { actions: AccountActions; allowDelete?: boolean }) {
@@ -40,8 +43,12 @@ function ThreeDotMenu({ actions, allowDelete = false }: { actions: AccountAction
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[190px]" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onSelect={actions.onViewDetails}>View Details</DropdownMenuItem>
-        <DropdownMenuItem onSelect={actions.onMoveToFunding}>Move to Funding</DropdownMenuItem>
-        <DropdownMenuItem onSelect={actions.onMarkAsFailed}>Mark as Failed</DropdownMenuItem>
+        {actions.progression && (
+          <DropdownMenuItem onSelect={actions.progression.onClick}>{actions.progression.label}</DropdownMenuItem>
+        )}
+        {!actions.hideMarkAsFailed && (
+          <DropdownMenuItem onSelect={actions.onMarkAsFailed}>Mark as Failed</DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={actions.onEditChallenge}>Edit Challenge</DropdownMenuItem>
         <DropdownMenuSeparator />
         {allowDelete ? (
