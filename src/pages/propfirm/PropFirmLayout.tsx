@@ -1,49 +1,37 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { MetricCards } from "@/components/propfirm/MetricCards";
-import { ROIChart } from "@/components/propfirm/ROIChart";
-import { FinanceBreakdown } from "@/components/propfirm/FinanceBreakdown";
-import { PassingInsights } from "@/components/propfirm/PassingInsights";
-import { BreachInsights } from "@/components/propfirm/BreachInsights";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { SlidersHorizontal, Receipt, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/propfirm/FilterPanel";
 import { PayoutModal } from "@/components/propfirm/PayoutModal";
 import { TrackAccountModal } from "@/components/propfirm/TrackAccountModal";
-import PropFirmAccounts from "@/components/propfirm/PropFirmAccounts";
-import PropFirmTransactions from "@/components/propfirm/PropFirmTransactions";
-import PropFirmAccountDetails from "@/components/propfirm/PropFirmAccountDetails";
-import RealPropFirmAccountDetails from "@/components/propfirm/RealPropFirmAccountDetails";
-import { SlidersHorizontal, Receipt, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 type Tab = "dashboard" | "accounts" | "transactions";
 
-const PropFirm = () => {
+const PropFirmLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
+  const isAccountDetails = Boolean(params.accountId);
+
   const activeTab: Tab = location.pathname.startsWith("/prop-firm/accounts")
     ? "accounts"
     : location.pathname.startsWith("/prop-firm/transactions")
     ? "transactions"
     : "dashboard";
+
   const setActiveTab = (tab: Tab) => {
     if (tab === "dashboard") navigate("/prop-firm");
     else navigate(`/prop-firm/${tab}`);
   };
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [trackAccountOpen, setTrackAccountOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  if (selectedAccountId === "demo") {
-    return <PropFirmAccountDetails onBack={() => setSelectedAccountId(null)} />;
-  }
-  if (selectedAccountId) {
-    return (
-      <RealPropFirmAccountDetails
-        accountId={selectedAccountId}
-        onBack={() => setSelectedAccountId(null)}
-      />
-    );
+  // Account details takes over the page (no header/tabs)
+  if (isAccountDetails) {
+    return <Outlet />;
   }
 
   return (
@@ -117,34 +105,12 @@ const PropFirm = () => {
         ))}
       </div>
 
-      {/* Tab content */}
-      {activeTab === "dashboard" && (
-        <>
-          <MetricCards />
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5">
-            <ROIChart />
-            <FinanceBreakdown />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <PassingInsights />
-            <BreachInsights />
-          </div>
-        </>
-      )}
+      <Outlet />
 
-      {activeTab === "accounts" && (
-        <PropFirmAccounts
-          onSelectAccount={(id) => setSelectedAccountId(id ?? "demo")}
-        />
-      )}
-
-      {activeTab === "transactions" && <PropFirmTransactions />}
-
-      {/* Overlays */}
       <PayoutModal open={payoutOpen} onClose={() => setPayoutOpen(false)} />
       <TrackAccountModal open={trackAccountOpen} onClose={() => setTrackAccountOpen(false)} />
     </div>
   );
 };
 
-export default PropFirm;
+export default PropFirmLayout;

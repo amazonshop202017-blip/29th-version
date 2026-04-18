@@ -50,7 +50,11 @@ import TagsAnalytics from "./pages/chartroom/TagsAnalytics";
 import RiskDistribution from "./pages/chartroom/RiskDistribution";
 import TradeManagement from "./pages/chartroom/TradeManagement";
 import ExitAnalyzer from "./pages/chartroom/ExitAnalyzer";
-import PropFirm from "./pages/PropFirm";
+import PropFirmLayout from "./pages/propfirm/PropFirmLayout";
+import PropFirmDashboard from "./pages/propfirm/PropFirmDashboard";
+import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
+import PropFirmTransactionsPage from "./pages/propfirm/PropFirmTransactionsPage";
+import PropFirmAccountDetailsPage from "./pages/propfirm/PropFirmAccountDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -112,9 +116,12 @@ const AuthenticatedApp = () => {
                                   <Route path="/chart-room/risk-distribution" element={<RiskDistribution />} />
                                   <Route path="/chart-room/trade-management" element={<TradeManagement />} />
                                   <Route path="/exit-analyzer" element={<ExitAnalyzer />} />
-                                  <Route path="/prop-firm" element={<PropFirm />} />
-                                  <Route path="/prop-firm/accounts" element={<PropFirm />} />
-                                  <Route path="/prop-firm/transactions" element={<PropFirm />} />
+                                  <Route path="/prop-firm" element={<PropFirmLayout />}>
+                                    <Route index element={<PropFirmDashboard />} />
+                                    <Route path="accounts" element={<PropFirmAccountsPage />} />
+                                    <Route path="accounts/:accountId" element={<PropFirmAccountDetailsPage />} />
+                                    <Route path="transactions" element={<PropFirmTransactionsPage />} />
+                                  </Route>
                                   <Route path="/entering" element={<Navigate to="/" replace />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
