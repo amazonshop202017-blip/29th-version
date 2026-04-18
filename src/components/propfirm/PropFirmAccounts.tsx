@@ -209,18 +209,54 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     [allRealPropfirmAccounts]
   );
 
-  // Bucket per tab
+  // Pick the single "top-level" account per challenge using lifecycle priority
+  // Priority: breached > active funded > active step 2 > active step 1 > newest
+  const pickLatestForChallenge = (group: Account[]): Account => {
+    const sorted = [...group].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    const breached = sorted.filter(a => a.status === 'breached');
+    if (breached.length) return breached[0]; // most recent breached
+    const fundedActive = sorted.find(
+      a => a.step === 'funded' && (a.status === 'active' || a.status === 'funded')
+    );
+    if (fundedActive) return fundedActive;
+    const step2Active = sorted.find(a => a.step === '2' && a.status === 'active');
+    if (step2Active) return step2Active;
+    const step1Active = sorted.find(a => a.step === '1' && a.status === 'active');
+    if (step1Active) return step1Active;
+    return sorted[0];
+  };
+
+  // Group all real propfirm accounts by challengeId, picking one "latest" per group.
+  // Standalone accounts (no challengeId) pass through unchanged.
+  const topLevelAccounts = useMemo(() => {
+    const groups = new Map<string, Account[]>();
+    const standalone: Account[] = [];
+    for (const a of allRealPropfirmAccounts) {
+      if (a.challengeId) {
+        const arr = groups.get(a.challengeId) ?? [];
+        arr.push(a);
+        groups.set(a.challengeId, arr);
+      } else {
+        standalone.push(a);
+      }
+    }
+    const picks: Account[] = [];
+    groups.forEach(g => picks.push(pickLatestForChallenge(g)));
+    return [...picks, ...standalone];
+  }, [allRealPropfirmAccounts]);
+
+  // Bucket per tab — strictly one row per challenge, hides 'completed'
   const realByTab = useMemo(() => {
-    const buckets = {
-      // Evaluations: anything in evaluation phase that is NOT breached and not archived
-      Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status !== 'breached'),
-      // Funded: anything in funded phase that is NOT breached and not archived
-      Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status !== 'breached'),
-      // Breached tab includes archived breached accounts too
-      Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
+    return {
+      Evaluations: topLevelAccounts.filter(
+        a => a.phase === 'evaluation' && a.status !== 'breached' && a.status !== 'completed'
+      ),
+      Funded: topLevelAccounts.filter(
+        a => a.phase === 'funded' && a.status !== 'breached'
+      ),
+      Breached: topLevelAccounts.filter(a => a.status === 'breached'),
     };
-    return buckets;
-  }, [realPropfirmAccounts, allRealPropfirmAccounts]);
+  }, [topLevelAccounts]);
 
   const accountTabs: { label: AccountTab; count: number }[] = [
     { label: "Evaluations", count: demoEvaluationAccounts.length + realByTab.Evaluations.length },
