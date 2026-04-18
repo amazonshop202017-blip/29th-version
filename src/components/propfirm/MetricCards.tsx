@@ -42,7 +42,7 @@ export function MetricCards() {
     const passed = accounts.filter(a => a.status === "completed" && a.step !== "funded").length;
     const passRate = attempted > 0 ? (passed / attempted) * 100 : 0;
 
-    // Avg Days to Funded
+    // Avg Days to Funded — based on actual trade activity within the challenge
     const fundedAll = accounts.filter(a => a.step === "funded" && a.status === "funded");
     const daysList: number[] = [];
     const tradesList: number[] = [];
@@ -54,25 +54,50 @@ export function MetricCards() {
       const sameChallenge = accounts.filter(x => x.challengeId === fa.challengeId);
       if (!sameChallenge.length) continue;
 
-      // Sort ASC by createdAt (immutable clone), pick earliest with valid date
-      const sorted = [...sameChallenge]
-        .filter(x => isFinite(new Date(x.createdAt).getTime()))
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-      const startDate = sorted[0];
-      if (!startDate) continue;
-
-      const days = (fundedTs - new Date(startDate.createdAt).getTime()) / 86400000;
-      if (isFinite(days) && days >= 0) daysList.push(days);
-
       const acctIds = new Set(sameChallenge.map(x => x.id));
-      const tradesCount = trades.filter(t => {
+
+      // Collect trades belonging to this challenge that closed on/before funded date
+      const challengeTrades = trades.filter(t => {
         if (!acctIds.has(t.accountId)) return false;
         const closeDate = calculateTradeMetrics(t).closeDate;
         if (!closeDate) return false;
         return new Date(closeDate).getTime() <= fundedTs;
-      }).length;
-      tradesList.push(tradesCount);
+      });
+
+      // Determine startTs: earliest trade openDate, fallback to earliest account createdAt
+      const tradeOpenTimes = challengeTrades
+        .map(t => {
+          const od = (t as any).openDate ?? (t as any).entryDate ?? (t as any).date;
+          const ts = od ? new Date(od).getTime() : NaN;
+          return isFinite(ts) ? ts : null;
+        })
+        .filter((v): v is number => v !== null);
+
+      let startTs: number | null = null;
+      if (tradeOpenTimes.length) {
+        startTs = Math.min(...tradeOpenTimes);
+      } else {
+        const sortedAccts = [...sameChallenge]
+          .filter(x => isFinite(new Date(x.createdAt).getTime()))
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        if (sortedAccts[0]) startTs = new Date(sortedAccts[0].createdAt).getTime();
+      }
+      if (startTs == null) continue;
+
+      // End: latest trade closeDate (capped at fundedTs), fallback to fundedTs
+      const tradeCloseTimes = challengeTrades
+        .map(t => {
+          const cd = calculateTradeMetrics(t).closeDate;
+          const ts = cd ? new Date(cd).getTime() : NaN;
+          return isFinite(ts) ? ts : null;
+        })
+        .filter((v): v is number => v !== null);
+      const endTs = tradeCloseTimes.length ? Math.max(...tradeCloseTimes) : fundedTs;
+
+      const days = (endTs - startTs) / 86400000;
+      if (isFinite(days) && days >= 0) daysList.push(days);
+
+      tradesList.push(challengeTrades.length);
     }
     const avgDays = daysList.length ? daysList.reduce((s, n) => s + n, 0) / daysList.length : 0;
     const avgTrades = tradesList.length ? tradesList.reduce((s, n) => s + n, 0) / tradesList.length : null;
