@@ -193,7 +193,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; account: Account | null }>({ open: false, account: null });
 
   const { user } = useAuth();
-  const { accounts, removeAccount, patchAccount, archiveAccount, addAccount } = useAccountsContext();
+  const { accounts, removeAccount, patchAccount, addAccount } = useAccountsContext();
   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
   const { trades } = useTradesContext();
 
@@ -209,18 +209,54 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     [allRealPropfirmAccounts]
   );
 
-  // Bucket per tab
+  // Pick the single "top-level" account per challenge using lifecycle priority
+  // Priority: breached > active funded > active step 2 > active step 1 > newest
+  const pickLatestForChallenge = (group: Account[]): Account => {
+    const sorted = [...group].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    const breached = sorted.filter(a => a.status === 'breached');
+    if (breached.length) return breached[0]; // most recent breached
+    const fundedActive = sorted.find(
+      a => a.step === 'funded' && (a.status === 'active' || a.status === 'funded')
+    );
+    if (fundedActive) return fundedActive;
+    const step2Active = sorted.find(a => a.step === '2' && a.status === 'active');
+    if (step2Active) return step2Active;
+    const step1Active = sorted.find(a => a.step === '1' && a.status === 'active');
+    if (step1Active) return step1Active;
+    return sorted[0];
+  };
+
+  // Group all real propfirm accounts by challengeId, picking one "latest" per group.
+  // Standalone accounts (no challengeId) pass through unchanged.
+  const topLevelAccounts = useMemo(() => {
+    const groups = new Map<string, Account[]>();
+    const standalone: Account[] = [];
+    for (const a of allRealPropfirmAccounts) {
+      if (a.challengeId) {
+        const arr = groups.get(a.challengeId) ?? [];
+        arr.push(a);
+        groups.set(a.challengeId, arr);
+      } else {
+        standalone.push(a);
+      }
+    }
+    const picks: Account[] = [];
+    groups.forEach(g => picks.push(pickLatestForChallenge(g)));
+    return [...picks, ...standalone];
+  }, [allRealPropfirmAccounts]);
+
+  // Bucket per tab — strictly one row per challenge, hides 'completed'
   const realByTab = useMemo(() => {
-    const buckets = {
-      // Evaluations: anything in evaluation phase that is NOT breached and not archived
-      Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status !== 'breached'),
-      // Funded: anything in funded phase that is NOT breached and not archived
-      Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status !== 'breached'),
-      // Breached tab includes archived breached accounts too
-      Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
+    return {
+      Evaluations: topLevelAccounts.filter(
+        a => a.phase === 'evaluation' && a.status !== 'breached' && a.status !== 'completed'
+      ),
+      Funded: topLevelAccounts.filter(
+        a => a.phase === 'funded' && a.status !== 'breached'
+      ),
+      Breached: topLevelAccounts.filter(a => a.status === 'breached'),
     };
-    return buckets;
-  }, [realPropfirmAccounts, allRealPropfirmAccounts]);
+  }, [topLevelAccounts]);
 
   const accountTabs: { label: AccountTab; count: number }[] = [
     { label: "Evaluations", count: demoEvaluationAccounts.length + realByTab.Evaluations.length },
@@ -243,7 +279,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onDeleteChallenge: () => {},
   });
 
-  // Move current Step 1 account to Step 2: archive Step 1, create new Step 2 account.
+  // Move current Step 1 account to Step 2: mark Step 1 completed+archived, create new Step 2.
   const moveToStep2 = (account: Account) => {
     if (!account.challengeId) {
       toast.error("No challenge linked to this account");
@@ -251,7 +287,17 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     }
     const challenge = getChallengeById(account.challengeId);
     if (!challenge) return;
-    archiveAccount(account.id);
+    // Guard: do not duplicate Step 2
+    const existingStep2 = accounts.find(
+      a => a.challengeId === account.challengeId && a.step === '2'
+    );
+    if (existingStep2) {
+      toast.error("Step 2 account already exists for this challenge");
+      onSelectAccount(existingStep2.id);
+      return;
+    }
+    // Mark current step as completed (preserve history) and archive
+    patchAccount(account.id, { status: 'completed', isArchived: true });
     const newAcc = addAccount(
       `${challenge.nickname} (Step 2)`,
       challenge.balanceAmount ?? account.startingBalance,
@@ -262,7 +308,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onSelectAccount(newAcc.id);
   };
 
-  // Move to Funding: archive ALL accounts under this challenge, create new Funded account.
+  // Move to Funding: mark active accounts as completed, archive all, create new Funded account.
   const moveToFunding = (account: Account) => {
     if (!account.challengeId) {
       toast.error("No challenge linked to this account");
@@ -270,14 +316,30 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     }
     const challenge = getChallengeById(account.challengeId);
     if (!challenge) return;
+    // Guard: do not duplicate Funded
+    const existingFunded = accounts.find(
+      a => a.challengeId === account.challengeId && a.step === 'funded'
+    );
+    if (existingFunded) {
+      toast.error("Funded account already exists for this challenge");
+      onSelectAccount(existingFunded.id);
+      return;
+    }
+    // For each linked account: never overwrite breached/completed; promote 'active' → 'completed'
     accounts
       .filter(a => a.challengeId === account.challengeId)
-      .forEach(a => patchAccount(a.id, { isArchived: true }));
+      .forEach(a => {
+        if (a.status === 'active') {
+          patchAccount(a.id, { status: 'completed', isArchived: true });
+        } else {
+          patchAccount(a.id, { isArchived: true });
+        }
+      });
     const newAcc = addAccount(
       `${challenge.nickname} (Funded)`,
       challenge.balanceAmount ?? account.startingBalance,
       'propfirm',
-      { challengeId: account.challengeId, step: 'funded', phase: 'funded', status: 'active' }
+      { challengeId: account.challengeId, step: 'funded', phase: 'funded', status: 'funded' }
     );
     updateChallenge(account.challengeId, { status: 'funded' });
     toast.success(`${challenge.nickname} moved to Funding`);
@@ -287,7 +349,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   // Real actions (fully wired). View Details opens the REAL details page for this account.
   const realActions = (account: Account): AccountActions => {
     const challenge = account.challengeId ? getChallengeById(account.challengeId) : undefined;
-    const isBreached = account.status === 'breached';
+    const isBreached = account.status === 'breached' || challenge?.status === 'breached';
     const isFundedPhase = account.step === 'funded' || account.phase === 'funded';
 
     let progression: AccountActions['progression'];
