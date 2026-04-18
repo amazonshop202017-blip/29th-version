@@ -5,7 +5,9 @@ const PropFirmAccountsPage = () => {
   const navigate = useNavigate();
   return (
     <PropFirmAccounts
-      onSelectAccount={(id) => navigate(`/prop-firm/accounts/${id ?? "demo"}`)}
+      onSelectAccount={(id) => {
+        if (id) navigate(`/prop-firm/accounts/${id}`);
+      }}
     />
   );
 };

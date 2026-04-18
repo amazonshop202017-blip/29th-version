@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MoreHorizontal, Clock, CheckCircle2, LayoutList, LayoutGrid } from "lucide-react";
+import { MoreHorizontal, LayoutList, LayoutGrid } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -15,14 +15,6 @@ import { computeAccountStats, accountToRow } from "@/lib/propFirmStats";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
-
-const demoEvaluationAccounts = [
-  { id: "e8-eval", firm: "e8", step: "Step 1", status: "Active", balance: "$10,486.03", pnl: "+$486.03", pnlPositive: true, target: "8%", pnlBarValue: 60, tradingDays: "—", drawdown: "$0 / Max $800", consistency: "—" },
-];
-
-const demoFundedAccounts = [
-  { id: "mffu-funded", firm: "mffu", step: "Funded", status: "Active", balance: "$64,742", pnl: "+$14,742", pnlPositive: true, target: "—", pnlBarValue: 100, tradingDays: "35", drawdown: "—", consistency: "—" },
-];
 
 type AccountActions = {
   onViewDetails: () => void;
@@ -78,7 +70,6 @@ function ThreeDotMenu({ actions, allowDelete = false }: { actions: AccountAction
   );
 }
 
-type RowShape = typeof demoEvaluationAccounts[number];
 type RealRow = ReturnType<typeof accountToRow>;
 
 function TableView({
@@ -87,7 +78,7 @@ function TableView({
   makeActionsForRow,
   realIds,
 }: {
-  rows: (RowShape | RealRow)[];
+  rows: RealRow[];
   onSelect: (id: string) => void;
   makeActionsForRow: (id: string) => AccountActions;
   realIds: Set<string>;
@@ -154,36 +145,6 @@ function ProgressRow({ icon, label, sublabel, value, barValue, percentage, barCo
   );
 }
 
-function EvalAccountCard({ onSelect, actions }: { onSelect: () => void; actions: AccountActions }) {
-  return (
-    <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">e8</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">STEP 1</span></div><ThreeDotMenu actions={actions} /></div>
-      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $10,486.03 <span className="text-sm font-semibold text-emerald-500">(+$486.03)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "e8 markets"</span></div>
-      <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Feb 03, 2025</div></div></div>
-      <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> MetaTrader 5</div>
-      <div className="mt-1">
-        <ProgressRow icon={<div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-primary" /></div>} label="Target: 8%" value="Profit: $486.03" barValue={60.75} percentage="60.75%" barColor="bg-primary" />
-        <ProgressRow icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} label="Maximum daily loss: 2%" value="$0" barValue={0} percentage="0%" barColor="bg-muted-foreground/30" />
-        <ProgressRow icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} label="Maximum Drawdown: $800 (8%)" sublabel="Floor: $9,200" value="Drawdown: $0" barValue={0} percentage="0%" barColor="bg-muted-foreground/30" />
-      </div>
-    </div>
-  );
-}
-
-function FundedAccountCard({ onSelect, actions }: { onSelect: () => void; actions: AccountActions }) {
-  return (
-    <div onClick={onSelect} className="bg-muted/40 rounded-xl border border-border p-4 w-full sm:w-[320px] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-primary/20 active:scale-[0.98] active:shadow-sm">
-      <div className="flex items-center justify-between mb-2.5"><div className="flex items-center gap-2"><span className="text-xl font-black text-foreground tracking-tight leading-none">mffu</span><span className="text-[10px] font-semibold text-muted-foreground border border-border bg-card rounded px-1.5 py-0.5 uppercase tracking-wide">FUNDED</span></div><ThreeDotMenu actions={actions} /></div>
-      <div className="flex items-start justify-between mb-3"><div className="text-base font-bold text-foreground leading-tight">Balance: $64,742 <span className="text-sm font-semibold text-emerald-500">(+$14,742)</span></div><span className="text-xs text-muted-foreground whitespace-nowrap ml-2 mt-0.5">Use "mffu"</span></div>
-      <div className="bg-primary/10 rounded-lg px-3 py-2.5 flex items-center gap-2.5 mb-3"><div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0"><Clock className="w-3.5 h-3.5 text-primary" /></div><div><div className="text-sm font-semibold text-primary leading-tight">No time limit</div><div className="text-xs text-primary/70 mt-0.5">Started on Apr 07, 2026</div></div></div>
-      <div className="text-xs text-muted-foreground mb-0.5"><span className="font-medium text-foreground">Account:</span> Demo account</div>
-      <div className="mt-1">
-        <ProgressRow icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} label="Minimum trading days: 5" value="Days: 35" barValue={100} percentage="100%" barColor="bg-primary" />
-        <ProgressRow icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} label="Maximum daily loss: 6%" value="$0" barValue={0} percentage="0%" barColor="bg-muted-foreground/30" />
-      </div>
-    </div>
-  );
-}
 
 export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount: (id?: string) => void }) {
   const [activeTab, setActiveTab] = useState<AccountTab>("Evaluations");
@@ -259,25 +220,10 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   }, [topLevelAccounts]);
 
   const accountTabs: { label: AccountTab; count: number }[] = [
-    { label: "Evaluations", count: demoEvaluationAccounts.length + realByTab.Evaluations.length },
-    { label: "Funded", count: demoFundedAccounts.length + realByTab.Funded.length },
-    { label: "Breached", count: 0 + realByTab.Breached.length },
+    { label: "Evaluations", count: realByTab.Evaluations.length },
+    { label: "Funded", count: realByTab.Funded.length },
+    { label: "Breached", count: realByTab.Breached.length },
   ];
-
-  // Demo actions (toast/dialog only — no persistence). Demo opens demo details (no id).
-  const demoActions = (acc: typeof demoEvaluationAccounts[number]): AccountActions => ({
-    onViewDetails: () => onSelectAccount(),
-    progression: { label: "Move to Funding", onClick: () => toast.info("Coming soon") },
-    onMarkAsFailed: () =>
-      setFailedDialog({
-        open: true,
-        name: acc.firm,
-        subtitle: acc.firm === "e8" ? 'Use "e8 markets"' : `Use "${acc.firm}"`,
-        accountId: null,
-      }),
-    onEditChallenge: () => setEditModal({ open: true }),
-    onDeleteChallenge: () => {},
-  });
 
   // Move current Step 1 account to Step 2: mark Step 1 completed+archived, create new Step 2.
   const moveToStep2 = (account: Account) => {
@@ -423,12 +369,10 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
       });
     }
     const realList = activeTab === "Evaluations" ? realByTab.Evaluations : realByTab.Funded;
-    const realRows = realList.map(acc => {
+    return realList.map(acc => {
       const ch = acc.challengeId ? getChallengeById(acc.challengeId) : undefined;
       return accountToRow(acc, ch, computeAccountStats(acc, ch, trades));
     });
-    const demoList = activeTab === "Evaluations" ? demoEvaluationAccounts : demoFundedAccounts;
-    return [...realRows, ...demoList];
   }, [activeTab, realByTab, getChallengeById, trades]);
 
   // Include archived breached accounts so Breached tab rows resolve to real accounts/actions
@@ -436,16 +380,18 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
 
   const handleRowSelect = (id: string) => {
     if (realIds.has(id)) onSelectAccount(id);
-    else onSelectAccount();
   };
 
   const makeActionsForRow = (id: string): AccountActions => {
     const realAcc = allRealPropfirmAccounts.find(a => a.id === id);
     if (realAcc) return realActions(realAcc);
-    // demo row
-    const demoAcc =
-      demoEvaluationAccounts.find(d => d.id === id) ?? demoFundedAccounts.find(d => d.id === id);
-    return demoAcc ? demoActions(demoAcc) : demoActions(demoEvaluationAccounts[0]);
+    // Fallback (should never hit since rows are real-only)
+    return {
+      onViewDetails: () => {},
+      onMarkAsFailed: () => {},
+      onEditChallenge: () => {},
+      onDeleteChallenge: () => {},
+    };
   };
 
   const renderGridRealCards = (list: Account[]) =>
@@ -492,22 +438,26 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
             <p className="text-xs text-muted-foreground/60 mt-1">Keep your risk in check</p>
           </div>
         ) : viewMode === "list" ? (
-          <div className="overflow-x-auto"><TableView rows={tableRows} onSelect={handleRowSelect} makeActionsForRow={makeActionsForRow} realIds={realIds} /></div>
+          tableRows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm font-medium text-muted-foreground">No {activeTab.toLowerCase()} accounts</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Track a new challenge to get started</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto"><TableView rows={tableRows} onSelect={handleRowSelect} makeActionsForRow={makeActionsForRow} realIds={realIds} /></div>
+          )
         ) : (
           <div className="flex flex-wrap gap-4">
-            {activeTab === "Evaluations" && (
-              <>
-                {renderGridRealCards(realByTab.Evaluations)}
-                <EvalAccountCard onSelect={() => onSelectAccount()} actions={demoActions(demoEvaluationAccounts[0])} />
-              </>
-            )}
-            {activeTab === "Funded" && (
-              <>
-                {renderGridRealCards(realByTab.Funded)}
-                <FundedAccountCard onSelect={() => onSelectAccount()} actions={demoActions(demoFundedAccounts[0])} />
-              </>
-            )}
+            {activeTab === "Evaluations" && renderGridRealCards(realByTab.Evaluations)}
+            {activeTab === "Funded" && renderGridRealCards(realByTab.Funded)}
             {activeTab === "Breached" && renderGridRealCards(realByTab.Breached)}
+            {((activeTab === "Evaluations" && realByTab.Evaluations.length === 0) ||
+              (activeTab === "Funded" && realByTab.Funded.length === 0)) && (
+              <div className="flex flex-col items-center justify-center py-16 text-center w-full">
+                <p className="text-sm font-medium text-muted-foreground">No {activeTab.toLowerCase()} accounts</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Track a new challenge to get started</p>
+              </div>
+            )}
           </div>
         )}
       </div>
