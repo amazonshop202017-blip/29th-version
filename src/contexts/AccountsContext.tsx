@@ -142,7 +142,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     ));
   }, [accounts, saveAccounts]);
 
-  const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt'>>) => {
+  const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => {
     saveAccounts(accounts.map(a => a.id === id ? { ...a, ...patch } : a));
   }, [accounts, saveAccounts]);
 
