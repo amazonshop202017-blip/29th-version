@@ -29,11 +29,13 @@ const DayView = () => {
 
   // Filter trades by account (but NOT by date) for the calendar
   const accountFilteredTrades = useMemo(() => {
+    const activeSet = new Set(activeAccountIds);
     if (selectedAccounts.length === 0) {
-      return allTrades.filter(trade => activeAccountIds.includes(trade.accountId));
-    } else {
-      return allTrades.filter(trade => selectedAccounts.includes(trade.accountId));
+      return allTrades.filter(trade => activeSet.has(trade.accountId));
     }
+    // Intersect explicit selection with active accounts so archived ones are never included
+    const selectedSet = new Set(selectedAccounts);
+    return allTrades.filter(trade => selectedSet.has(trade.accountId) && activeSet.has(trade.accountId));
   }, [allTrades, selectedAccounts, activeAccountIds]);
 
   // Group filtered trades by date
