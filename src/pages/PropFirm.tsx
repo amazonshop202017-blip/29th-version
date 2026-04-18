@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MetricCards } from "@/components/propfirm/MetricCards";
 import { ROIChart } from "@/components/propfirm/ROIChart";
 import { FinanceBreakdown } from "@/components/propfirm/FinanceBreakdown";
@@ -17,7 +18,17 @@ import { Button } from "@/components/ui/button";
 type Tab = "dashboard" | "accounts" | "transactions";
 
 const PropFirm = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab: Tab = location.pathname.startsWith("/prop-firm/accounts")
+    ? "accounts"
+    : location.pathname.startsWith("/prop-firm/transactions")
+    ? "transactions"
+    : "dashboard";
+  const setActiveTab = (tab: Tab) => {
+    if (tab === "dashboard") navigate("/prop-firm");
+    else navigate(`/prop-firm/${tab}`);
+  };
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [trackAccountOpen, setTrackAccountOpen] = useState(false);

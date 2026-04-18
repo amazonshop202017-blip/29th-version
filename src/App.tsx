@@ -113,6 +113,8 @@ const AuthenticatedApp = () => {
                                   <Route path="/chart-room/trade-management" element={<TradeManagement />} />
                                   <Route path="/exit-analyzer" element={<ExitAnalyzer />} />
                                   <Route path="/prop-firm" element={<PropFirm />} />
+                                  <Route path="/prop-firm/accounts" element={<PropFirm />} />
+                                  <Route path="/prop-firm/transactions" element={<PropFirm />} />
                                   <Route path="/entering" element={<Navigate to="/" replace />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
