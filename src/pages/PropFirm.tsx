@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MetricCards } from "@/components/propfirm/MetricCards";
 import { ROIChart } from "@/components/propfirm/ROIChart";
 import { FinanceBreakdown } from "@/components/propfirm/FinanceBreakdown";
