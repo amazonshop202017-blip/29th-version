@@ -231,7 +231,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   // Demo actions (toast/dialog only — no persistence). Demo opens demo details (no id).
   const demoActions = (acc: typeof demoEvaluationAccounts[number]): AccountActions => ({
     onViewDetails: () => onSelectAccount(),
-    onMoveToFunding: () => toast.info("Coming soon"),
+    progression: { label: "Move to Funding", onClick: () => toast.info("Coming soon") },
     onMarkAsFailed: () =>
       setFailedDialog({
         open: true,
@@ -243,29 +243,83 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     onDeleteChallenge: () => {},
   });
 
+  // Move current Step 1 account to Step 2: archive Step 1, create new Step 2 account.
+  const moveToStep2 = (account: Account) => {
+    if (!account.challengeId) {
+      toast.error("No challenge linked to this account");
+      return;
+    }
+    const challenge = getChallengeById(account.challengeId);
+    if (!challenge) return;
+    archiveAccount(account.id);
+    const newAcc = addAccount(
+      `${challenge.nickname} (Step 2)`,
+      challenge.balanceAmount ?? account.startingBalance,
+      'propfirm',
+      { challengeId: account.challengeId, step: '2', phase: 'evaluation', status: 'active' }
+    );
+    toast.success(`${challenge.nickname} moved to Step 2`);
+    onSelectAccount(newAcc.id);
+  };
+
+  // Move to Funding: archive ALL accounts under this challenge, create new Funded account.
+  const moveToFunding = (account: Account) => {
+    if (!account.challengeId) {
+      toast.error("No challenge linked to this account");
+      return;
+    }
+    const challenge = getChallengeById(account.challengeId);
+    if (!challenge) return;
+    accounts
+      .filter(a => a.challengeId === account.challengeId)
+      .forEach(a => patchAccount(a.id, { isArchived: true }));
+    const newAcc = addAccount(
+      `${challenge.nickname} (Funded)`,
+      challenge.balanceAmount ?? account.startingBalance,
+      'propfirm',
+      { challengeId: account.challengeId, step: 'funded', phase: 'funded', status: 'active' }
+    );
+    updateChallenge(account.challengeId, { status: 'funded' });
+    toast.success(`${challenge.nickname} moved to Funding`);
+    onSelectAccount(newAcc.id);
+  };
+
   // Real actions (fully wired). View Details opens the REAL details page for this account.
-  const realActions = (account: Account): AccountActions => ({
-    onViewDetails: () => onSelectAccount(account.id),
-    onMoveToFunding: () => {
-      patchAccount(account.id, { phase: 'funded', step: 'funded', status: 'active' });
-      if (account.challengeId) updateChallenge(account.challengeId, { status: 'funded' });
-      toast.success(`${account.name} moved to Funding`);
-    },
-    onMarkAsFailed: () => {
-      const challenge = account.challengeId ? getChallengeById(account.challengeId) : undefined;
-      setFailedDialog({
-        open: true,
-        name: challenge?.firm || account.name,
-        subtitle: `Use "${challenge?.firm || account.name}"`,
-        accountId: account.id,
-      });
-    },
-    onEditChallenge: () => {
-      if (account.challengeId) setEditModal({ open: true, challengeId: account.challengeId });
-      else toast.error("No challenge linked to this account");
-    },
-    onDeleteChallenge: () => setDeleteDialog({ open: true, account }),
-  });
+  const realActions = (account: Account): AccountActions => {
+    const challenge = account.challengeId ? getChallengeById(account.challengeId) : undefined;
+    const isBreached = account.status === 'breached';
+    const isFundedPhase = account.step === 'funded' || account.phase === 'funded';
+
+    let progression: AccountActions['progression'];
+    if (!isBreached && !isFundedPhase && challenge) {
+      if (account.step === '1' && challenge.steps === 2) {
+        progression = { label: "Move to Step 2", onClick: () => moveToStep2(account) };
+      } else if (account.step === '1' && challenge.steps === 1) {
+        progression = { label: "Move to Funding", onClick: () => moveToFunding(account) };
+      } else if (account.step === '2') {
+        progression = { label: "Move to Funding", onClick: () => moveToFunding(account) };
+      }
+    }
+
+    return {
+      onViewDetails: () => onSelectAccount(account.id),
+      progression,
+      hideMarkAsFailed: isBreached,
+      onMarkAsFailed: () => {
+        setFailedDialog({
+          open: true,
+          name: challenge?.firm || account.name,
+          subtitle: `Use "${challenge?.firm || account.name}"`,
+          accountId: account.id,
+        });
+      },
+      onEditChallenge: () => {
+        if (account.challengeId) setEditModal({ open: true, challengeId: account.challengeId });
+        else toast.error("No challenge linked to this account");
+      },
+      onDeleteChallenge: () => setDeleteDialog({ open: true, account }),
+    };
+  };
 
   const handleConfirmFailed = (reason: string) => {
     if (!failedDialog.accountId) return;
