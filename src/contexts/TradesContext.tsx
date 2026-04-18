@@ -135,18 +135,21 @@ export const useFilteredTradesContext = (activeAccountIds?: string[]) => {
   const filteredTrades = useMemo(() => {
     let filtered = trades;
 
-    // When "All Accounts" is selected (selectedAccounts is empty), 
-    // filter to only include trades from ACTIVE (non-archived) accounts
+    // When "All Accounts" is selected (selectedAccounts is empty),
+    // filter to only include trades from ACTIVE (non-archived) accounts.
+    // Archived accounts must NEVER be included in the implicit "All accounts" set.
     if (selectedAccounts.length === 0) {
       if (accountIds.length > 0) {
-        filtered = filtered.filter(trade => 
-          accountIds.includes(trade.accountId)
-        );
+        const activeSet = new Set(accountIds);
+        filtered = filtered.filter(trade => activeSet.has(trade.accountId));
       }
     } else {
-      // Filter by specifically selected accounts (UUIDs)
-      filtered = filtered.filter(trade => 
-        selectedAccounts.includes(trade.accountId)
+      // Filter by specifically selected accounts (UUIDs).
+      // Also intersect with active account IDs so any stale archived selection is ignored.
+      const activeSet = accountIds.length > 0 ? new Set(accountIds) : null;
+      const selectedSet = new Set(selectedAccounts);
+      filtered = filtered.filter(trade =>
+        selectedSet.has(trade.accountId) && (!activeSet || activeSet.has(trade.accountId))
       );
     }
 
