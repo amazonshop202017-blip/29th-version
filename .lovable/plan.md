@@ -1,193 +1,150 @@
-# Prop Firm Transactions — Full Implementation Plan
+# Wire Prop Firm Dashboard to Live Data
 
-## 1. New context — `TransactionsContext.tsx`
+The `BreachInsights` card is already wired. The remaining four widgets (`MetricCards`, `ROIChart`, `FinanceBreakdown`, `PassingInsights`) currently show mock data — I'll replace them with memoized calculations from `AccountsContext`, `ChallengesContext`, `TransactionsContext`, and `TradesContext`.
 
-Create `src/contexts/TransactionsContext.tsx` (separate from the existing deposit/withdraw `Transaction` in `AccountsContext`, which we'll leave untouched).
+## 1. `MetricCards.tsx` — full rewrite
+
+Compute live values:
+
+- **Funded card**: `accounts.filter(a => a.step === 'funded' && a.status === 'funded' && !a.isArchived)`. Balance = Σ `getAccountWithStats(a.id).currentBalance`; sub-line = `${count} funded account(s)`.
+- **Evaluation card**: `accounts.filter(a => a.phase === 'evaluation' && a.status === 'active' && !a.isArchived)`. Balance = Σ current balance.
+- **Total Spent**: `Σ tx.amount` where `type === 'expense'`, `status !== 'ignored'`, category in `evaluation_fee | activation_fee | reset | other_expense`.
+- **Total Earned**: `Σ tx.amount` where `type === 'income'`, `status !== 'ignored'`, category in `payout | refund | commission | other_income`.
+- **Net Total**: `earned − spent`; ROI% = `spent > 0 ? (net/spent)*100 : 0`. Color green when ≥0, rose when <0.
+
+All wrapped in a single `useMemo` keyed on `[accounts, transactions, getAllAccountsWithStats]`.
+
+Add a **second row** (3 cards) for Pass Rate / Avg Days to Funded / Avg Trades to Funded:
+
+- **Pass Rate**: `passed = accounts.filter(a => a.status === 'completed' && a.step !== 'funded').length`; `attempted = accounts.filter(a => a.phase === 'evaluation' && a.step !== 'funded').length`. Rate = `passed/attempted * 100`.
+- **Avg Days to Funded**: For each funded account, find earliest account in same `challengeId`; `days = (fundedAccount.createdAt − step1.createdAt) / 86400000`. Average.
+- **Avg Trades to Funded**: For each funded account, gather trades from all accounts sharing its `challengeId` with `closeDate ≤ fundedAccount.createdAt` (using `calculateTradeMetrics(t).closeDate`). Average count.
+
+## 2. `ROIChart.tsx` — full rewrite
+
+Build cumulative time series from non-ignored transactions:
 
 ```ts
-export type TxType = 'income' | 'expense';
-export type TxStatus = 'reviewed' | 'not_reviewed' | 'ignored';
-export type TxCategory =
-  | 'evaluation_fee' | 'activation_fee' | 'payout'
-  | 'refund' | 'commission' | 'other_income' | 'other_expense';
-
-export interface PropFirmTransaction {
-  id: string; userId: string;
-  accountId?: string; challengeId?: string;
-  firm: string;
-  type: TxType; category: TxCategory;
-  description?: string;
-  amount: number;       // ALWAYS positive
-  date: string;         // ISO
-  status: TxStatus;
-  createdAt: string; updatedAt: string;
-}
+const sorted = txs.sort((a,b) => +new Date(a.date) - +new Date(b.date));
+let cumIn=0, cumEx=0;
+const points = sorted.map(t => {
+  if (t.type==='income') cumIn += t.amount; else cumEx += t.amount;
+  return { date: t.date, income: cumIn, expenses: -cumEx, roi: cumIn - cumEx };
+});
 ```
 
-Storage key: `propfirm-transactions-v1` (localStorage). All mutations use functional `setState(prev => …)` like `AccountsContext`.
+Then bucket by period ("1W" = last 7d daily, "1M" = last 30d every ~5d, "1Y" = last 12 months monthly). For empty buckets carry forward last cumulative values. Keep existing chart UI (areas, gradients, tooltip, period switcher). Show centered empty state when no transactions.
 
-API:
+## 3. `FinanceBreakdown.tsx` — full rewrite
 
-- `transactions`, `addTransaction(input)`, `updateTransaction(id, patch)`, `deleteTransaction(id)`, `bulkUpdateStatus(ids, status)`, `bulkDelete(ids)`
-- `getByChallengeId(id)`, `getByAccountId(id)`
+Compute groups based on `activeTab`:
 
-Wire provider in `App.tsx` inside `<ChallengesProvider>` (after, since transactions reference challenges).
+- **By firm**: group txs by `challenges.find(c => c.challengeId === tx.challengeId)?.firm ?? tx.firm`.
+- **By account type**: map `challenge.steps` → `1 → "1-step"`, `2 → "2-step"`, `0 → "Instant"`. Group txs by lookup.
+- **By account size**: `challenge.balanceAmount` formatted to bucket label (`10K`, `50K`, `100K`, etc. via the same helper as BreachInsights).
+- **Expenses**: group expense txs by category (`evaluation_fee`, `activation_fee`, `reset`, `other_expense`).
 
-## 2. Auto-transactions hook — `useChallengeAutoTransactions`
+For each group: `spent`, `earned`, `net = earned − spent`, `barProgress = (max(spent,earned) / globalMax)*100`, `percent = (groupVolume / totalVolume)*100`. Use distinct color palette `["#22c55e","#6366f1","#f59e0b","#ec4899","#06b6d4","#8b5cf6"]`. Donut center shows total net across groups; if no data, render empty state.
 
-A small effect-based reconciler that runs once on app load + on challenge add. For every challenge:
+## 4. `PassingInsights.tsx` — full rewrite
 
-- If `evaluationFee > 0` and no transaction with `(challengeId, category:'evaluation_fee')` exists → create one (`type:'expense'`, `status:'reviewed'`, date = `challenge.createdAt`).
-- If `activationFee > 0` and no transaction with `(challengeId, category:'activation_fee')` exists → create one similarly.
+Group accounts (eval-only, exclude `step === 'funded'` and instant funded `steps === 0`) by:
 
-Place the hook inside a small wrapper component `<TransactionsAutoSync/>` rendered once below the providers, so it never re-creates duplicates (idempotent via the existence check).
+- **By firm** → `challenge.firm`
+- **By account type** → `challenge.steps` mapped to "1-step" / "2-step"
+- **By account size** → balance bucket
+- **By strategy** → flatten `challenge.setups[]` (one row per setup an account uses)
 
-## 3. Update `PayoutModal.tsx` — make it functional
+For each group: `attempted = total in group`; `passed = those where status === 'completed'`. `pct = passed/attempted * 100`. Render as existing list with progress bar and "Passed X out of Y accounts" sub-line. Empty state when no eval data.
 
-Wire it to real state instead of static UI:
+## 5. Shared helpers
 
-- Challenge dropdown (from `useChallengesContext`)
-- Amount (positive number, validated)
-- Date (uses Shadcn DatePicker → existing pattern in repo)
-- On confirm → `addTransaction({ type:'income', category:'payout', amount, challengeId, firm: challenge.firm, accountId: latestAccountForChallenge?.id, status:'reviewed', date })`
+Create `src/lib/propfirmDashboardStats.ts` with pure functions:
 
-## 4. Rewrite `PropFirmTransactions.tsx`
+- `getNonIgnoredTxs(txs)`
+- `formatSizeBucket(n)` (reuse from BreachInsights)
+- `accountTypeLabel(steps)`
+- `groupTransactions(txs, getKey)` → `Map<key, {spent, earned}>`
 
-Replace the mock array + UI with a fully wired implementation. Keep current visual design (cards, tabs, table, pagination).
+Pure-function structure keeps everything memoizable and SQL-translatable per spec §11.
 
-### State
+## 6. No changes needed
 
-- `filterTab: 'all' | 'income' | 'expense' | 'needs_review'`
-- `search: string`
-- `selectedIds: Set<string>` (bulk)
-- `page`, `pageSize` (default 10)
-- `editingTx`, `addOpen` (modal)
+- `PropFirmDashboard.tsx` layout stays the same.
+- `BreachInsights.tsx` already wired correctly.
+- Contexts unchanged.
 
-### Derived data
+## Files modified
 
-1. `visibleTxs` = transactions where `status !== 'ignored'` (the "ignored" filter is reachable only via a future tab; per spec, ignored are excluded from cards & tabs).
-2. Apply tab filter:
-  - `all` → visibleTxs
-  - `income` → `type==='income'`
-  - `expense` → `type==='expense'`
-  - `needs_review` → `status==='not_reviewed'`
-3. Apply search across challenge nickname, account name, firm, category label, description.
+- `src/components/propfirm/MetricCards.tsx`
+- `src/components/propfirm/ROIChart.tsx`
+- `src/components/propfirm/FinanceBreakdown.tsx`
+- `src/components/propfirm/PassingInsights.tsx`
 
-### Summary cards (reactive, not hard-coded)
+## Files created
 
-Computed from filtered (post-tab, post-search) but always excluding `ignored`:
-
-- Total Transactions: count, volume = Σ amounts (any type)
-- Total Income: Σ where type income
-- Total Spent: Σ where type expense
-- Net Cash Flow: income − expense (color-coded green/red)
-
-### Table
-
-Columns from spec. Account/challenge resolved via `getAccountById` and `getChallengeById`. Empty resolution shows `—`.
-
-- Type badge (income/expense)
-- Status badge (reviewed = green, not_reviewed = amber, ignored = grey)
-- Amount: green `+$x` for income, red `−$x` for expense
-- Row checkbox + master checkbox
-- Action menu: Edit / Mark reviewed / Mark not reviewed / Mark ignored / Mark unignored / Delete (with confirm)
-
-### Empty states
-
-- Zero transactions overall → centered "No transactions yet" + "Add transaction" CTA
-- Zero after filter → "No matching transactions"
-
-### Bulk actions
-
-Bar visible when `selectedIds.size > 0`: Mark reviewed, Mark not reviewed, Mark ignored, Delete.
-
-### Pagination
-
-Slice on `page * pageSize`. Page-size dropdown (10 / 25 / 50). Prev/Next + "1 – N of M".
-
-## 5. New `AddEditTransactionModal.tsx`
-
-Single modal handles both create + edit (mirrors `TrackAccountModal` styling).
-
-Fields:
-
-- **Type** segmented toggle (Income / Expense)
-- **Challenge** dropdown (from challenges)
-- **Account** dropdown — populated from `getAccountsByChallengeId(challengeId)` after challenge selected (optional)
-- **Firm** auto-filled from challenge, editable
-- **Category** dropdown — Income: payout / refund / commission / other_income; Expense: evaluation_fee / activation_fee / other_expense
-- **Amount** numeric (positive only)
-- **Date** Shadcn DatePicker (`pointer-events-auto`)
-- **Description** textarea (optional, ≤500 chars)
-- **Status** segmented (default `reviewed`)
-
-Validation (zod):
-
-- `type` required, `amount > 0`, `date` required, `firm.trim()` required
-- `description.max(500)`, `amount.max(1_000_000)`
-
-Submit → `addTransaction(...)` or `updateTransaction(id, ...)`.
-
-## 6. Files touched / created
-
-Created:
-
-- `src/contexts/TransactionsContext.tsx`
-- `src/components/propfirm/AddEditTransactionModal.tsx`
-- `src/components/propfirm/TransactionsAutoSync.tsx`
-
-Modified:
-
-- `src/components/propfirm/PropFirmTransactions.tsx` — full rewrite per above
-- `src/components/propfirm/PayoutModal.tsx` — wire to TransactionsContext
-- `src/App.tsx` — add `<TransactionsProvider>` + `<TransactionsAutoSync/>`
-
-## 7. Edge cases handled
-
-- **Existing challenges** at first run: auto-sync creates eval/activation fee transactions retroactively (idempotent).
-- **Challenge deleted** (`removeChallenge` exists): transactions remain but show `—` for challenge name; user can delete or re-link via edit.
-- **No accounts on challenge** (e.g. all archived in detail view): account dropdown still allows selection from full account list filtered by `challengeId`.
-- **Negative amount entry**: rejected by zod; type controls direction.
-- **Ignored rows**: hidden from cards & non-"All" tabs; visible in `All` (greyed badge) so user can unignore.
-- **Bulk delete**: confirms via `AlertDialog` before deletion.
+- `src/lib/propfirmDashboardStats.ts`
 
 &nbsp;
 
-## “Ignored visibility” contradiction
+## FINAL IMPLEMENTATION SAFETY (IMPORTANT)
 
-Your plan says:
+1. IMMUTABLE SORTING (CRITICAL)
 
-```
-visibleTxs = status !== 'ignored'
-```
+- Never call .sort() directly on context/state arrays (transactions, accounts, trades).
 
-But later:
+- .sort() mutates the original array and can break React state consistency.
 
-```
-Ignored rows visible in All tab
-```
+Always clone before sorting:
 
----
+  const sorted = [...txs].sort((a, b) => ...)
 
-### ❗ Conflict
+Apply this rule in:
 
-You can’t both:
+- ROIChart (time-series sorting)
 
--   
-exclude ignored  
+- Any grouping or ordering logic across dashboard components
 
--   
-and show them in “All”  
+-----------------------------------
 
+2. SAFE RELATION RESOLUTION (NO CRASHES)
 
----
+When resolving linked data:
 
-### ✅ Fix
+- challengeId → challenge
 
-```
-const visibleTxs = transactions; // include all
+- accountId → account
 
-// then filter:
-if (tab === 'all') → include ALL (including ignored)
-if (tab !== 'all') → exclude ignored
-```
+Always use safe fallback:
+
+  const challenge = challenges.find(c => c.challengeId === tx.challengeId);
+
+  const firm =
+
+    challenge?.firm ??
+
+    tx.firm ??
+
+    "Unknown";
+
+  const challengeName =
+
+    challenge?.nickname ??
+
+    "Deleted Challenge";
+
+- Never access properties like challenge.firm without optional chaining.
+
+- UI must not break if a related entity is missing (deleted or not found).
+
+-----------------------------------
+
+3. GOAL OF THESE RULES
+
+- Prevent hidden state mutation bugs
+
+- Ensure dashboard stability even with partial/missing data
+
+- Maintain React best practices (immutability)
+
+- Keep logic safe for future database migration
