@@ -143,8 +143,12 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   }, [accounts, saveAccounts]);
 
   const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => {
-    saveAccounts(accounts.map(a => a.id === id ? { ...a, ...patch } : a));
-  }, [accounts, saveAccounts]);
+    setAccounts(prev => {
+      const next = prev.map(a => a.id === id ? { ...a, ...patch } : a);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const getAccountById = useCallback((id: string) => {
     return accounts.find(a => a.id === id);
