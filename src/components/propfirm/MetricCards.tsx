@@ -101,7 +101,7 @@ export function MetricCards() {
       passRate, passed, attempted,
       avgDays, avgTrades, fundedTotal: fundedAll.length,
     };
-  }, [accounts, transactions, trades, getAllAccountsWithStats]);
+  }, [accounts, transactions, trades, getAllAccountsWithStats, getChallengeById]);
 
   const fmtUsd = (n: number) => `$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   const netSign = m.net >= 0 ? "+" : "-";
