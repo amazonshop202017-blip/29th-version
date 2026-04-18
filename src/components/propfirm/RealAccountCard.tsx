@@ -14,10 +14,11 @@ import type { Trade } from "@/types/trade";
 
 type AccountActions = {
   onViewDetails: () => void;
-  onMoveToFunding: () => void;
   onMarkAsFailed: () => void;
   onEditChallenge: () => void;
   onDeleteChallenge: () => void;
+  progression?: { label: string; onClick: () => void };
+  hideMarkAsFailed?: boolean;
 };
 
 type Props = {

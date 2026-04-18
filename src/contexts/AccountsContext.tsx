@@ -62,6 +62,8 @@ interface AccountsContextType {
   getActiveAccountIds: () => string[];
   // Get account balance BEFORE any trade P/L (starting balance + transactions only)
   getAccountBalanceBeforeTrades: (id: string) => number;
+  // Get all accounts (active + archived) linked to a challenge
+  getAccountsByChallengeId: (challengeId: string) => Account[];
 }
 
 const AccountsContext = createContext<AccountsContextType | undefined>(undefined);
@@ -264,6 +266,10 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     return account.startingBalance + depositTotal - withdrawTotal;
   }, [accounts, transactions]);
 
+  const getAccountsByChallengeId = useCallback((challengeId: string): Account[] => {
+    return accounts.filter(a => a.challengeId === challengeId);
+  }, [accounts]);
+
   return (
     <AccountsContext.Provider value={{
       accounts,
@@ -284,6 +290,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       getTransactionsForAccount,
       getActiveAccountIds,
       getAccountBalanceBeforeTrades,
+      getAccountsByChallengeId,
     }}>
       {children}
     </AccountsContext.Provider>
