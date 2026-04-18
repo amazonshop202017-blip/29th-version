@@ -14,6 +14,7 @@ export function MetricCards() {
   const { accounts, getAllAccountsWithStats } = useAccountsContext();
   const { transactions } = useTransactionsContext();
   const { trades } = useTradesContext();
+  const { getChallengeById } = useChallengesContext();
 
   const m = useMemo(() => {
     const stats = getAllAccountsWithStats();
