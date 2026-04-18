@@ -73,7 +73,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
     const tx: PropFirmTransaction = {
       ...input,
       id: uid(),
-      userId: user?.id || 'local',
+      userId: user?.userId || 'local',
       createdAt: now,
       updatedAt: now,
       amount: Math.abs(input.amount),
@@ -112,7 +112,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
       const tx: PropFirmTransaction = {
         ...input,
         id: uid(),
-        userId: user?.id || 'local',
+        userId: user?.userId || 'local',
         createdAt: now,
         updatedAt: now,
         amount: Math.abs(input.amount),
