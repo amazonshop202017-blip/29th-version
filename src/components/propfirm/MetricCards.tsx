@@ -44,37 +44,52 @@ export function MetricCards() {
     const passed = accounts.filter(a => a.status === "completed" && a.step !== "funded").length;
     const passRate = attempted > 0 ? (passed / attempted) * 100 : 0;
 
-    // Avg Days to Funded
+    // Avg Days to Funded — multi-step aware
     const fundedAll = accounts.filter(a => a.step === "funded" && a.status === "funded");
+
+    // Pre-group trades by accountId for performance
+    const tradesByAccount = new Map<string, typeof trades>();
+    for (const t of trades) {
+      const list = tradesByAccount.get(t.accountId);
+      if (list) list.push(t);
+      else tradesByAccount.set(t.accountId, [t]);
+    }
+
     const daysList: number[] = [];
     const tradesList: number[] = [];
+
     for (const fa of fundedAll) {
-      const fundedTs = new Date(fa.createdAt).getTime();
-      if (!fa.challengeId || !isFinite(fundedTs)) continue;
+      if (!fa.challengeId) continue;
+      const challenge = getChallengeById(fa.challengeId);
+      if (!challenge || challenge.steps === 0) continue;
 
-      // ALL accounts in challenge (no archive filter)
-      const sameChallenge = accounts.filter(x => x.challengeId === fa.challengeId);
-      if (!sameChallenge.length) continue;
+      const step1 = accounts.find(x => x.challengeId === fa.challengeId && x.step === "1");
+      if (!step1) continue;
+      const startTs = new Date(step1.createdAt).getTime();
+      if (!isFinite(startTs)) continue;
 
-      // Sort ASC by createdAt (immutable clone), pick earliest with valid date
-      const sorted = [...sameChallenge]
-        .filter(x => isFinite(new Date(x.createdAt).getTime()))
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const completionAcct = challenge.steps === 2
+        ? accounts.find(x => x.challengeId === fa.challengeId && x.step === "2")
+        : step1;
+      if (!completionAcct) continue;
 
-      const startDate = sorted[0];
-      if (!startDate) continue;
+      const acctTrades = tradesByAccount.get(completionAcct.id) ?? [];
+      const closeTimes = acctTrades
+        .map(t => {
+          const cd = calculateTradeMetrics(t).closeDate;
+          return cd ? new Date(cd).getTime() : NaN;
+        })
+        .filter(ts => isFinite(ts));
 
-      const days = (fundedTs - new Date(startDate.createdAt).getTime()) / 86400000;
+      const endTs = closeTimes.length
+        ? Math.max(...closeTimes)
+        : new Date(fa.createdAt).getTime();
+      if (!isFinite(endTs)) continue;
+
+      const days = (endTs - startTs) / 86400000;
       if (isFinite(days) && days >= 0) daysList.push(days);
 
-      const acctIds = new Set(sameChallenge.map(x => x.id));
-      const tradesCount = trades.filter(t => {
-        if (!acctIds.has(t.accountId)) return false;
-        const closeDate = calculateTradeMetrics(t).closeDate;
-        if (!closeDate) return false;
-        return new Date(closeDate).getTime() <= fundedTs;
-      }).length;
-      tradesList.push(tradesCount);
+      tradesList.push(acctTrades.length);
     }
     const avgDays = daysList.length ? daysList.reduce((s, n) => s + n, 0) / daysList.length : 0;
     const avgTrades = tradesList.length ? tradesList.reduce((s, n) => s + n, 0) / tradesList.length : null;
