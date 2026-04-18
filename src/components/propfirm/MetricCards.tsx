@@ -47,26 +47,34 @@ export function MetricCards() {
     const daysList: number[] = [];
     const tradesList: number[] = [];
     for (const fa of fundedAll) {
-      if (!fa.challengeId || !fa.createdAt) continue;
+      const fundedTs = new Date(fa.createdAt).getTime();
+      if (!fa.challengeId || !isFinite(fundedTs)) continue;
+
+      // ALL accounts in challenge (no archive filter)
       const sameChallenge = accounts.filter(x => x.challengeId === fa.challengeId);
       if (!sameChallenge.length) continue;
-      const earliest = sameChallenge.reduce((min, x) =>
-        new Date(x.createdAt).getTime() < new Date(min.createdAt).getTime() ? x : min
-      );
-      const days = (new Date(fa.createdAt).getTime() - new Date(earliest.createdAt).getTime()) / 86400000;
-      if (days >= 0 && isFinite(days)) daysList.push(days);
 
-      const cutoff = new Date(fa.createdAt).getTime();
+      // Sort ASC by createdAt (immutable clone), pick earliest with valid date
+      const sorted = [...sameChallenge]
+        .filter(x => isFinite(new Date(x.createdAt).getTime()))
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      const startDate = sorted[0];
+      if (!startDate) continue;
+
+      const days = (fundedTs - new Date(startDate.createdAt).getTime()) / 86400000;
+      if (isFinite(days) && days >= 0) daysList.push(days);
+
       const acctIds = new Set(sameChallenge.map(x => x.id));
       const tradesCount = trades.filter(t => {
         if (!acctIds.has(t.accountId)) return false;
         const closeDate = calculateTradeMetrics(t).closeDate;
         if (!closeDate) return false;
-        return new Date(closeDate).getTime() <= cutoff;
+        return new Date(closeDate).getTime() <= fundedTs;
       }).length;
       tradesList.push(tradesCount);
     }
-    const avgDays = daysList.length ? daysList.reduce((s, n) => s + n, 0) / daysList.length : null;
+    const avgDays = daysList.length ? daysList.reduce((s, n) => s + n, 0) / daysList.length : 0;
     const avgTrades = tradesList.length ? tradesList.reduce((s, n) => s + n, 0) / tradesList.length : null;
 
     return {
