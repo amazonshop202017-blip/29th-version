@@ -193,7 +193,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; account: Account | null }>({ open: false, account: null });
 
   const { user } = useAuth();
-  const { accounts, removeAccount, patchAccount, archiveAccount } = useAccountsContext();
+  const { accounts, removeAccount, patchAccount, archiveAccount, addAccount } = useAccountsContext();
   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
   const { trades } = useTradesContext();
 
