@@ -101,6 +101,18 @@ export default function PropFirmTransactions() {
     else if (filterTab === "needs_review") list = list.filter(t => t.status === "not_reviewed");
     // "all" includes everything (including ignored)
 
+    if (filters.firms.length > 0) {
+      list = list.filter(t => filters.firms.includes(t.firm));
+    }
+
+    if (filters.categories.length > 0) {
+      list = list.filter(t => {
+        if (filters.categories.includes(t.category as any)) return true;
+        if (filters.categories.includes("uncategorized") && UNCATEGORIZED_CATEGORIES.includes(t.category)) return true;
+        return false;
+      });
+    }
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(t => {
@@ -117,7 +129,7 @@ export default function PropFirmTransactions() {
       });
     }
     return list;
-  }, [transactions, filterTab, search, challenges, accounts]);
+  }, [transactions, filterTab, search, filters, challenges, accounts]);
 
   // Summary cards: always exclude ignored
   const summary = useMemo(() => {
