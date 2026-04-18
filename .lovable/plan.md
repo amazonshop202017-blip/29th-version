@@ -1,82 +1,220 @@
+# Account Lifecycle Status + Hierarchy Display
 
-# Prop Firm Account Progression — Implementation Plan
+## 1. Type updates (`AccountsContext.tsx`)
 
-## Goal
-Each phase (Step 1 / Step 2 / Funded) is its own account row tied to a `challengeId`. Progressing never overwrites an account — it archives the current one and creates a new one. The detail page builds tabs from all accounts (including archived) sharing the same `challengeId`.
+Extend `PropFirmStatus`:
 
----
+```ts
+export type PropFirmStatus = 'active' | 'completed' | 'breached' | 'funded';
+```
 
-## What we'll change
+Also widen the `patchAccount` signature so `status` can be patched (currently it isn't in the `Pick<>` allowlist):
 
-### 1. New helper on `AccountsContext` — `getAccountsByChallengeId(id)`
-Returns all accounts (active + archived) linked to a challenge, used by the detail page to build tabs.
+```ts
+patchAccount: (id, patch: Partial<Pick<Account,
+  'name'|'phase'|'step'|'status'|'breachReason'|'breachedAt'|'isArchived'>>) => void;
+```
 
-### 2. Initial account creation (`TrackAccountModal.tsx`)
-Already creates one account per challenge. Update the create branch:
-- `steps === 0` (Funded phase) → create one Funded account (already done, keep)
-- `steps === 1` → create one Step 1 account (already done, keep)
-- `steps === 2` → create one Step 1 account only (Step 2 created later via progression). Already correct.
+(`status` is already there — verify, no change if so.)
 
-No structural change here — just verify naming convention `${nickname} (Step 1)` / `(Step 2)` / `(Funded)`.
+## 2. Step transition logic (`PropFirmAccounts.tsx`)
 
-### 3. Step transition logic (`PropFirmAccounts.tsx` → `realActions`)
-Replace the current `onMoveToFunding` handler with two new actions wired by button label, and add a new action `onMoveToStep2`.
+### `moveToStep2(account)` — replace current body
 
-**`onMoveToStep2`** (only enabled when `account.step === '1'` and `challenge.steps === 2`)
-- `archiveAccount(account.id)` — archive Step 1
-- `addAccount(\`${challenge.nickname} (Step 2)\`, challenge.balanceAmount, 'propfirm', { challengeId, step: '2', phase: 'evaluation', status: 'active' })`
+- `patchAccount(account.id, { status: 'completed', isArchived: true })` (instead of just `archiveAccount`)
+- `addAccount(... { step:'2', phase:'evaluation', status:'active' })`
+- Navigate to new account.
 
-**`onMoveToFunding`** (rewritten)
-- For every account where `challengeId === account.challengeId`: `patchAccount(a.id, { isArchived: true })`
-- `addAccount(\`${challenge.nickname} (Funded)\`, challenge.balanceAmount, 'propfirm', { challengeId, step: 'funded', phase: 'funded', status: 'active' })`
-- `updateChallenge(challengeId, { status: 'funded' })`
+### `moveToFunding(account)` — rewrite the loop
 
-### 4. Three-dot menu — dynamic button label
-In `ThreeDotMenu`, replace the static "Move to Funding" item with a dynamic one based on the active account's step + challenge.steps:
-- `step === '1'` && `challenge.steps === 2` → **"Move to Step 2"**
-- `step === '1'` && `challenge.steps === 1` → **"Move to Funding"**
-- `step === '2'` → **"Move to Funding"**
-- `step === 'funded'` → hide the progression item entirely
-- Already-breached accounts → hide both progression items
+For every account where `challengeId === account.challengeId`:
 
-This requires passing the account+challenge into `ThreeDotMenu` (or computing the label/handler at the call site and feeding a single `progression?: { label, onClick }` field into `AccountActions`).
+- If current `status === 'active'` → `patchAccount(a.id, { status: 'completed', isArchived: true })`
+- Else (`completed` or `breached`) → `patchAccount(a.id, { isArchived: true })` (preserve status)
 
-### 5. Detail page — dynamic tabs from accounts (`RealPropFirmAccountDetails.tsx`)
-Currently tabs are derived from `challenge.steps`, and the page only shows data for the URL-routed account. Rework:
+Then create the funded account with `status: 'funded'` (not `'active'`):
 
-- Fetch **all** accounts linked via `challengeId` using the new context helper (includes archived ones).
-- Build tabs from those accounts:
-  - Account with `step === '1'` → **STEP 1** tab
-  - Account with `step === '2'` → **STEP 2** tab
-  - Account with `step === 'funded'` → **FUNDED** tab
-- If only a Funded account exists (Instant Funded case), only render the FUNDED tab.
-- Each tab is bound to its own `accountId`. Switching tabs swaps which account drives `accountTrades`, `stats`, `selectedRules`, `balanceSeries`, the trades table, and the path-to-funding card.
-- Default tab = the tab matching the currently active (non-archived) account; falls back to the URL accountId.
-- Archived accounts in tabs get a small visual hint (e.g. "Archived" pill) but still show full historical data.
+```ts
+addAccount(..., { step:'funded', phase:'funded', status:'funded' })
+```
 
-### 6. Routing behaviour
-`PropFirmAccountsPage` already routes to `/prop-firm/accounts/:accountId`. After progression, navigate to the new account's id so the URL stays consistent with the active account. The detail page will still render correctly for any historical account because tabs derive from the shared `challengeId`.
+Then `updateChallenge(challengeId, { status: 'funded' })`.
 
-### 7. Archived accounts visibility
-Already correct in `PropFirmAccounts.tsx`:
-- Evaluations / Funded buckets filter out archived (`!a.isArchived`).
-- Breached tab keeps archived. No change needed there.
+## 3. Breach logic — already correct
 
----
+Existing `handleConfirmFailed` already:
 
-## Files touched
+- sets status `breached`, archives target + all siblings,
+- updates challenge to `breached`.
+No flow change. Progression button is already hidden when `account.status === 'breached'`. Add an extra guard so progression is also hidden if the **challenge** itself is `'breached'` (defensive — covers archived breached + later actions).
 
-- `src/contexts/AccountsContext.tsx` — add `getAccountsByChallengeId`
-- `src/components/propfirm/TrackAccountModal.tsx` — verify create branch (no logic change expected)
-- `src/components/propfirm/PropFirmAccounts.tsx` — rewrite `onMoveToFunding`, add `onMoveToStep2`, dynamic menu label, hide progression for breached/funded
-- `src/components/propfirm/RealPropFirmAccountDetails.tsx` — derive tabs from accounts list (not from `challenge.steps`); per-tab data binding; handle Instant Funded
-- `src/pages/propfirm/PropFirmAccountsPage.tsx` — no change (URL already keyed by accountId)
+## 4. Accounts page — top-level hierarchy display
 
----
+Currently `realByTab.Evaluations / Funded` filter by `!isArchived`, so the latest active per challenge is naturally what's shown. But to satisfy the explicit "one row per challenge by priority" rule and handle edge cases (e.g. funded account with `status:'funded'` not being filtered out), refactor the buckets:
 
-## Edge cases handled
+Add a helper inside `PropFirmAccounts.tsx`:
 
-- **Instant Funded** (`steps === 0`) — only Funded tab; no progression buttons.
-- **Breached account** — progression items hidden in menu (already aligned with prior memory).
-- **Re-entering details after progression** — old archived account still loads via its tab; new active account is the default tab.
-- **Mark as Failed mid-Step-2** — existing logic already archives all challenge accounts and breaches the current one; remains compatible.
+```ts
+function pickLatestForChallenge(group: Account[]): Account {
+  // Priority: breached > active funded > active step 2 > active step 1 > newest
+  const breached = group.find(a => a.status === 'breached');
+  if (breached) return breached;
+  const fundedActive = group.find(a => a.step === 'funded' && (a.status === 'active' || a.status === 'funded'));
+  if (fundedActive) return fundedActive;
+  const step2Active = group.find(a => a.step === '2' && a.status === 'active');
+  if (step2Active) return step2Active;
+  const step1Active = group.find(a => a.step === '1' && a.status === 'active');
+  if (step1Active) return step1Active;
+  return [...group].sort((a,b)=>+new Date(b.createdAt)-+new Date(a.createdAt))[0];
+}
+```
+
+Group `allRealPropfirmAccounts` by `challengeId`, pick one per group, then bucket:
+
+- **Evaluations** tab: picks where chosen account `phase === 'evaluation' && status !== 'breached'`
+- **Funded** tab: picks where `phase === 'funded' && status !== 'breached'`
+- **Breached** tab: picks where `status === 'breached'`
+
+Stand-alone (no challengeId) accounts fall through unchanged.
+
+This guarantees:
+
+- One row per challenge.
+- Funded account (status `funded`) appears in Funded tab.
+- After breach, only the breached row shows (in Breached tab).
+- `completed` accounts are never shown on the accounts list — only inside detail tabs.
+
+## 5. Detail page tabs (`RealPropFirmAccountDetails.tsx`)
+
+No structural change — tabs already derive from all challenge accounts (incl. archived) and show "Archived" pill. The new `'completed'` status will simply appear as an archived tab; full historical data still loads. Verify the `phasePill` text still makes sense (`Evaluation Account` / `Funded Account` based on `phase`, which is unchanged).
+
+## 6. Files touched
+
+- `src/contexts/AccountsContext.tsx` — add `'completed'` to `PropFirmStatus`.
+- `src/components/propfirm/PropFirmAccounts.tsx` — update `moveToStep2`, `moveToFunding`, add `pickLatestForChallenge`, regroup buckets.
+
+No DB/storage migration needed: existing accounts keep their current status; `'completed'` only appears for newly-progressed accounts going forward.
+
+## Edge cases
+
+- **Instant Funded** (`steps === 0`): single funded account with `status:'funded'` — appears in Funded tab via priority fallback.
+- **Breached mid-Step-2**: Step 1 may be `'completed'` and Step 2 `'breached'` → Breached tab shows the Step 2 row only.
+- **Already-funded challenge then Mark as Failed**: existing breach loop archives all and sets the funded account to breached → Breached tab shows it. 
+
+&nbsp;
+
+## FINAL IMPLEMENTATION NOTES (IMPORTANT)
+
+1. STATE UPDATE SAFETY
+
+- Ensure all account updates use functional state updates:
+
+  setAccounts(prev => ...)
+
+- Do NOT use stale state when calling patchAccount multiple times in sequence.
+
+-----------------------------------
+
+2. NO OVERWRITING OF STATUS
+
+- Never overwrite:
+
+  - 'breached' → should remain breached
+
+  - 'completed' → should remain completed
+
+- Only update:
+
+  - 'active' → 'completed' during progression
+
+-----------------------------------
+
+3. FUNDED ACCOUNT CONSISTENCY
+
+- Funded accounts must ALWAYS have:
+
+  - step = 'funded'
+
+  - phase = 'funded'
+
+  - status = 'funded'
+
+- Do NOT treat funded accounts as 'active'
+
+-----------------------------------
+
+4. BREACHED ACCOUNT SELECTION (IMPORTANT)
+
+- When selecting breached account in pickLatestForChallenge:
+
+  - If multiple exist, select the MOST RECENT (by createdAt)
+
+- Do NOT rely on .find() alone
+
+-----------------------------------
+
+5. PREVENT DUPLICATE ACCOUNT CREATION
+
+- Before creating:
+
+  - Step 2 account → check if one already exists for this challenge
+
+  - Funded account → check if one already exists
+
+- If already exists → do NOT create another
+
+-----------------------------------
+
+6. IDENTITY & RELATIONSHIP RULE
+
+- Always use [account.id](http://account.id) (UUID) for relationships
+
+- Never rely on account name or step text for matching
+
+-----------------------------------
+
+7. ACCOUNTS PAGE DISPLAY GUARANTEE
+
+- Ensure exactly ONE account per challenge is rendered
+
+- Do NOT allow multiple rows for the same challenge
+
+-----------------------------------
+
+8. COMPLETED ACCOUNTS VISIBILITY
+
+- Accounts with status 'completed':
+
+  - must NOT appear in Accounts page lists
+
+  - must ONLY appear in detailed page tabs
+
+-----------------------------------
+
+9. SORTING CONSISTENCY
+
+- When grouping accounts:
+
+  - Always sort by createdAt DESC before fallback selection
+
+-----------------------------------
+
+10. NO BREAKING EXISTING DATA
+
+- Existing accounts without 'completed' status should continue working
+
+- Do NOT mutate historical data unexpectedly
+
+- Only apply 'completed' status during new transitions
+
+-----------------------------------
+
+GOAL OF THESE RULES
+
+- Prevent inconsistent states
+
+- Avoid duplicate accounts
+
+- Ensure clean UI hierarchy
+
+- Maintain reliable lifecycle transitions
