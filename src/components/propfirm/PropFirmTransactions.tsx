@@ -27,6 +27,7 @@ import {
 import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { AddEditTransactionModal } from "./AddEditTransactionModal";
+import { TransactionsFilterPanel, TransactionsFilters, UNCATEGORIZED_CATEGORIES } from "./TransactionsFilterPanel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -79,6 +80,14 @@ export default function PropFirmTransactions() {
   const [editing, setEditing] = useState<PropFirmTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<TransactionsFilters>({ firms: [], categories: [] });
+
+  const firmOptions = useMemo(
+    () => Array.from(new Set(transactions.map(t => t.firm).filter(Boolean))).sort(),
+    [transactions]
+  );
+  const activeFilterCount = filters.firms.length + filters.categories.length;
 
   const challengeName = (id?: string) => id ? challenges.find(c => c.challengeId === id)?.nickname || "—" : "—";
   const accountName = (id?: string) => id ? accounts.find(a => a.id === id)?.name || "—" : "—";
@@ -91,6 +100,18 @@ export default function PropFirmTransactions() {
     else if (filterTab === "expense") list = list.filter(t => t.type === "expense" && t.status !== "ignored");
     else if (filterTab === "needs_review") list = list.filter(t => t.status === "not_reviewed");
     // "all" includes everything (including ignored)
+
+    if (filters.firms.length > 0) {
+      list = list.filter(t => filters.firms.includes(t.firm));
+    }
+
+    if (filters.categories.length > 0) {
+      list = list.filter(t => {
+        if (filters.categories.includes(t.category as any)) return true;
+        if (filters.categories.includes("uncategorized") && UNCATEGORIZED_CATEGORIES.includes(t.category)) return true;
+        return false;
+      });
+    }
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -108,7 +129,7 @@ export default function PropFirmTransactions() {
       });
     }
     return list;
-  }, [transactions, filterTab, search, challenges, accounts]);
+  }, [transactions, filterTab, search, filters, challenges, accounts]);
 
   // Summary cards: always exclude ignored
   const summary = useMemo(() => {
@@ -209,7 +230,32 @@ export default function PropFirmTransactions() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} placeholder="Search by firm, challenge, account, or category" className="w-full pl-9 pr-3 py-2 text-xs border border-border rounded-lg bg-card focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/60" />
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-border rounded-lg bg-card text-muted-foreground hover:text-foreground transition-colors"><SlidersHorizontal className="w-3.5 h-3.5" />Filters</button>
+          <div className="relative">
+            <button
+              onClick={() => setFiltersOpen(o => !o)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-medium border rounded-lg transition-colors",
+                activeFilterCount > 0 || filtersOpen
+                  ? "border-foreground/40 bg-card text-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            <TransactionsFilterPanel
+              open={filtersOpen}
+              onClose={() => setFiltersOpen(false)}
+              firmOptions={firmOptions}
+              filters={filters}
+              onChange={(next) => { setFilters(next); setPage(0); }}
+            />
+          </div>
         </div>
       </div>
 
