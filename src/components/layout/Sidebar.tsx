@@ -341,7 +341,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
           label="Prop Firm"
           path="/prop-firm"
           isCollapsed={isCollapsed}
-          isActive={location.pathname === '/prop-firm'}
+          isActive={location.pathname.startsWith('/prop-firm')}
         />
       </nav>
 
