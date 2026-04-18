@@ -144,16 +144,27 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.userId]);
 
   const removeAccount = useCallback((id: string) => {
-    saveAccounts(accounts.filter(a => a.id !== id));
-    // Also remove transactions for this account
-    saveTransactions(transactions.filter(t => t.accountId !== id));
-  }, [accounts, transactions, saveAccounts, saveTransactions]);
+    setAccounts(prev => {
+      const next = prev.filter(a => a.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+    setTransactions(prev => {
+      const next = prev.filter(t => t.accountId !== id);
+      localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode) => {
-    saveAccounts(accounts.map(a => 
-      a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }) } : a
-    ));
-  }, [accounts, saveAccounts]);
+    setAccounts(prev => {
+      const next = prev.map(a =>
+        a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }) } : a
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const patchAccount = useCallback((id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => {
     setAccounts(prev => {
@@ -168,26 +179,35 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   }, [accounts]);
 
   const archiveAccount = useCallback((id: string) => {
-    saveAccounts(accounts.map(a => 
-      a.id === id ? { ...a, isArchived: true } : a
-    ));
-  }, [accounts, saveAccounts]);
+    setAccounts(prev => {
+      const next = prev.map(a => a.id === id ? { ...a, isArchived: true } : a);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const unarchiveAccount = useCallback((id: string) => {
-    saveAccounts(accounts.map(a => 
-      a.id === id ? { ...a, isArchived: false } : a
-    ));
-  }, [accounts, saveAccounts]);
+    setAccounts(prev => {
+      const next = prev.map(a => a.id === id ? { ...a, isArchived: false } : a);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const deleteAccountPermanently = useCallback((id: string) => {
-    // Only allow deletion of archived accounts
-    const account = accounts.find(a => a.id === id);
-    if (!account?.isArchived) return;
-    
-    saveAccounts(accounts.filter(a => a.id !== id));
-    // Also remove transactions for this account
-    saveTransactions(transactions.filter(t => t.accountId !== id));
-  }, [accounts, transactions, saveAccounts, saveTransactions]);
+    setAccounts(prev => {
+      const target = prev.find(a => a.id === id);
+      if (!target?.isArchived) return prev;
+      const next = prev.filter(a => a.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+    setTransactions(prev => {
+      const next = prev.filter(t => t.accountId !== id);
+      localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const addTransaction = useCallback((accountId: string, type: 'deposit' | 'withdraw', amount: number, note?: string) => {
     if (!user?.userId) return;
@@ -200,8 +220,12 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       date: new Date().toISOString(),
       note,
     };
-    saveTransactions([...transactions, newTransaction]);
-  }, [transactions, saveTransactions, user]);
+    setTransactions(prev => {
+      const next = [...prev, newTransaction];
+      localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [user]);
 
   const getTransactionsForAccount = useCallback((accountId: string) => {
     return transactions.filter(t => t.accountId === accountId);
