@@ -39,10 +39,13 @@ export function MetricCards() {
     const net = earned - spent;
     const roi = spent > 0 ? (net / spent) * 100 : 0;
 
-    // Pass rate
-    const attempted = accounts.filter(a => a.phase === "evaluation" && a.step !== "funded").length;
+    // Pass rate = Passed ÷ Finished Attempts (completed + breached). Active/ongoing attempts are excluded.
+    const finishedAttempts = accounts.filter(
+      a => a.step !== "funded" && (a.status === "completed" || a.status === "breached")
+    ).length;
     const passed = accounts.filter(a => a.status === "completed" && a.step !== "funded").length;
-    const passRate = attempted > 0 ? (passed / attempted) * 100 : 0;
+    const passRate = finishedAttempts > 0 ? (passed / finishedAttempts) * 100 : 0;
+    const attempted = finishedAttempts;
 
     // Avg Days to Funded — multi-step aware
     const fundedAll = accounts.filter(a => a.step === "funded" && a.status === "funded");
