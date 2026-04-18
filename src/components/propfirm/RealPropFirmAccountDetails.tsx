@@ -383,6 +383,17 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
         <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">Path to funding</h3>
 
+          {account.status === "breached" && (
+            <div className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 space-y-1">
+              <div className="text-xs font-semibold text-rose-500">
+                Breach: <span className="text-foreground font-medium">{formatBreachReason(account.breachReason)}</span>
+              </div>
+              <div className="text-xs font-semibold text-rose-500">
+                Breach date: <span className="text-foreground font-medium">{formatBreachDate(account.breachedAt)}</span>
+              </div>
+            </div>
+          )}
+
           {!selectedRules?.isFunded && selectedRules?.profitTarget != null && (
             <FundingItem
               showCheck={false}
@@ -471,17 +482,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
               threshold={consistencyTarget}
               thresholdLabel={`${consistencyTarget}%`}
             />
-          )}
-
-          {account.status === "breached" && (
-            <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 space-y-1">
-              <div className="text-xs font-semibold text-rose-500">
-                Breach: <span className="text-foreground font-medium">{formatBreachReason(account.breachReason)}</span>
-              </div>
-              <div className="text-xs font-semibold text-rose-500">
-                Breach date: <span className="text-foreground font-medium">{formatBreachDate(account.breachedAt)}</span>
-              </div>
-            </div>
           )}
 
           <div className="border-t border-border mt-4 pt-4">
