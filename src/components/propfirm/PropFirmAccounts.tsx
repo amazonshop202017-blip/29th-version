@@ -186,14 +186,20 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; account: Account | null }>({ open: false, account: null });
 
   const { user } = useAuth();
-  const { accounts, removeAccount, patchAccount } = useAccountsContext();
+  const { accounts, removeAccount, patchAccount, archiveAccount } = useAccountsContext();
   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
   const { trades } = useTradesContext();
 
-  // Filter real propfirm accounts for current user
-  const realPropfirmAccounts = useMemo(
-    () => accounts.filter(a => a.accountMode === 'propfirm' && a.userId === (user?.userId || '') && !a.isArchived),
+  // All real propfirm accounts for current user (used for Breached tab — includes archived)
+  const allRealPropfirmAccounts = useMemo(
+    () => accounts.filter(a => a.accountMode === 'propfirm' && a.userId === (user?.userId || '')),
     [accounts, user?.userId]
+  );
+
+  // Active (non-archived) accounts — used for Evaluations / Funded buckets and row actions
+  const realPropfirmAccounts = useMemo(
+    () => allRealPropfirmAccounts.filter(a => !a.isArchived),
+    [allRealPropfirmAccounts]
   );
 
   // Bucket per tab
@@ -201,9 +207,10 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     return {
       Evaluations: realPropfirmAccounts.filter(a => a.phase === 'evaluation' && a.status === 'active'),
       Funded: realPropfirmAccounts.filter(a => a.phase === 'funded' && a.status === 'active'),
-      Breached: realPropfirmAccounts.filter(a => a.status === 'breached'),
+      // Breached tab includes archived breached accounts too
+      Breached: allRealPropfirmAccounts.filter(a => a.status === 'breached'),
     };
-  }, [realPropfirmAccounts]);
+  }, [realPropfirmAccounts, allRealPropfirmAccounts]);
 
   const accountTabs: { label: AccountTab; count: number }[] = [
     { label: "Evaluations", count: demoEvaluationAccounts.length + realByTab.Evaluations.length },
@@ -255,7 +262,16 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     const acc = accounts.find(a => a.id === failedDialog.accountId);
     if (!acc) return;
     patchAccount(acc.id, { status: 'breached', breachReason: reason, breachedAt: new Date().toISOString() });
-    if (acc.challengeId) updateChallenge(acc.challengeId, { status: 'breached' });
+    if (acc.challengeId) {
+      updateChallenge(acc.challengeId, { status: 'breached' });
+      // Archive ALL accounts linked to this challenge
+      accounts
+        .filter(a => a.challengeId === acc.challengeId)
+        .forEach(a => archiveAccount(a.id));
+    } else {
+      // No linked challenge — archive just this account
+      archiveAccount(acc.id);
+    }
   };
 
   const handleConfirmDelete = () => {

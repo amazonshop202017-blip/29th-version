@@ -33,7 +33,9 @@ export function MarkAsFailedDialog({ open, onOpenChange, accountName = "e8", acc
   }, [open]);
 
   const handleConfirm = () => {
-    const finalReason = reason === "other" ? (customReason.trim() || "Other") : (REASONS.find(r => r.value === reason)?.label || reason);
+    // Pass raw enum value (e.g. "max_drawdown") OR raw custom string when "Other" is selected.
+    // Display-layer formatting lives in src/lib/breachReason.ts
+    const finalReason = reason === "other" ? (customReason.trim() || "Other") : reason;
     onConfirm?.(finalReason);
     toast.success(`${accountName} marked as failed`);
     onOpenChange(false);
