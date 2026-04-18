@@ -155,12 +155,12 @@ export function BreachInsights() {
         <div className="space-y-5">
           {/* Top breach reasons */}
           <div>
-            <p className="text-[10px] font-semibold tracking-wider text-foreground/80 mb-3">TOP BREACH REASONS</p>
+            <p className="text-[14px] font-semibold tracking-wider text-foreground/80 mb-3">TOP BREACH REASONS</p>
             <div className="space-y-3">
               {stats.topReasons.map((r) => (
                 <div key={r.reason}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-foreground">{formatBreachReason(r.reason)}</span>
+                    <span className="text-[13px] text-foreground">{formatBreachReason(r.reason)}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {r.count} ({r.pct}%)
                     </span>
@@ -198,7 +198,7 @@ export function BreachInsights() {
               <MetricBox label="Most common size" value={stats.mostCommonSize ?? "—"} />
               <MetricBox
                 label="Most common firm"
-                value={stats.mostCommonFirm ? `Use "${stats.mostCommonFirm}"` : "—"}
+                value={stats.mostCommonFirm ?? "—"}
               />
             </div>
           </div>
