@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MoreHorizontal, Clock, CheckCircle2, LayoutList, LayoutGrid } from "lucide-react";
+import { MoreHorizontal, LayoutList, LayoutGrid } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
