@@ -80,6 +80,14 @@ export default function PropFirmTransactions() {
   const [editing, setEditing] = useState<PropFirmTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<TransactionsFilters>({ firms: [], categories: [] });
+
+  const firmOptions = useMemo(
+    () => Array.from(new Set(transactions.map(t => t.firm).filter(Boolean))).sort(),
+    [transactions]
+  );
+  const activeFilterCount = filters.firms.length + filters.categories.length;
 
   const challengeName = (id?: string) => id ? challenges.find(c => c.challengeId === id)?.nickname || "—" : "—";
   const accountName = (id?: string) => id ? accounts.find(a => a.id === id)?.name || "—" : "—";
