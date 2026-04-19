@@ -42,8 +42,8 @@ export interface Trade {
   selectedChecklistItems?: string[];
   tags: string[];
   notes: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
   // Stop Loss and Take Profit
   stopLoss?: number;
   takeProfit?: number;
