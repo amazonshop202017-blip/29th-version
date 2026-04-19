@@ -203,15 +203,15 @@ export const useTrades = () => {
       ...data,
       id: crypto.randomUUID(),
       userId: getCurrentUserId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
     };
     saveTrades([...trades, newTrade]);
     return newTrade;
   }, [trades, saveTrades]);
 
   const bulkAddTrades = useCallback((tradesData: TradeFormData[]): Trade[] => {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const userId = getCurrentUserId();
     const newTrades: Trade[] = tradesData.map(data => ({
       ...data,
@@ -227,7 +227,7 @@ export const useTrades = () => {
   const updateTrade = useCallback((id: string, data: TradeFormData) => {
     const updated = trades.map(trade =>
       trade.id === id
-        ? { ...trade, ...data, updatedAt: new Date().toISOString() }
+        ? { ...trade, ...data, updatedAt: nowISO() }
         : trade
     );
     saveTrades(updated);
@@ -235,7 +235,7 @@ export const useTrades = () => {
 
   // Bulk update multiple trades atomically (avoids stale closure issues with looped updateTrade)
   const bulkUpdateTrades = useCallback((updates: Map<string, Partial<TradeFormData>>) => {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const updated = trades.map(trade => {
       const patch = updates.get(trade.id);
       if (patch) {
