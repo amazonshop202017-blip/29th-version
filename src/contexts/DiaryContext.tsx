@@ -36,7 +36,11 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: DiaryNote[] = JSON.parse(saved);
+        // Audit: createdAt/updatedAt must be canonical ISO UTC.
+        // linkedDate intentionally stays YYYY-MM-DD (calendar key) — do NOT audit.
+        auditISOValues('DiaryContext.notes', parsed.flatMap(n => [n.createdAt, n.updatedAt]));
+        return parsed;
       } catch {
         return [];
       }
