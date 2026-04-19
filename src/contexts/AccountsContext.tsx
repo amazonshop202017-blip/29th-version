@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useTradesContext } from './TradesContext';
 import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
+import { toISO, nowISO, type ISODateString } from '@/lib/datetime';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
@@ -14,7 +15,7 @@ export interface Account {
   userId: string;
   name: string;
   startingBalance: number;
-  createdAt: string;
+  createdAt: ISODateString;
   isArchived?: boolean;
   accountMode: AccountMode;
   // Propfirm-specific fields (only set when created from PropFirm flow)
@@ -23,7 +24,7 @@ export interface Account {
   phase?: PropFirmPhase;
   status?: PropFirmStatus;
   breachReason?: string;
-  breachedAt?: string;
+  breachedAt?: ISODateString;
 }
 
 export interface Transaction {
@@ -32,7 +33,7 @@ export interface Transaction {
   accountId: string;
   type: 'deposit' | 'withdraw';
   amount: number;
-  date: string;
+  date: ISODateString;
   note?: string;
 }
 
@@ -81,11 +82,34 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setAccounts(JSON.parse(stored));
+        const parsed: Account[] = JSON.parse(stored);
+        let changed = false;
+        const migrated = parsed.map(a => {
+          const nextCreated = toISO(a.createdAt) || a.createdAt;
+          const nextBreached = a.breachedAt ? (toISO(a.breachedAt) || a.breachedAt) : a.breachedAt;
+          if (nextCreated !== a.createdAt || nextBreached !== a.breachedAt) changed = true;
+          return { ...a, createdAt: nextCreated, breachedAt: nextBreached };
+        });
+        setAccounts(migrated);
+        if (changed) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+          console.log('[AccountsContext] Normalized legacy account dates to ISO UTC.');
+        }
       }
       const storedTransactions = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
       if (storedTransactions) {
-        setTransactions(JSON.parse(storedTransactions));
+        const parsedTx: Transaction[] = JSON.parse(storedTransactions);
+        let txChanged = false;
+        const migratedTx = parsedTx.map(t => {
+          const nextDate = toISO(t.date) || t.date;
+          if (nextDate !== t.date) txChanged = true;
+          return { ...t, date: nextDate };
+        });
+        setTransactions(migratedTx);
+        if (txChanged) {
+          localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(migratedTx));
+          console.log('[AccountsContext] Normalized legacy transaction dates to ISO UTC.');
+        }
       }
     } catch (error) {
       console.error('Error loading accounts:', error);
