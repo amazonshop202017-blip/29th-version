@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
-import { toISO, nowISO } from '@/lib/datetime';
+import { toISO, nowISO, auditISOValues } from '@/lib/datetime';
 
 const getCurrentUserId = (): string | undefined => {
   try {
@@ -186,6 +186,14 @@ export const useTrades = () => {
 
         setTrades(migrated);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+
+        // Audit: surface any persisted date that isn't canonical ISO UTC
+        const allDates: Array<string | null | undefined> = [];
+        for (const t of migrated) {
+          allDates.push(t.createdAt, t.updatedAt);
+          if (Array.isArray(t.entries)) for (const e of t.entries) allDates.push(e?.datetime);
+        }
+        auditISOValues('useTrades', allDates);
       }
     } catch (error) {
       console.error('Error loading trades from localStorage:', error);

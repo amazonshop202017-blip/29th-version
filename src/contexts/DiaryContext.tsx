@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
 import { DiaryNote, DiaryFolder, DiaryNoteFormData, DEFAULT_FOLDERS, DiaryFolderType } from '@/types/diary';
 import { useTradesContext } from '@/contexts/TradesContext';
-import { nowISO } from '@/lib/datetime';
+import { nowISO, auditISOValues } from '@/lib/datetime';
 
 interface DiaryContextType {
   notes: DiaryNote[];
@@ -36,7 +36,11 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: DiaryNote[] = JSON.parse(saved);
+        // Audit: createdAt/updatedAt must be canonical ISO UTC.
+        // linkedDate intentionally stays YYYY-MM-DD (calendar key) — do NOT audit.
+        auditISOValues('DiaryContext.notes', parsed.flatMap(n => [n.createdAt, n.updatedAt]));
+        return parsed;
       } catch {
         return [];
       }
