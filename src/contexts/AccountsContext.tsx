@@ -142,7 +142,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       userId: user?.userId || '',
       name: name.trim(),
       startingBalance,
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
       isArchived: false,
       accountMode,
       ...(accountMode === 'propfirm' && propFirmFields ? {
@@ -241,7 +241,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       accountId,
       type,
       amount,
-      date: new Date().toISOString(),
+      date: nowISO(),
       note,
     };
     setTransactions(prev => {

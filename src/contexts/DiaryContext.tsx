@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
 import { DiaryNote, DiaryFolder, DiaryNoteFormData, DEFAULT_FOLDERS, DiaryFolderType } from '@/types/diary';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { nowISO } from '@/lib/datetime';
 
 interface DiaryContextType {
   notes: DiaryNote[];
@@ -119,7 +120,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
 
   // Create a new note
   const createNote = useCallback((data?: Partial<DiaryNoteFormData>): DiaryNote => {
-    const now = new Date().toISOString();
+    const now = nowISO();
     
     // Determine default title based on linked data
     let defaultTitle = 'Untitled';
@@ -128,6 +129,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
     if (data?.linkedTradeId) {
       const trade = trades.find(t => t.id === data.linkedTradeId);
       if (trade) {
+        // Display in user's local time (toLocaleDateString uses local tz automatically)
         const openDate = trade.entries[0]?.datetime 
           ? new Date(trade.entries[0].datetime).toLocaleDateString('en-US', { 
               month: 'short', 
@@ -165,7 +167,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
       return {
         ...note,
         ...data,
-        updatedAt: new Date().toISOString(),
+        updatedAt: nowISO(),
       };
     }));
   }, []);
@@ -203,7 +205,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
         title,
         linkedTradeId: tradeId,
         linkedDate: null, // Clear day link when linking to trade
-        updatedAt: new Date().toISOString(),
+        updatedAt: nowISO(),
       };
     }));
   }, [trades]);
@@ -215,7 +217,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
       return {
         ...note,
         linkedTradeId: null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: nowISO(),
       };
     }));
   }, []);
@@ -228,7 +230,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
         ...note,
         linkedDate: date,
         linkedTradeId: null, // Clear trade link when linking to day
-        updatedAt: new Date().toISOString(),
+        updatedAt: nowISO(),
       };
     }));
   }, []);
@@ -251,7 +253,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
       name,
       type: 'custom',
       isDefault: false,
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
     };
     setCustomFolders(prev => [...prev, newFolder]);
     return newFolder;

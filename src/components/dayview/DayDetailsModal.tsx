@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { isoToDateTimeLocalInputValue } from '@/lib/datetime';
 
 interface DayDetailsModalProps {
   isOpen: boolean;
@@ -97,11 +98,11 @@ export const DayDetailsModal = ({ isOpen, onClose, date, trades }: DayDetailsMod
   const formattedDate = format(date, 'EEE, MMM dd, yyyy');
 
   const handleAddTrade = () => {
-    // Build a datetime string for the clicked date with current time
+    // Build a datetime string for the clicked date with current time (local clock)
     const now = new Date();
     const entryDate = new Date(date);
     entryDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
-    const entryDateStr = entryDate.toISOString().slice(0, 16);
+    const entryDateStr = isoToDateTimeLocalInputValue(entryDate.toISOString());
     onClose();
     openModalWithDate(entryDateStr);
   };

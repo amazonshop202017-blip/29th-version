@@ -11,6 +11,7 @@ import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useTransactionsContext } from "@/contexts/TransactionsContext";
 import { toast } from "sonner";
+import { toISO } from "@/lib/datetime";
 
 type PayoutModalProps = { open: boolean; onClose: () => void };
 
@@ -46,7 +47,7 @@ export function PayoutModal({ open, onClose }: PayoutModalProps) {
       accountId: fundedAcct?.id,
       firm: challenge.firm,
       status: 'reviewed',
-      date: date.toISOString(),
+      date: toISO(date),
       description: `Payout — ${challenge.nickname}`,
     });
     toast.success("Payout recorded");

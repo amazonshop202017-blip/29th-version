@@ -35,7 +35,7 @@ import { TradeModalErrorBoundary } from './TradeModalErrorBoundary';
 const defaultEntry = (): TradeEntry => ({
   id: crypto.randomUUID(),
   type: 'BUY',
-  datetime: new Date().toISOString().slice(0, 16),
+  datetime: isoToDateTimeLocalInputValue(nowISO()),
   quantity: 0,
   price: 0,
   charges: 0,

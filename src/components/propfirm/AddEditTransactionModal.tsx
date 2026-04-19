@@ -22,6 +22,7 @@ import {
   useTransactionsContext,
 } from "@/contexts/TransactionsContext";
 import { toast } from "sonner";
+import { toISO } from "@/lib/datetime";
 
 type Props = {
   open: boolean;
@@ -126,7 +127,7 @@ export function AddEditTransactionModal({ open, onClose, editing }: Props) {
       firm: data.firm,
       category: data.category as TxCategory,
       amount: data.amount,
-      date: data.date.toISOString(),
+      date: toISO(data.date),
       description: data.description?.trim() || undefined,
       status: data.status,
     };

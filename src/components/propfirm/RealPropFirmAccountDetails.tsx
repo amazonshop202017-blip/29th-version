@@ -7,6 +7,7 @@ import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, type StepRules } from "@/contexts/ChallengesContext";
 import { useAccountScopedFilteredTrades } from "@/hooks/useAccountScopedFilteredTrades";
 import { calculateTradeMetrics } from "@/types/trade";
+import { localDayKey, localHourKey } from "@/lib/datetime";
 import {
   computeAccountStats,
   computeDrawdownFloor,
@@ -159,7 +160,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   const dailyTotals = useMemo(() => {
     const map = new Map<string, number>();
     for (const { m } of enriched) {
-      const day = m.closeDate ? m.closeDate.split("T")[0] : "";
+      const day = localDayKey(m.closeDate);
       if (!day) continue;
       map.set(day, (map.get(day) || 0) + (m.netPnl || 0));
     }
@@ -219,7 +220,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   const balanceSeries = useMemo(() => {
     if (!account) return [] as { date: string; balance: number; floor: number | null }[];
     const startBalance = account.startingBalance ?? 0;
-    const startDayKey = (account.createdAt || "").slice(0, 10);
+    const startDayKey = localDayKey(account.createdAt);
     const start = {
       date: formatStartedOn(account.createdAt) || "Start",
       balance: startBalance,
@@ -247,7 +248,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
             date: fmtTrade(iso, i),
             balance: running,
             runningBalance: running,
-            dayKey: (iso || "").slice(0, 10),
+            dayKey: localDayKey(iso),
           });
         });
       } else {
@@ -257,10 +258,10 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
           const d = new Date(iso);
           const key =
             chartView === "Hourly"
-              ? `${d.toISOString().slice(0, 13)}`
-              : d.toISOString().slice(0, 10);
+              ? localHourKey(iso)
+              : localDayKey(iso);
           const label = chartView === "Hourly" ? fmtHour(iso) : fmtDay(iso);
-          const dayKey = d.toISOString().slice(0, 10);
+          const dayKey = localDayKey(iso);
           const existing = bucket.get(key);
           if (existing) existing.pnl += m.netPnl || 0;
           else bucket.set(key, { label, pnl: m.netPnl || 0, ts: d.getTime(), dayKey });
@@ -287,10 +288,10 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i] }));
   }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDayKey(new Date().toISOString());
   const dailyLoss = useMemo(() => {
     const todayPnl = enriched
-      .filter(({ m }) => (m.closeDate || "").slice(0, 10) === today)
+      .filter(({ m }) => localDayKey(m.closeDate) === today)
       .reduce((s, { m }) => s + (m.netPnl || 0), 0);
     return Math.max(0, -todayPnl);
   }, [enriched, today]);
