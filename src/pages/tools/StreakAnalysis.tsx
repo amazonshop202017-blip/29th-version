@@ -80,10 +80,10 @@ function computeStreakSim(winRate: number, iterations: number): SimStreakData {
 // ── Streak table color helpers ────────────────────────────────────────────────
 function cellStyle(pct: number, invert: boolean) {
   const v = invert ? 1 - pct : pct;
-  if (v >= 0.75) return { bg: "bg-rose-600/80",   text: "text-white" };
-  if (v >= 0.50) return { bg: "bg-orange-500/75", text: "text-white" };
-  if (v >= 0.25) return { bg: "bg-amber-400/70",  text: "text-white" };
-  return              { bg: "bg-emerald-600/65", text: "text-white" };
+  if (v >= 0.75) return { bg: "bg-rose-600/80",   text: "text-foreground" };
+  if (v >= 0.50) return { bg: "bg-orange-500/75", text: "text-foreground" };
+  if (v >= 0.25) return { bg: "bg-amber-400/70",  text: "text-foreground" };
+  return              { bg: "bg-emerald-600/65", text: "text-foreground" };
 }
 function formatPct(v: number) { return (v * 100).toFixed(2) + "%"; }
 
@@ -107,37 +107,37 @@ function StreakTable({ title, subtitle, p, invert, calcMode, simData, colIndex }
     rows.push({ streak: k, probs });
   }
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.025] overflow-hidden">
-      <div className="px-6 py-4 border-b border-white/8">
-        <h3 className="text-sm font-bold text-white">{title}</h3>
-        <p className="text-xs text-white/35 mt-0.5">{subtitle}</p>
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="px-6 py-4 border-b border-border">
+        <h3 className="text-sm font-bold text-foreground">{title}</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="border-b border-white/8">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-white/40 uppercase tracking-wide w-48">
+            <tr className="border-b border-border">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide w-48">
                 {invert ? "Wins in a row" : "Losses in a row"}
               </th>
-              <th colSpan={TRADE_COLS.length} className="px-4 py-3 text-center text-xs font-semibold text-white/40 uppercase tracking-wide border-l border-white/8">
+              <th colSpan={TRADE_COLS.length} className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide border-l border-border">
                 Number of trades
               </th>
             </tr>
-            <tr className="border-b border-white/10">
-              <th className="px-6 py-2 text-left text-xs text-white/25" />
+            <tr className="border-b border-border">
+              <th className="px-6 py-2 text-left text-xs text-muted-foreground/80" />
               {TRADE_COLS.map(n => (
-                <th key={n} className="px-4 py-2 text-center text-xs font-bold text-white/50 border-l border-white/8 w-32">{n}</th>
+                <th key={n} className="px-4 py-2 text-center text-xs font-bold text-foreground/60 border-l border-border w-32">{n}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map(({ streak, probs }) => (
-              <tr key={streak} className="border-b border-white/[0.05] last:border-0">
-                <td className="px-6 py-2.5 text-center text-sm font-semibold text-white/60">{streak}</td>
+              <tr key={streak} className="border-b border-border/50 last:border-0">
+                <td className="px-6 py-2.5 text-center text-sm font-semibold text-foreground/70">{streak}</td>
                 {probs.map((prob, ci) => {
                   const s = cellStyle(prob, invert);
                   return (
-                    <td key={ci} className={`px-4 py-2.5 text-center text-xs font-bold border-l border-white/8 ${s.bg} ${s.text}`}>
+                    <td key={ci} className={`px-4 py-2.5 text-center text-xs font-bold border-l border-border ${s.bg} ${s.text}`}>
                       {formatPct(prob)}
                     </td>
                   );
@@ -169,21 +169,21 @@ function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between">
-        <label className="text-xs font-semibold text-white/60 uppercase tracking-wide">{label}</label>
-        {description && <span className="text-[10px] text-white/25">{description}</span>}
+        <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">{label}</label>
+        {description && <span className="text-[10px] text-muted-foreground/80">{description}</span>}
       </div>
-      <div className="flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+      <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
         {prefix && (
-          <span className="px-3 py-2 text-sm text-white/35 border-r border-white/8 bg-white/3 select-none shrink-0">{prefix}</span>
+          <span className="px-3 py-2 text-sm text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">{prefix}</span>
         )}
         <input
           type="number" value={value} min={min} max={max} step={step}
           onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v); }}
           onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && min !== undefined && v < min) onChange(min); }}
-          className="flex-1 px-3 py-2 text-sm font-medium text-white bg-transparent outline-none min-w-0"
+          className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
         />
         {suffix && (
-          <span className="px-3 py-2 text-xs text-white/35 border-l border-white/8 bg-white/3 select-none shrink-0">{suffix}</span>
+          <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">{suffix}</span>
         )}
       </div>
     </div>
@@ -196,13 +196,13 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   if (!filtered.length) return null;
   const labelMap: Record<string, string> = { best: "Best Case", worst: "Worst Case", median: "Most Possible" };
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-md p-3 shadow-2xl">
-      <p className="text-[10px] font-semibold text-white/40 mb-2 uppercase tracking-wide">Trade #{label}</p>
+    <div className="rounded-xl border border-border bg-popover text-popover-foreground backdrop-blur-md p-3 shadow-2xl">
+      <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Trade #{label}</p>
       {filtered.map(p => (
         <div key={p.name} className="flex items-center gap-2 text-sm mb-1 last:mb-0">
           <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
-          <span className="text-white/55">{labelMap[p.name] ?? p.name}:</span>
-          <span className="font-bold text-white ml-auto pl-4">{formatCurrency(p.value, true)}</span>
+          <span className="text-foreground/65">{labelMap[p.name] ?? p.name}:</span>
+          <span className="font-bold text-foreground ml-auto pl-4">{formatCurrency(p.value, true)}</span>
         </div>
       ))}
     </div>
@@ -283,7 +283,7 @@ export default function StreakAnalysis() {
   const winP  = params.winRate / 100;
 
   return (
-    <div className="min-h-screen bg-[#0a0d14]">
+    <div className="min-h-screen bg-background">
       <div className="max-w-[1500px] mx-auto px-5 py-7">
 
         {/* Header */}
@@ -296,9 +296,9 @@ export default function StreakAnalysis() {
           </div>
           <div>
             <div className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-0.5">Trading Journal</div>
-            <h1 className="text-2xl font-bold text-white leading-none">Win/Loss Streak Simulator</h1>
+            <h1 className="text-2xl font-bold text-foreground leading-none">Win/Loss Streak Simulator</h1>
           </div>
-          <p className="ml-auto text-xs text-white/25 max-w-xs text-right hidden lg:block">
+          <p className="ml-auto text-xs text-muted-foreground/80 max-w-xs text-right hidden lg:block">
             Visualize how winning and losing streaks affect your equity curve
           </p>
         </div>
@@ -307,8 +307,8 @@ export default function StreakAnalysis() {
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mb-4">
 
           {/* Inputs Card */}
-          <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-5 flex flex-col gap-4">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-1">Strategy Inputs</div>
+          <div className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Strategy Inputs</div>
 
             <InputField
               label="Win Rate"
@@ -321,17 +321,17 @@ export default function StreakAnalysis() {
             {/* Risk Per Trade toggle */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-xs font-semibold text-white/60 uppercase tracking-wide">Risk Per Trade</span>
-                <div className="flex rounded-md overflow-hidden border border-white/10 text-[11px] font-semibold">
+                <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">Risk Per Trade</span>
+                <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
                   <button
                     onClick={() => setRiskMode("percent")}
-                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-white" : "bg-transparent text-white/35 hover:text-white/60"}`}
+                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     % Risk
                   </button>
                   <button
                     onClick={() => setRiskMode("dollar")}
-                    className={`px-2.5 py-1 transition-colors border-l border-white/10 ${params.riskMode === "dollar" ? "bg-blue-600 text-white" : "bg-transparent text-white/35 hover:text-white/60"}`}
+                    className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     $ Win/Loss
                   </button>
@@ -340,16 +340,16 @@ export default function StreakAnalysis() {
 
               {params.riskMode === "percent" ? (
                 <>
-                  <div className="flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
                     <input
                       type="number"
                       value={params.riskPerTrade}
                       min={1} max={100} step={1}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam("riskPerTrade", v); }}
                       onBlur={e => { const v = parseFloat(e.target.value); setParam("riskPerTrade", isNaN(v) || v < 1 ? 1 : Math.min(100, v)); }}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-transparent outline-none min-w-0"
+                      className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                     />
-                    <span className="px-3 py-2 text-xs text-white/35 border-l border-white/8 bg-white/3 select-none shrink-0">% of capital</span>
+                    <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">% of capital</span>
                   </div>
                   <InputField
                     label="Risk Reward Ratio (1:X)"
@@ -361,23 +361,23 @@ export default function StreakAnalysis() {
                 </>
               ) : (
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-blue-500/50 transition-all">
-                    <span className="px-3 py-2 text-xs text-white/35 border-r border-white/8 bg-white/3 select-none shrink-0">Avg Win</span>
+                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 transition-all">
+                    <span className="px-3 py-2 text-xs text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">Avg Win</span>
                     <input
                       type="number" value={params.avgWinDollar} min={0.01} step={10}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setParam("avgWinDollar", v); }}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-transparent outline-none min-w-0"
+                      className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                     />
-                    <span className="px-3 py-2 text-xs text-white/35 border-l border-white/8 bg-white/3 select-none shrink-0">$</span>
+                    <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">$</span>
                   </div>
-                  <div className="flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-blue-500/50 transition-all">
-                    <span className="px-3 py-2 text-xs text-white/35 border-r border-white/8 bg-white/3 select-none shrink-0">Avg Loss</span>
+                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 transition-all">
+                    <span className="px-3 py-2 text-xs text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">Avg Loss</span>
                     <input
                       type="number" value={params.avgLossDollar} min={0.01} step={10}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setParam("avgLossDollar", v); }}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-transparent outline-none min-w-0"
+                      className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                     />
-                    <span className="px-3 py-2 text-xs text-white/35 border-l border-white/8 bg-white/3 select-none shrink-0">$</span>
+                    <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">$</span>
                   </div>
                 </div>
               )}
@@ -400,10 +400,10 @@ export default function StreakAnalysis() {
 
             <div className="flex flex-col gap-1">
               <div className="flex items-baseline justify-between">
-                <label className="text-xs font-semibold text-white/60 uppercase tracking-wide">Simulations</label>
-                <span className="text-[10px] text-white/25">number of paths</span>
+                <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">Simulations</label>
+                <span className="text-[10px] text-muted-foreground/80">number of paths</span>
               </div>
-              <div className="flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
                 <input
                   type="number"
                   value={iterInput}
@@ -419,16 +419,16 @@ export default function StreakAnalysis() {
                     setIterInput(clamped.toString());
                     setParam("iterations", clamped);
                   }}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-white bg-transparent outline-none min-w-0"
+                  className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                 />
-                <span className="px-3 py-2 text-xs text-white/35 border-l border-white/8 bg-white/3 select-none shrink-0">paths</span>
+                <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">paths</span>
               </div>
             </div>
 
             <button
               onClick={runSimulation}
               disabled={isRunning}
-              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
+              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
             >
               {isRunning ? (
                 <>
@@ -448,13 +448,13 @@ export default function StreakAnalysis() {
             {/* EV pill */}
             {result && (
               <div className={`rounded-xl px-4 py-3 border text-center ${result.globalStats.expectedValue >= 0 ? "border-emerald-500/20 bg-emerald-500/5" : "border-rose-500/20 bg-rose-500/5"}`}>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-1">Expected Value / Trade</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Expected Value / Trade</div>
                 <div className={`text-base font-bold ${result.globalStats.expectedValue >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {params.riskMode === "dollar"
                     ? `${result.globalStats.expectedValue >= 0 ? "+" : ""}${formatCurrency(result.globalStats.expectedValue)}`
                     : `${result.globalStats.expectedValue >= 0 ? "+" : ""}${result.globalStats.expectedValue.toFixed(2)}%`}
                 </div>
-                <div className="text-[10px] text-white/30 mt-1">
+                <div className="text-[10px] text-muted-foreground mt-1">
                   {result.globalStats.profitablePct.toFixed(1)}% of paths profitable · {params.iterations.toLocaleString()} simulations
                 </div>
               </div>
@@ -462,14 +462,14 @@ export default function StreakAnalysis() {
           </div>
 
           {/* Chart Card */}
-          <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-5 flex flex-col min-h-[440px]">
+          <div className="rounded-2xl border border-border bg-card p-5 flex flex-col min-h-[440px]">
             {!result && !isRunning && (
-              <div className="flex-1 flex flex-col items-center justify-center text-white/15">
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/60">
                 <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-3">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
-                <p className="text-sm font-medium text-white/25">Configure inputs and run the simulation</p>
-                <p className="text-xs text-white/15 mt-1">Chart will appear here</p>
+                <p className="text-sm font-medium text-muted-foreground/80">Configure inputs and run the simulation</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Chart will appear here</p>
               </div>
             )}
             {isRunning && (
@@ -477,17 +477,17 @@ export default function StreakAnalysis() {
                 <svg className="animate-spin w-9 h-9 mb-3 text-blue-400" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="60" strokeDashoffset="20" />
                 </svg>
-                <p className="text-sm text-white/40">Running {params.iterations.toLocaleString()} simulations...</p>
+                <p className="text-sm text-muted-foreground">Running {params.iterations.toLocaleString()} simulations...</p>
               </div>
             )}
             {result && chartData && !isRunning && (
               <>
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">Equity Curve Distribution</h3>
-                    <p className="text-xs text-white/30 mt-0.5">{params.iterations.toLocaleString()} paths · {params.numberOfTrades} trades each</p>
+                    <h3 className="text-sm font-semibold text-foreground">Equity Curve Distribution</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{params.iterations.toLocaleString()} paths · {params.numberOfTrades} trades each</p>
                   </div>
-                  <div className="flex items-center gap-4 text-[11px] text-white/40 flex-wrap">
+                  <div className="flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-emerald-400 inline-block rounded-full" />Best</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-blue-400 inline-block rounded-full" />Most Possible</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-rose-400 inline-block rounded-full" />Worst</span>
@@ -497,16 +497,16 @@ export default function StreakAnalysis() {
                 <div className="flex-1 min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 24, left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                       <XAxis
                         dataKey="trade"
-                        stroke="rgba(255,255,255,0.1)"
-                        tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }}
-                        label={{ value: "Trade Number", position: "insideBottom", offset: -12, fill: "rgba(255,255,255,0.2)", fontSize: 10 }}
+                        stroke="hsl(var(--border))"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                        label={{ value: "Trade Number", position: "insideBottom", offset: -12, fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                       />
                       <YAxis
-                        stroke="rgba(255,255,255,0.1)"
-                        tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }}
+                        stroke="hsl(var(--border))"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                         tickFormatter={v => formatCurrency(v, true)}
                         width={70}
                         domain={yDomain}
@@ -515,12 +515,12 @@ export default function StreakAnalysis() {
                       <Tooltip content={<CustomTooltip />} />
                       <ReferenceLine
                         y={params.initialCapital}
-                        stroke="rgba(255,255,255,0.12)"
+                        stroke="hsl(var(--border))"
                         strokeDasharray="4 4"
-                        label={{ value: "Start", fill: "rgba(255,255,255,0.25)", fontSize: 9, position: "insideTopLeft" }}
+                        label={{ value: "Start", fill: "hsl(var(--muted-foreground))", fontSize: 9, position: "insideTopLeft" }}
                       />
                       {pathKeys.map(key => (
-                        <Line key={key} dataKey={key} stroke="rgba(148,163,184,0.10)" dot={false} strokeWidth={1} isAnimationActive={false} legendType="none" activeDot={false} />
+                        <Line key={key} dataKey={key} stroke="hsl(var(--muted-foreground) / 0.18)" dot={false} strokeWidth={1} isAnimationActive={false} legendType="none" activeDot={false} />
                       ))}
                       <Line dataKey="worst" stroke="#f43f5e" strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" activeDot={{ r: 3, fill: "#f43f5e" }} />
                       <Line dataKey="median" stroke="#60a5fa" strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" activeDot={{ r: 3, fill: "#60a5fa" }} />
@@ -537,24 +537,24 @@ export default function StreakAnalysis() {
         <div>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-white/50">Streak Calculation Mode</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground/60">Streak Calculation Mode</span>
               {calcMode === "simulation" && (
-                <span className="ml-3 text-[11px] text-white/25">Simulations: {params.iterations.toLocaleString()}</span>
+                <span className="ml-3 text-[11px] text-muted-foreground/80">Simulations: {params.iterations.toLocaleString()}</span>
               )}
             </div>
             <div className="flex items-center gap-3">
               {calcMode === "simulation" && (
-                <span className="text-[10px] text-white/20 italic">Results may vary slightly due to randomness</span>
+                <span className="text-[10px] text-muted-foreground/70 italic">Results may vary slightly due to randomness</span>
               )}
-              <div className="flex rounded-md overflow-hidden border border-white/10 text-[11px] font-semibold">
+              <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
                 <button
                   onClick={() => setCalcMode("mathematical")}
-                  className={`px-3 py-1.5 transition-colors ${calcMode === "mathematical" ? "bg-blue-600 text-white" : "bg-transparent text-white/35 hover:text-white/60"}`}>
+                  className={`px-3 py-1.5 transition-colors ${calcMode === "mathematical" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
                   Mathematical
                 </button>
                 <button
                   onClick={() => setCalcMode("simulation")}
-                  className={`px-3 py-1.5 transition-colors border-l border-white/10 ${calcMode === "simulation" ? "bg-blue-600 text-white" : "bg-transparent text-white/35 hover:text-white/60"}`}>
+                  className={`px-3 py-1.5 transition-colors border-l border-border ${calcMode === "simulation" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
                   Simulation
                 </button>
               </div>
@@ -562,12 +562,12 @@ export default function StreakAnalysis() {
           </div>
 
           {simLoading ? (
-            <div className="rounded-2xl border border-white/8 bg-white/[0.025] flex items-center justify-center py-16">
+            <div className="rounded-2xl border border-border bg-card flex items-center justify-center py-16">
               <div className="flex flex-col items-center gap-3">
                 <svg className="animate-spin w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="60" strokeDashoffset="20" />
                 </svg>
-                <p className="text-sm text-white/35">Running {params.iterations.toLocaleString()} streak simulations…</p>
+                <p className="text-sm text-muted-foreground">Running {params.iterations.toLocaleString()} streak simulations…</p>
               </div>
             </div>
           ) : (
