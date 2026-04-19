@@ -285,10 +285,10 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
       ? startBalance + selectedRules.profitTarget
       : null;
-  const drawdownFloorLine =
-    selectedRules && selectedRules.maxDrawdown != null
-      ? startBalance - selectedRules.maxDrawdown
-      : null;
+  const drawdownFloorLine = useMemo(
+    () => (account ? computeDrawdownFloor(account, challenge, accountTrades) : null),
+    [account, challenge, accountTrades]
+  );
 
   const phasePill = account.phase === "funded" ? "Funded Account" : "Evaluation Account";
   const pnl = stats?.pnl ?? 0;
@@ -491,7 +491,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                 )
               }
               label={`Maximum Drawdown: ${fmtUsd(selectedRules.maxDrawdown)}`}
-              sublabel={`Floor: ${fmtUsd(startBalance - selectedRules.maxDrawdown)}`}
+              sublabel={`Floor: ${fmtUsd(drawdownFloorLine ?? (startBalance - selectedRules.maxDrawdown))}`}
               value={`Drawdown: ${fmtUsd(stats?.currentDrawdown ?? 0)}`}
               barValue={selectedRules.maxDrawdown > 0 ? clamp(((stats?.currentDrawdown ?? 0) / selectedRules.maxDrawdown) * 100) : 0}
               percentage={`${selectedRules.maxDrawdown > 0 ? Math.round(clamp(((stats?.currentDrawdown ?? 0) / selectedRules.maxDrawdown) * 100)) : 0}%`}
