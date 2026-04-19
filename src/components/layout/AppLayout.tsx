@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 import { GlobalHeader } from './GlobalHeader';
 import { SelectedFiltersBar } from './SelectedFiltersBar';
 import { cn } from '@/lib/utils';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SidebarCollapseProvider } from '@/contexts/SidebarCollapseContext';
 
 interface AppLayoutProps {
