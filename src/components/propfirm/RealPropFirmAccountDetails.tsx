@@ -458,7 +458,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                     y={profitTargetLine}
                     stroke="hsl(145,60%,50%)"
                     strokeDasharray="5 4"
-                    label={{ value: `Profit Target`, position: "right", fontSize: 10, fill: "hsl(145,60%,45%)" }}
+                    label={{ value: "Profit Target", position: "insideTopRight", fontSize: 10, fontWeight: 600, fill: "hsl(145,60%,45%)" }}
                   />
                 )}
                 <Area
