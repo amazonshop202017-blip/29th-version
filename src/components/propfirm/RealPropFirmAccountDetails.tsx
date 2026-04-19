@@ -9,6 +9,7 @@ import { useAccountScopedFilteredTrades } from "@/hooks/useAccountScopedFiltered
 import { calculateTradeMetrics } from "@/types/trade";
 import {
   computeAccountStats,
+  computeDrawdownFloor,
   resolveTargetAmount,
   resolveDrawdownAmount,
   fmtUsd,
@@ -131,6 +132,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     () =>
       accountTrades
         .map((t) => ({ t, m: calculateTradeMetrics(t) }))
+        .filter(({ m }) => m.positionStatus === 'CLOSED')
         .sort((a, b) => new Date(a.m.closeDate || 0).getTime() - new Date(b.m.closeDate || 0).getTime()),
     [accountTrades]
   );
@@ -258,6 +260,11 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     return { pct, totalProfit, bestDay };
   }, [dailyTotals]);
 
+  const drawdownFloorLine = useMemo(
+    () => (account ? computeDrawdownFloor(account, challenge, accountTrades) : null),
+    [account, challenge, accountTrades]
+  );
+
   if (!account) {
     return (
       <div className="space-y-5">
@@ -282,10 +289,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   const profitTargetLine =
     selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
       ? startBalance + selectedRules.profitTarget
-      : null;
-  const drawdownFloorLine =
-    selectedRules && selectedRules.maxDrawdown != null
-      ? startBalance - selectedRules.maxDrawdown
       : null;
 
   const phasePill = account.phase === "funded" ? "Funded Account" : "Evaluation Account";
@@ -489,7 +492,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                 )
               }
               label={`Maximum Drawdown: ${fmtUsd(selectedRules.maxDrawdown)}`}
-              sublabel={`Floor: ${fmtUsd(startBalance - selectedRules.maxDrawdown)}`}
+              sublabel={`Floor: ${fmtUsd(drawdownFloorLine ?? (startBalance - selectedRules.maxDrawdown))}`}
               value={`Drawdown: ${fmtUsd(stats?.currentDrawdown ?? 0)}`}
               barValue={selectedRules.maxDrawdown > 0 ? clamp(((stats?.currentDrawdown ?? 0) / selectedRules.maxDrawdown) * 100) : 0}
               percentage={`${selectedRules.maxDrawdown > 0 ? Math.round(clamp(((stats?.currentDrawdown ?? 0) / selectedRules.maxDrawdown) * 100)) : 0}%`}
