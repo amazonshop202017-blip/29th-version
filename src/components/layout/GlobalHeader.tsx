@@ -1328,8 +1328,7 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {/* Dashboard Edit Button - after filter bar */}
+      </>)}
       {isDashboard && (
         <button
           onClick={toggleEditMode}
