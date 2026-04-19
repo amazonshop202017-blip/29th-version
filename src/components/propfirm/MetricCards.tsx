@@ -103,6 +103,7 @@ export function MetricCards() {
       spent, earned, net, roi,
       passRate, passed, attempted,
       avgDays, avgTrades, fundedTotal: fundedAll.length,
+      avgDaysCount: daysList.length, avgTradesCount: tradesList.length,
     };
   }, [accounts, transactions, trades, getAllAccountsWithStats, getChallengeById]);
 
