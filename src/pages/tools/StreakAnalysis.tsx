@@ -287,7 +287,7 @@ export default function StreakAnalysis() {
       <div className="max-w-[1500px] mx-auto px-5 py-7">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-7">
+        <div className="flex items-center gap-3 mb-7 ml-[55px]">
           <div className="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-rose-400">
               <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />

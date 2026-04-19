@@ -205,7 +205,7 @@ export default function MonteCarlo() {
       <div className="max-w-[1500px] mx-auto px-5 py-7">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-7">
+        <div className="flex items-center gap-3 mb-7 ml-[55px]">
           <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-blue-400">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
