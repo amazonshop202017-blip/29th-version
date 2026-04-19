@@ -9,8 +9,8 @@ export interface InterfaceTheme {
 }
 
 const DEFAULT_THEME: InterfaceTheme = {
-  positive: '#00c2ab',
-  negative: '#d10046',
+  positive: '#1bbb28',
+  negative: '#e24b55',
   neutral: '#4a4a4a',
   mode: 'flat',
 };
@@ -135,7 +135,7 @@ export const useInterfaceTheme = () => {
   const ctx = useContext(InterfaceThemeContext);
   if (!ctx) {
     const fallback: InterfaceThemeContextType = {
-      theme: { positive: '#00c2ab', negative: '#d10046', neutral: '#4a4a4a', mode: 'flat' as const },
+      theme: { positive: '#1bbb28', negative: '#e24b55', neutral: '#4a4a4a', mode: 'flat' as const },
       setThemeColor: () => {},
       setMode: () => {},
       resetToDefaults: () => {},
