@@ -9,6 +9,7 @@ import { useAccountScopedFilteredTrades } from "@/hooks/useAccountScopedFiltered
 import { calculateTradeMetrics } from "@/types/trade";
 import {
   computeAccountStats,
+  computeDrawdownFloor,
   resolveTargetAmount,
   resolveDrawdownAmount,
   fmtUsd,
