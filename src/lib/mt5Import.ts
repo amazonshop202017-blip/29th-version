@@ -1,4 +1,5 @@
 import { TradeFormData, TradeEntry } from '@/types/trade';
+import { toISO } from '@/lib/datetime';
 
 export interface MT5ImportResult {
   success: boolean;
@@ -171,18 +172,19 @@ function findColumnIndexes(headers: string[]): ColumnIndexes {
 }
 
 function parseMT5DateTime(dateTimeStr: string): string {
-  // Format: YYYY.MM.DD HH:MM:SS → ISO format
+  // Format: YYYY.MM.DD HH:MM:SS — broker time, treated as user local → UTC ISO.
   const cleaned = dateTimeStr.trim();
   const [datePart, timePart] = cleaned.split(' ');
-  
+
   if (!datePart || !timePart) {
     throw new Error(`Invalid datetime format: ${dateTimeStr}`);
   }
-  
+
   const [year, month, day] = datePart.split('.');
-  const isoDate = `${year}-${month}-${day}T${timePart}`;
-  
-  return isoDate;
+  const naive = `${year}-${month}-${day}T${timePart}`;
+  const iso = toISO(naive);
+  if (!iso) throw new Error(`Invalid datetime format: ${dateTimeStr}`);
+  return iso;
 }
 
 function parseNumber(value: string): number {
