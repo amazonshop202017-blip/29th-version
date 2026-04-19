@@ -64,19 +64,21 @@ export function MetricCards() {
     for (const fa of fundedAll) {
       if (!fa.challengeId) continue;
       const challenge = getChallengeById(fa.challengeId);
-      if (!challenge || challenge.steps === 0) continue;
+      if (!challenge || challenge.steps === 0) continue; // skip Instant
+      if (!challenge.startDate) continue; // need real start
 
-      const step1 = accounts.find(x => x.challengeId === fa.challengeId && x.step === "1");
-      if (!step1) continue;
-      const startTs = new Date(step1.createdAt).getTime();
+      const startTs = new Date(challenge.startDate).getTime();
       if (!isFinite(startTs)) continue;
 
-      const completionAcct = challenge.steps === 2
-        ? accounts.find(x => x.challengeId === fa.challengeId && x.step === "2")
-        : step1;
-      if (!completionAcct) continue;
+      // Final evaluation step account
+      const finalStep = challenge.steps === 2 ? "2" : "1";
+      const stepAcct = accounts.find(
+        x => x.challengeId === fa.challengeId && x.step === finalStep
+      );
+      if (!stepAcct) continue;
 
-      const acctTrades = tradesByAccount.get(completionAcct.id) ?? [];
+      // End date = latest closeDate among that step's trades
+      const acctTrades = tradesByAccount.get(stepAcct.id) ?? [];
       const closeTimes = acctTrades
         .map(t => {
           const cd = calculateTradeMetrics(t).closeDate;
@@ -84,10 +86,8 @@ export function MetricCards() {
         })
         .filter(ts => isFinite(ts));
 
-      const endTs = closeTimes.length
-        ? Math.max(...closeTimes)
-        : new Date(fa.createdAt).getTime();
-      if (!isFinite(endTs)) continue;
+      if (closeTimes.length === 0) continue; // SKIP — no fallback
+      const endTs = Math.max(...closeTimes);
 
       const days = (endTs - startTs) / 86400000;
       if (isFinite(days) && days >= 0) daysList.push(days);
