@@ -133,6 +133,7 @@ export const GlobalHeader = () => {
   const { isEditMode, toggleEditMode } = useDashboardEdit();
   const { isCollapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
   const isDashboard = location.pathname === '/';
+  const isToolsRoute = location.pathname.startsWith('/tools');
 
   // Resolve page title from route
   const pageTitle = useMemo(() => {
@@ -408,7 +409,8 @@ export const GlobalHeader = () => {
         </h1>
       )}
 
-      {/* Mobile/Tablet: Single "Filters" menu button */}
+      {/* Mobile/Tablet: Single "Filters" menu button — hidden on /tools/* pages */}
+      {!isToolsRoute && (
       <div className="lg:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
