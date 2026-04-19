@@ -1,5 +1,4 @@
 import { type ReactNode, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { GlobalHeader } from './GlobalHeader';
 import { SelectedFiltersBar } from './SelectedFiltersBar';
@@ -14,8 +13,6 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
-  const isToolsRoute = location.pathname.startsWith('/tools');
 
   return (
     <SidebarCollapseProvider value={{ isCollapsed, setIsCollapsed, toggle: () => setIsCollapsed(!isCollapsed) }}>
@@ -53,20 +50,11 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           isCollapsed ? "md:ml-[70px]" : "md:ml-[229px]"
         )}>
           <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(0_0%_5%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
-            {!isToolsRoute && (
-              <div className="flex-shrink-0">
-                <GlobalHeader />
-                <SelectedFiltersBar />
-              </div>
-            )}
             <div className="flex-shrink-0">
               <GlobalHeader />
               <SelectedFiltersBar />
             </div>
-            <div className={cn(
-              "flex-1 overflow-y-auto",
-              isToolsRoute ? "p-0" : "p-4 md:p-6 lg:p-8"
-            )}>
+            <div className="p-4 md:p-6 lg:p-8 flex-1 overflow-y-auto">
               {children}
             </div>
           </main>
