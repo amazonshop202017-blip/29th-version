@@ -199,7 +199,79 @@ export function computeDrawdownFloor(
     .sort((a, b) => new Date(a.m.closeDate || 0).getTime() - new Date(b.m.closeDate || 0).getTime());
 
   const { floor } = computeDrawdownState(balance, closedTrades, ddSpec.type, ddAmount);
-  return floor;
+}
+
+/**
+ * Compute the drawdown floor (red line) at every point in a chart series.
+ * Mirrors `computeDrawdownState` rules exactly so chart visuals match account stats.
+ *
+ * - static   → constant `startingBalance - ddAmount`
+ * - trailing → walk points; peak = max(peak, runningBalance); floor = peak - ddAmount
+ * - eod      → peak walks day-by-day on completed (non-today) days only
+ */
+export function computeDrawdownFloorSeries(
+  startingBalance: number,
+  ddType: 'static' | 'eod' | 'trailing',
+  ddAmount: number | null,
+  points: { runningBalance: number; dayKey: string }[]
+): (number | null)[] {
+  if (ddAmount == null) return points.map(() => null);
+
+  if (ddType === 'static') {
+    const floor = startingBalance - ddAmount;
+    return points.map(() => floor);
+  }
+
+  if (ddType === 'trailing') {
+    let peak = startingBalance;
+    return points.map((p) => {
+      if (p.runningBalance > peak) peak = p.runningBalance;
+      return peak - ddAmount;
+    });
+  }
+
+  // EOD: peak only updates from completed (non-today) end-of-day balances.
+  const todayKey = new Date().toISOString().slice(0, 10);
+  // Find the final runningBalance per dayKey (in chronological order).
+  const lastBalanceByDay = new Map<string, number>();
+  for (const p of points) {
+    if (!p.dayKey) continue;
+    lastBalanceByDay.set(p.dayKey, p.runningBalance);
+  }
+  // Track which days are "completed" (not today and we've seen a later day).
+  const dayKeysOrdered = [...lastBalanceByDay.keys()];
+  let peak = startingBalance;
+  // We update peak as soon as we move past a non-today day.
+  const completedPeakAfterDay = new Map<string, number>();
+  for (let i = 0; i < dayKeysOrdered.length; i++) {
+    const dk = dayKeysOrdered[i];
+    if (dk !== todayKey) {
+      const eodBal = lastBalanceByDay.get(dk)!;
+      if (eodBal > peak) peak = eodBal;
+    }
+    completedPeakAfterDay.set(dk, peak);
+  }
+  // For each point, floor uses the peak that was locked in by the END of its day
+  // (matches `computeDrawdownState` which excludes today). For points within
+  // today we use the prior peak (peak before today was processed).
+  // Simpler equivalent: peak for a non-today day = peak after that day; for today = peak after the previous non-today day.
+  let priorPeak = startingBalance;
+  const peakBeforeDay = new Map<string, number>();
+  for (const dk of dayKeysOrdered) {
+    peakBeforeDay.set(dk, priorPeak);
+    if (dk !== todayKey) {
+      const eodBal = lastBalanceByDay.get(dk)!;
+      if (eodBal > priorPeak) priorPeak = eodBal;
+    }
+  }
+  return points.map((p) => {
+    const dk = p.dayKey;
+    if (!dk) return startingBalance - ddAmount;
+    if (dk === todayKey) {
+      return (peakBeforeDay.get(dk) ?? startingBalance) - ddAmount;
+    }
+    return (completedPeakAfterDay.get(dk) ?? startingBalance) - ddAmount;
+  });
 }
 
 export function fmtUsd(n: number, opts: { sign?: boolean } = {}): string {
