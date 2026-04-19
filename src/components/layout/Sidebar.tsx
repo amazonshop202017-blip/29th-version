@@ -37,6 +37,14 @@ const chartRoomItems = [
   { label: 'Trade Management', path: '/chart-room/trade-management' },
 ];
 
+const toolsItems = [
+  { label: 'Monte Carlo', path: '/tools/monte-carlo' },
+  { label: 'Risk of Ruin', path: '/tools/risk-of-ruin' },
+  { label: 'Kelly Criterion', path: '/tools/kelly-criterion' },
+  { label: 'Streak Analysis', path: '/tools/streak-analysis' },
+  { label: 'Forex Clock', path: '/tools/forex-clock' },
+];
+
 const NavItem = ({ icon: Icon, label, path, isCollapsed, isActive }: {
   icon: any; label: string; path: string; isCollapsed: boolean; isActive: boolean;
 }) => (
