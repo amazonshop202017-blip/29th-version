@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { setContractSizeRegistry, setTickSizeRegistry } from '@/lib/contractSizeRegistry';
+import type { ISODateString } from '@/lib/datetime';
 
 export interface TickPipRule {
   id: string;
@@ -7,8 +8,8 @@ export interface TickPipRule {
   symbol: string;
   tickSize: number;
   contractSize: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 interface SymbolTickSizes {

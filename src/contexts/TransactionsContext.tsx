@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import type { ISODateString } from '@/lib/datetime';
 
 export type TxType = 'income' | 'expense';
 export type TxStatus = 'reviewed' | 'not_reviewed' | 'ignored';
@@ -22,10 +23,10 @@ export interface PropFirmTransaction {
   category: TxCategory;
   description?: string;
   amount: number; // Always positive
-  date: string; // ISO
+  date: ISODateString;
   status: TxStatus;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export type NewTransactionInput = Omit<PropFirmTransaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
