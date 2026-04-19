@@ -39,7 +39,7 @@ function getFundedRules(challenge: Challenge): FundedRules {
 const clamp = (v: number, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
 /** Resolve the active drawdown spec for an account (funded or evaluation step). */
-function getActiveDrawdownSpec(
+export function getActiveDrawdownSpec(
   challenge: Challenge,
   account: Account
 ): { type: 'static' | 'eod' | 'trailing'; mode: 'percent' | 'amount'; value: number | null } | null {
