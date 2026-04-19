@@ -80,10 +80,10 @@ function computeStreakSim(winRate: number, iterations: number): SimStreakData {
 // ── Streak table color helpers ────────────────────────────────────────────────
 function cellStyle(pct: number, invert: boolean) {
   const v = invert ? 1 - pct : pct;
-  if (v >= 0.75) return { bg: "bg-rose-600/80",   text: "text-foreground" };
-  if (v >= 0.50) return { bg: "bg-orange-500/75", text: "text-foreground" };
-  if (v >= 0.25) return { bg: "bg-amber-400/70",  text: "text-foreground" };
-  return              { bg: "bg-emerald-600/65", text: "text-foreground" };
+  if (v >= 0.75) return { bg: "bg-rose-600/80",   text: "text-white" };
+  if (v >= 0.50) return { bg: "bg-orange-500/75", text: "text-white" };
+  if (v >= 0.25) return { bg: "bg-amber-400/70",  text: "text-white" };
+  return              { bg: "bg-emerald-600/65", text: "text-white" };
 }
 function formatPct(v: number) { return (v * 100).toFixed(2) + "%"; }
 
