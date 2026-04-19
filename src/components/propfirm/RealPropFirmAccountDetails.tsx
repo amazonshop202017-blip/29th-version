@@ -225,8 +225,16 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     };
   }, [challenge, account, accountTab]);
 
+  const profitTargetLine = useMemo(() => {
+    if (!account) return null;
+    const startBal = account.startingBalance ?? 0;
+    return selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
+      ? startBal + selectedRules.profitTarget
+      : null;
+  }, [account, selectedRules]);
+
   const balanceSeries = useMemo(() => {
-    if (!account) return [] as { date: string; balance: number; floor: number | null }[];
+    if (!account) return [] as { date: string; balance: number; floor: number | null; profitTarget: number | null }[];
     const startBalance = account.startingBalance ?? 0;
     const startDayKey = localDayKey(account.createdAt);
     const start = {
@@ -293,8 +301,8 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
       ddAmount,
       raw.map((p) => ({ runningBalance: p.runningBalance, dayKey: p.dayKey }))
     );
-    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i] }));
-  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown]);
+    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i], profitTarget: profitTargetLine }));
+  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown, profitTargetLine]);
 
   const today = localDayKey(new Date().toISOString());
   const dailyLoss = useMemo(() => {
