@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { GlobalHeader } from './GlobalHeader';
 import { SelectedFiltersBar } from './SelectedFiltersBar';
