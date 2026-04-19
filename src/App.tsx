@@ -52,6 +52,8 @@ import TagsAnalytics from "./pages/chartroom/TagsAnalytics";
 import RiskDistribution from "./pages/chartroom/RiskDistribution";
 import TradeManagement from "./pages/chartroom/TradeManagement";
 import ExitAnalyzer from "./pages/chartroom/ExitAnalyzer";
+import MonteCarlo from "./pages/tools/MonteCarlo";
+import StreakAnalysis from "./pages/tools/StreakAnalysis";
 import PropFirmLayout from "./pages/propfirm/PropFirmLayout";
 import PropFirmDashboard from "./pages/propfirm/PropFirmDashboard";
 import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
@@ -120,6 +122,8 @@ const AuthenticatedApp = () => {
                                   <Route path="/chart-room/risk-distribution" element={<RiskDistribution />} />
                                   <Route path="/chart-room/trade-management" element={<TradeManagement />} />
                                   <Route path="/exit-analyzer" element={<ExitAnalyzer />} />
+                                  <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
+                                  <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>
                                     <Route index element={<PropFirmDashboard />} />
                                     <Route path="accounts" element={<PropFirmAccountsPage />} />
