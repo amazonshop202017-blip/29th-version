@@ -456,6 +456,7 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      )}
 
       {/* Mobile/Tablet Sheets for filter panels */}
       {/* Basic Filters Sheet - reuses the same DropdownMenu with open state */}
