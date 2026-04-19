@@ -443,15 +443,20 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                     label={{ value: `Profit Target`, position: "right", fontSize: 10, fill: "hsl(145,60%,45%)" }}
                   />
                 )}
-                {drawdownFloorLine != null && (
-                  <ReferenceLine
-                    y={drawdownFloorLine}
-                    stroke="hsl(0,70%,60%)"
-                    strokeDasharray="5 4"
-                    label={{ value: "Drawdown Floor", position: "right", fontSize: 10, fill: "hsl(0,65%,55%)" }}
-                  />
-                )}
-                <Area type="monotone" dataKey="balance" stroke="hsl(250,80%,65%)" strokeWidth={2} fill="url(#pfRealBalanceGradient)" dot={false} activeDot={{ r: 4, fill: "hsl(250,80%,65%)" }} />
+                <Area
+                  type="monotone"
+                  dataKey="floor"
+                  stroke="hsl(0,70%,60%)"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  fill="none"
+                  dot={false}
+                  activeDot={{ r: 3, fill: "hsl(0,70%,60%)" }}
+                  name="Minimum Balance"
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Area type="monotone" dataKey="balance" stroke="hsl(250,80%,65%)" strokeWidth={2} fill="url(#pfRealBalanceGradient)" dot={false} activeDot={{ r: 4, fill: "hsl(250,80%,65%)" }} name="Balance" />
               </AreaChart>
             </ResponsiveContainer>
             {!tradeStats.hasTrades && (
