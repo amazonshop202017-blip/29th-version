@@ -10,6 +10,8 @@ import { calculateTradeMetrics } from "@/types/trade";
 import {
   computeAccountStats,
   computeDrawdownFloor,
+  computeDrawdownFloorSeries,
+  getActiveDrawdownSpec,
   resolveTargetAmount,
   resolveDrawdownAmount,
   fmtUsd,
@@ -22,10 +24,27 @@ type AccountTab = "STEP 1" | "STEP 2" | "FUNDING";
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const balanceEntry = payload.find((p: any) => p.dataKey === "balance");
+    const floorEntry = payload.find((p: any) => p.dataKey === "floor");
+    const fmt = (v: number) =>
+      `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return (
-      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
+      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs space-y-1">
         <p className="text-muted-foreground">{label}</p>
-        <p className="font-bold text-foreground">${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+        {balanceEntry && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(250,80%,65%)" }} />
+            <span className="text-muted-foreground">Balance:</span>
+            <span className="font-bold text-foreground">{fmt(balanceEntry.value)}</span>
+          </div>
+        )}
+        {floorEntry && floorEntry.value != null && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(0,70%,60%)" }} />
+            <span className="text-muted-foreground">Minimum Balance:</span>
+            <span className="font-bold text-foreground">{fmt(floorEntry.value)}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -198,51 +217,75 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   }, [challenge, account, accountTab]);
 
   const balanceSeries = useMemo(() => {
-    if (!account) return [] as { date: string; balance: number }[];
+    if (!account) return [] as { date: string; balance: number; floor: number | null }[];
     const startBalance = account.startingBalance ?? 0;
-    const start = { date: formatStartedOn(account.createdAt) || "Start", balance: startBalance };
+    const startDayKey = (account.createdAt || "").slice(0, 10);
+    const start = {
+      date: formatStartedOn(account.createdAt) || "Start",
+      balance: startBalance,
+      runningBalance: startBalance,
+      dayKey: startDayKey,
+    };
 
-    if (enriched.length === 0) return [start];
+    type Pt = { date: string; balance: number; runningBalance: number; dayKey: string };
+    let raw: Pt[] = [start];
 
-    const fmtDay = (iso: string) =>
-      new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
-    const fmtHour = (iso: string) =>
-      new Date(iso).toLocaleString("en-US", { month: "short", day: "2-digit", hour: "2-digit" });
-    const fmtTrade = (iso: string, idx: number) =>
-      `#${idx + 1} ${new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}`;
+    if (enriched.length > 0) {
+      const fmtDay = (iso: string) =>
+        new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+      const fmtHour = (iso: string) =>
+        new Date(iso).toLocaleString("en-US", { month: "short", day: "2-digit", hour: "2-digit" });
+      const fmtTrade = (iso: string, idx: number) =>
+        `#${idx + 1} ${new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}`;
 
-    if (chartView === "Per Trade") {
-      let running = startBalance;
-      const series = [start];
-      enriched.forEach(({ m }, i) => {
-        running += m.netPnl || 0;
-        series.push({ date: fmtTrade(m.closeDate || account.createdAt, i), balance: running });
-      });
-      return series;
+      if (chartView === "Per Trade") {
+        let running = startBalance;
+        enriched.forEach(({ m }, i) => {
+          running += m.netPnl || 0;
+          const iso = m.closeDate || account.createdAt;
+          raw.push({
+            date: fmtTrade(iso, i),
+            balance: running,
+            runningBalance: running,
+            dayKey: (iso || "").slice(0, 10),
+          });
+        });
+      } else {
+        const bucket = new Map<string, { label: string; pnl: number; ts: number; dayKey: string }>();
+        for (const { m } of enriched) {
+          const iso = m.closeDate || account.createdAt;
+          const d = new Date(iso);
+          const key =
+            chartView === "Hourly"
+              ? `${d.toISOString().slice(0, 13)}`
+              : d.toISOString().slice(0, 10);
+          const label = chartView === "Hourly" ? fmtHour(iso) : fmtDay(iso);
+          const dayKey = d.toISOString().slice(0, 10);
+          const existing = bucket.get(key);
+          if (existing) existing.pnl += m.netPnl || 0;
+          else bucket.set(key, { label, pnl: m.netPnl || 0, ts: d.getTime(), dayKey });
+        }
+        const ordered = [...bucket.values()].sort((a, b) => a.ts - b.ts);
+        let running = startBalance;
+        for (const b of ordered) {
+          running += b.pnl;
+          raw.push({ date: b.label, balance: running, runningBalance: running, dayKey: b.dayKey });
+        }
+      }
     }
 
-    const bucket = new Map<string, { label: string; pnl: number; ts: number }>();
-    for (const { m } of enriched) {
-      const iso = m.closeDate || account.createdAt;
-      const d = new Date(iso);
-      const key =
-        chartView === "Hourly"
-          ? `${d.toISOString().slice(0, 13)}`
-          : d.toISOString().slice(0, 10);
-      const label = chartView === "Hourly" ? fmtHour(iso) : fmtDay(iso);
-      const existing = bucket.get(key);
-      if (existing) existing.pnl += m.netPnl || 0;
-      else bucket.set(key, { label, pnl: m.netPnl || 0, ts: d.getTime() });
-    }
-    const ordered = [...bucket.values()].sort((a, b) => a.ts - b.ts);
-    let running = startBalance;
-    const series = [start];
-    for (const b of ordered) {
-      running += b.pnl;
-      series.push({ date: b.label, balance: running });
-    }
-    return series;
-  }, [enriched, account?.startingBalance, account?.createdAt, chartView]);
+    // Compute floor per point using the SAME logic as computeAccountStats / computeDrawdownFloor.
+    const ddSpec = challenge ? getActiveDrawdownSpec(challenge, account) : null;
+    const ddType = ddSpec?.type ?? 'static';
+    const ddAmount = selectedRules?.maxDrawdown ?? null;
+    const floors = computeDrawdownFloorSeries(
+      startBalance,
+      ddType,
+      ddAmount,
+      raw.map((p) => ({ runningBalance: p.runningBalance, dayKey: p.dayKey }))
+    );
+    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i] }));
+  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown]);
 
   const today = new Date().toISOString().slice(0, 10);
   const dailyLoss = useMemo(() => {
@@ -278,10 +321,14 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     );
   }
 
-  const balanceVals = balanceSeries.map((p) => p.balance);
-  const minB = Math.min(...balanceVals);
-  const maxB = Math.max(...balanceVals);
-  const yDomain: [number, number] = balanceVals.length
+  const allYVals: number[] = [];
+  for (const p of balanceSeries) {
+    allYVals.push(p.balance);
+    if (p.floor != null) allYVals.push(p.floor);
+  }
+  const minB = allYVals.length ? Math.min(...allYVals) : 0;
+  const maxB = allYVals.length ? Math.max(...allYVals) : 100;
+  const yDomain: [number, number] = allYVals.length
     ? [Math.floor(minB * 0.98), Math.ceil(maxB * 1.02 || minB * 1.02 + 100)]
     : [0, 100];
 
@@ -396,15 +443,20 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                     label={{ value: `Profit Target`, position: "right", fontSize: 10, fill: "hsl(145,60%,45%)" }}
                   />
                 )}
-                {drawdownFloorLine != null && (
-                  <ReferenceLine
-                    y={drawdownFloorLine}
-                    stroke="hsl(0,70%,60%)"
-                    strokeDasharray="5 4"
-                    label={{ value: "Drawdown Floor", position: "right", fontSize: 10, fill: "hsl(0,65%,55%)" }}
-                  />
-                )}
-                <Area type="monotone" dataKey="balance" stroke="hsl(250,80%,65%)" strokeWidth={2} fill="url(#pfRealBalanceGradient)" dot={false} activeDot={{ r: 4, fill: "hsl(250,80%,65%)" }} />
+                <Area
+                  type="monotone"
+                  dataKey="floor"
+                  stroke="hsl(0,70%,60%)"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  fill="none"
+                  dot={false}
+                  activeDot={{ r: 3, fill: "hsl(0,70%,60%)" }}
+                  name="Minimum Balance"
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Area type="monotone" dataKey="balance" stroke="hsl(250,80%,65%)" strokeWidth={2} fill="url(#pfRealBalanceGradient)" dot={false} activeDot={{ r: 4, fill: "hsl(250,80%,65%)" }} name="Balance" />
               </AreaChart>
             </ResponsiveContainer>
             {!tradeStats.hasTrades && (
