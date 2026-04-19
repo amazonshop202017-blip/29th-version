@@ -106,8 +106,12 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const [chartRoomOpen, setChartRoomOpen] = useState(
     location.pathname.startsWith('/chart-room')
   );
+  const [toolsOpen, setToolsOpen] = useState(
+    location.pathname.startsWith('/tools')
+  );
 
   const isChartRoomActive = location.pathname.startsWith('/chart-room');
+  const isToolsActive = location.pathname.startsWith('/tools');
 
   return (
     <aside
