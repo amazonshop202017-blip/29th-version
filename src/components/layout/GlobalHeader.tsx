@@ -133,6 +133,7 @@ export const GlobalHeader = () => {
   const { isEditMode, toggleEditMode } = useDashboardEdit();
   const { isCollapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
   const isDashboard = location.pathname === '/';
+  const isToolsRoute = location.pathname.startsWith('/tools');
 
   // Resolve page title from route
   const pageTitle = useMemo(() => {
@@ -408,7 +409,8 @@ export const GlobalHeader = () => {
         </h1>
       )}
 
-      {/* Mobile/Tablet: Single "Filters" menu button */}
+      {/* Mobile/Tablet: Single "Filters" menu button — hidden on /tools/* pages */}
+      {!isToolsRoute && (
       <div className="lg:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -454,6 +456,7 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      )}
 
       {/* Mobile/Tablet Sheets for filter panels */}
       {/* Basic Filters Sheet - reuses the same DropdownMenu with open state */}
@@ -561,6 +564,8 @@ export const GlobalHeader = () => {
       {/* Spacer to push all desktop filters to the right */}
       <div className="flex-1 hidden lg:block" />
 
+      {/* Desktop filter UI — hidden on /tools/* pages */}
+      {!isToolsRoute && (<>
       {/* Desktop: All filter buttons inline */}
       {/* Display Mode Selector */}
       <div className="hidden lg:block">
@@ -1323,8 +1328,7 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {/* Dashboard Edit Button - after filter bar */}
+      </>)}
       {isDashboard && (
         <button
           onClick={toggleEditMode}
