@@ -64,19 +64,21 @@ export function MetricCards() {
     for (const fa of fundedAll) {
       if (!fa.challengeId) continue;
       const challenge = getChallengeById(fa.challengeId);
-      if (!challenge || challenge.steps === 0) continue;
+      if (!challenge || challenge.steps === 0) continue; // skip Instant
+      if (!challenge.startDate) continue; // need real start
 
-      const step1 = accounts.find(x => x.challengeId === fa.challengeId && x.step === "1");
-      if (!step1) continue;
-      const startTs = new Date(step1.createdAt).getTime();
+      const startTs = new Date(challenge.startDate).getTime();
       if (!isFinite(startTs)) continue;
 
-      const completionAcct = challenge.steps === 2
-        ? accounts.find(x => x.challengeId === fa.challengeId && x.step === "2")
-        : step1;
-      if (!completionAcct) continue;
+      // Final evaluation step account
+      const finalStep = challenge.steps === 2 ? "2" : "1";
+      const stepAcct = accounts.find(
+        x => x.challengeId === fa.challengeId && x.step === finalStep
+      );
+      if (!stepAcct) continue;
 
-      const acctTrades = tradesByAccount.get(completionAcct.id) ?? [];
+      // End date = latest closeDate among that step's trades
+      const acctTrades = tradesByAccount.get(stepAcct.id) ?? [];
       const closeTimes = acctTrades
         .map(t => {
           const cd = calculateTradeMetrics(t).closeDate;
@@ -84,10 +86,8 @@ export function MetricCards() {
         })
         .filter(ts => isFinite(ts));
 
-      const endTs = closeTimes.length
-        ? Math.max(...closeTimes)
-        : new Date(fa.createdAt).getTime();
-      if (!isFinite(endTs)) continue;
+      if (closeTimes.length === 0) continue; // SKIP — no fallback
+      const endTs = Math.max(...closeTimes);
 
       const days = (endTs - startTs) / 86400000;
       if (isFinite(days) && days >= 0) daysList.push(days);
@@ -103,6 +103,7 @@ export function MetricCards() {
       spent, earned, net, roi,
       passRate, passed, attempted,
       avgDays, avgTrades, fundedTotal: fundedAll.length,
+      avgDaysCount: daysList.length, avgTradesCount: tradesList.length,
     };
   }, [accounts, transactions, trades, getAllAccountsWithStats, getChallengeById]);
 
@@ -203,9 +204,9 @@ export function MetricCards() {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground tracking-tight">
-                {m.fundedTotal > 0 ? `${Math.round(m.avgDays)}d` : "—"}
+                {m.avgDaysCount > 0 ? `${Math.round(m.avgDays)}d` : "—"}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">Across {m.fundedTotal} funded</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Across {m.avgDaysCount} funded</div>
             </div>
           </div>
         </div>
@@ -218,7 +219,7 @@ export function MetricCards() {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground tracking-tight">
-                {m.avgTrades != null ? Math.round(m.avgTrades) : "—"}
+                {m.avgTradesCount > 0 && m.avgTrades != null ? Math.round(m.avgTrades) : "—"}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">Trades per funded account</div>
             </div>
