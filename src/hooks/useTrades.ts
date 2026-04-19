@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
+import { toISO, nowISO } from '@/lib/datetime';
 
 const getCurrentUserId = (): string | undefined => {
   try {
@@ -43,6 +44,36 @@ export const useTrades = () => {
               entries: [],
               notes: updated.notes || '',
             };
+          }
+
+          // Migration: Normalize entry datetimes to full ISO 8601 UTC.
+          // Naive legacy values (YYYY-MM-DDTHH:mm or YYYY-MM-DDTHH:mm:ss) are
+          // interpreted as user local time — same as how the UI originally
+          // saved them — so the displayed day/time stays identical.
+          if (Array.isArray(updated.entries) && updated.entries.length > 0) {
+            let entriesChanged = false;
+            const normalizedEntries = updated.entries.map((e: any) => {
+              if (!e?.datetime) return e;
+              const next = toISO(e.datetime);
+              if (next && next !== e.datetime) {
+                entriesChanged = true;
+                return { ...e, datetime: next };
+              }
+              return e;
+            });
+            if (entriesChanged) {
+              updated = { ...updated, entries: normalizedEntries };
+            }
+          }
+          
+          // Migration: Normalize createdAt / updatedAt
+          if (updated.createdAt) {
+            const next = toISO(updated.createdAt);
+            if (next && next !== updated.createdAt) updated = { ...updated, createdAt: next };
+          }
+          if (updated.updatedAt) {
+            const next = toISO(updated.updatedAt);
+            if (next && next !== updated.updatedAt) updated = { ...updated, updatedAt: next };
           }
           
           // Migration: Remove deprecated instrument field (asset class concept)
