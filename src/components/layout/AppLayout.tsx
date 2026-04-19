@@ -53,10 +53,12 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           isCollapsed ? "md:ml-[70px]" : "md:ml-[229px]"
         )}>
           <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(0_0%_5%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
-            <div className="flex-shrink-0">
-              <GlobalHeader />
-              <SelectedFiltersBar />
-            </div>
+            {!isToolsRoute && (
+              <div className="flex-shrink-0">
+                <GlobalHeader />
+                <SelectedFiltersBar />
+              </div>
+            )}
             <div className={cn(
               "flex-1 overflow-y-auto",
               isToolsRoute ? "p-0" : "p-4 md:p-6 lg:p-8"
