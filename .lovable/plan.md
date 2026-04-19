@@ -1,69 +1,70 @@
+
+
 ## Bug
 
-In `src/contexts/TradesContext.tsx` (lines 141–145), when "All accounts" is selected (`selectedAccounts.length === 0`), filtering by active account IDs is **skipped entirely** if there are zero active accounts:
-
-```ts
-if (accountIds.length > 0) {
-  const activeSet = new Set(accountIds);
-  filtered = filtered.filter(trade => activeSet.has(trade.accountId));
-}
-```
-
-When the user has 0 active accounts (only archived ones), `accountIds.length === 0`, so the `if` is false and **all trades pass through unfiltered** — including trades from the archived account. That's why dashboard analytics still show data.
-
-The same defensive bug exists for the explicit-selection branch (lines 149–153): `activeSet` is `null` when no active accounts exist, allowing archived selections through.
+Current `Avg Days to Funded` in `MetricCards.tsx`:
+- Uses `step1.createdAt` as start date instead of `challenge.startDate`.
+- Falls back to `fa.createdAt` (the funded account's creation date) when no trades exist on the final evaluation step → produces fake/inflated days.
+- Includes the funded account itself as fallback for completion (`completionAcct = step1` for 1-step), which is fine, but the end-date fallback to `createdAt` is wrong.
 
 ## Fix
 
-Remove the `accountIds.length > 0` guard. If there are zero active accounts, the result should be **zero trades**, not all trades.
-
-In `src/contexts/TradesContext.tsx`, replace the block:
+In `src/components/propfirm/MetricCards.tsx`, rewrite the `Avg Days to Funded` block inside the `useMemo`:
 
 ```ts
-if (selectedAccounts.length === 0) {
-  if (accountIds.length > 0) {
-    const activeSet = new Set(accountIds);
-    filtered = filtered.filter(trade => activeSet.has(trade.accountId));
-  }
-} else {
-  const activeSet = accountIds.length > 0 ? new Set(accountIds) : null;
-  const selectedSet = new Set(selectedAccounts);
-  filtered = filtered.filter(trade =>
-    selectedSet.has(trade.accountId) && (!activeSet || activeSet.has(trade.accountId))
+for (const fa of fundedAll) {
+  if (!fa.challengeId) continue;
+  const challenge = getChallengeById(fa.challengeId);
+  if (!challenge || challenge.steps === 0) continue;          // skip Instant
+  if (!challenge.startDate) continue;                          // need real start
+
+  const startTs = new Date(challenge.startDate).getTime();
+  if (!isFinite(startTs)) continue;
+
+  // Final evaluation step account
+  const finalStep = challenge.steps === 2 ? "2" : "1";
+  const stepAcct = accounts.find(
+    x => x.challengeId === fa.challengeId && x.step === finalStep
   );
+  if (!stepAcct) continue;
+
+  // End date = latest closeDate among that step's trades
+  const acctTrades = tradesByAccount.get(stepAcct.id) ?? [];
+  const closeTimes = acctTrades
+    .map(t => {
+      const cd = calculateTradeMetrics(t).closeDate;
+      return cd ? new Date(cd).getTime() : NaN;
+    })
+    .filter(ts => isFinite(ts));
+
+  if (closeTimes.length === 0) continue;                       // SKIP — no fallback
+  const endTs = Math.max(...closeTimes);
+
+  const days = (endTs - startTs) / 86400000;
+  if (isFinite(days) && days >= 0) daysList.push(days);
+
+  tradesList.push(acctTrades.length);
 }
 ```
 
-with:
+Also update the subtitle counter so it reflects only the **valid** funded challenges actually averaged (use `daysList.length`, not `fundedTotal`):
 
-```ts
-const activeSet = new Set(accountIds);
-if (selectedAccounts.length === 0) {
-  // "All accounts" = all ACTIVE accounts only (never archived).
-  // If there are zero active accounts, result is zero trades.
-  filtered = filtered.filter(trade => activeSet.has(trade.accountId));
-} else {
-  // Explicit selection — intersect with active accounts so archived selections drop out.
-  const selectedSet = new Set(selectedAccounts);
-  filtered = filtered.filter(trade =>
-    selectedSet.has(trade.accountId) && activeSet.has(trade.accountId)
-  );
-}
+```tsx
+<div className="text-xs text-muted-foreground mt-0.5">
+  Across {daysList.length} funded
+</div>
 ```
+
+Display `—` when `daysList.length === 0`. Same treatment for `Avg trades to funded` (use `tradesList.length`).
 
 ## Files
 
-- `src/contexts/TradesContext.tsx` — fix filter guard so empty-active-set yields empty result.
-
-DayView already has the correct behavior (always intersects with `activeSet`), so no change needed there.
+- `src/components/propfirm/MetricCards.tsx` — replace start-date source (`challenge.startDate` instead of `step1.createdAt`), remove `fa.createdAt` fallback for end date, skip challenges that lack trades on the final evaluation step, and update subtitle counts to reflect only valid challenges.
 
 ## Result
 
-After this fix, with 0 active accounts:
+- Instant Funded challenges: ignored.
+- 1-step / 2-step funded challenges with real trades on the final step: counted using true `challenge.startDate` → latest trade `closeDate`.
+- Funded challenges with no trades on the final step: skipped entirely (no inflated days from `createdAt`).
+- Subtitle "Across N funded" reflects only the challenges that actually contributed to the average.
 
-- Dashboard, Trades, Reports, Chartroom, Day View → all show 0 trades / empty stats.
-- The archived Step 1 account's data will no longer leak into analytics. 
-
-analytics on any page must be as per filter, and in all accounts, it should have shown by only non archive account means they are active could be status ('active'| 'completed' |'funded') but they definitely should not be archived. 
-
-&nbsp;
