@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { isoToDateTimeLocalInputValue } from '@/lib/datetime';
 
 interface DayDetailsModalProps {
   isOpen: boolean;

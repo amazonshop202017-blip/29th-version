@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import type { ISODateString } from '@/lib/datetime';
+import { nowISO, isCanonicalISO, type ISODateString } from '@/lib/datetime';
 
 export type TxType = 'income' | 'expense';
 export type TxStatus = 'reviewed' | 'not_reviewed' | 'ignored';
@@ -70,7 +70,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addTransaction = useCallback((input: NewTransactionInput): PropFirmTransaction => {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const tx: PropFirmTransaction = {
       ...input,
       id: uid(),
@@ -84,7 +84,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const updateTransaction = useCallback((id, patch) => {
-    setTransactions(prev => persist(prev.map(t => t.id === id ? { ...t, ...patch, amount: patch.amount !== undefined ? Math.abs(patch.amount) : t.amount, updatedAt: new Date().toISOString() } : t)));
+    setTransactions(prev => persist(prev.map(t => t.id === id ? { ...t, ...patch, amount: patch.amount !== undefined ? Math.abs(patch.amount) : t.amount, updatedAt: nowISO() } : t)));
   }, []);
 
   const deleteTransaction = useCallback((id: string) => {

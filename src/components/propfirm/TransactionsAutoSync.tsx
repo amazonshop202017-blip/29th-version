@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useChallengesContext } from '@/contexts/ChallengesContext';
 import { useTransactionsContext } from '@/contexts/TransactionsContext';
+import { nowISO } from '@/lib/datetime';
 
 /**
  * Idempotently syncs auto-generated transactions for challenges:
@@ -22,7 +23,7 @@ export const TransactionsAutoSync = () => {
             type: 'expense',
             category: 'evaluation_fee',
             amount: c.evaluationFee,
-            date: c.createdAt || c.startDate || new Date().toISOString(),
+            date: c.createdAt || c.startDate || nowISO(),
             status: 'reviewed',
             description: `Evaluation fee — ${c.nickname}`,
           }),
@@ -37,7 +38,7 @@ export const TransactionsAutoSync = () => {
             type: 'expense',
             category: 'activation_fee',
             amount: c.activationFee,
-            date: c.createdAt || c.startDate || new Date().toISOString(),
+            date: c.createdAt || c.startDate || nowISO(),
             status: 'reviewed',
             description: `Activation fee — ${c.nickname}`,
           }),
