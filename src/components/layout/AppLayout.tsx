@@ -57,7 +57,14 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
               <GlobalHeader />
               <SelectedFiltersBar />
             </div>
-            <div className="p-4 md:p-6 lg:p-8 flex-1 overflow-y-auto">
+            <div className="flex-shrink-0">
+              <GlobalHeader />
+              <SelectedFiltersBar />
+            </div>
+            <div className={cn(
+              "flex-1 overflow-y-auto",
+              isToolsRoute ? "p-0" : "p-4 md:p-6 lg:p-8"
+            )}>
               {children}
             </div>
           </main>
