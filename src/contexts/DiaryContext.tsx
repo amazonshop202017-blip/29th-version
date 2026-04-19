@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
 import { DiaryNote, DiaryFolder, DiaryNoteFormData, DEFAULT_FOLDERS, DiaryFolderType } from '@/types/diary';
 import { useTradesContext } from '@/contexts/TradesContext';
-import { nowISO } from '@/lib/datetime';
+import { nowISO, auditISOValues } from '@/lib/datetime';
 
 interface DiaryContextType {
   notes: DiaryNote[];

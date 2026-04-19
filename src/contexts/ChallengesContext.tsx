@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { toISO, type ISODateString } from '@/lib/datetime';
+import { toISO, auditISOValues, type ISODateString } from '@/lib/datetime';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -103,6 +103,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if (didNormalizeDates) {
           console.log('[ChallengesContext] Normalized legacy date fields to ISO UTC.');
         }
+        auditISOValues('ChallengesContext', migrated.flatMap(c => [c.startDate, c.createdAt]));
       }
     } catch (e) {
       console.error('Error loading challenges:', e);

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useTradesContext } from './TradesContext';
 import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
-import { toISO, nowISO, type ISODateString } from '@/lib/datetime';
+import { toISO, nowISO, auditISOValues, type ISODateString } from '@/lib/datetime';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
@@ -95,6 +95,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
           console.log('[AccountsContext] Normalized legacy account dates to ISO UTC.');
         }
+        auditISOValues('AccountsContext.accounts', migrated.flatMap(a => [a.createdAt, a.breachedAt]));
       }
       const storedTransactions = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
       if (storedTransactions) {
@@ -110,6 +111,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(migratedTx));
           console.log('[AccountsContext] Normalized legacy transaction dates to ISO UTC.');
         }
+        auditISOValues('AccountsContext.transactions', migratedTx.map(t => t.date));
       }
     } catch (error) {
       console.error('Error loading accounts:', error);
