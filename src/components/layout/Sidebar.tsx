@@ -190,6 +190,15 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
           isActive={location.pathname === dashboardItem.path}
         />
 
+        {/* Prop Firm */}
+        <NavItem
+          icon={Building2}
+          label="Prop Firm"
+          path="/prop-firm"
+          isCollapsed={isCollapsed}
+          isActive={location.pathname.startsWith('/prop-firm')}
+        />
+
         {/* Separator after Dashboard */}
         <div className="py-2">
           <Separator className="bg-sidebar-border/50" />
