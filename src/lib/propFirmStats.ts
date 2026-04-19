@@ -2,6 +2,7 @@ import type { Account } from '@/contexts/AccountsContext';
 import type { Challenge, StepRules, FundedRules, TargetValue, DrawdownValue } from '@/contexts/ChallengesContext';
 import type { Trade } from '@/types/trade';
 import { calculateTradeMetrics } from '@/types/trade';
+import { localDayKey } from '@/lib/datetime';
 
 export interface AccountStats {
   pnl: number;
@@ -85,10 +86,12 @@ function computeDrawdownState(
   }
 
   // EOD: peak walks day-by-day on completed trading days only (exclude today)
-  const todayKey = new Date().toISOString().slice(0, 10);
+  // Uses LOCAL calendar so "today" + per-day buckets match the user's clock,
+  // not a UTC slice (avoids off-by-one for users in non-UTC zones).
+  const todayKey = localDayKey(new Date().toISOString());
   const dayPnl = new Map<string, number>();
   for (const { m } of closedTrades) {
-    const day = m.closeDate ? m.closeDate.split('T')[0] : '';
+    const day = localDayKey(m.closeDate);
     if (!day) continue;
     dayPnl.set(day, (dayPnl.get(day) || 0) + (m.netPnl || 0));
   }
@@ -120,7 +123,7 @@ export function computeAccountStats(account: Account, challenge: Challenge | und
   const currentBalance = balance + pnl;
 
   const dayKeys = new Set(
-    closedTrades.map(({ m }) => (m.closeDate ? m.closeDate.split('T')[0] : '')).filter(Boolean)
+    closedTrades.map(({ m }) => localDayKey(m.closeDate)).filter(Boolean)
   );
 
   // Resolve target/drawdown/consistency from active rules
@@ -231,7 +234,7 @@ export function computeDrawdownFloorSeries(
   }
 
   // EOD: peak only updates from completed (non-today) end-of-day balances.
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = localDayKey(new Date().toISOString());
   // Find the final runningBalance per dayKey (in chronological order).
   const lastBalanceByDay = new Map<string, number>();
   for (const p of points) {

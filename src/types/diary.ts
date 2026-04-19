@@ -1,4 +1,4 @@
-import type { ISODateString } from '@/lib/datetime';
+import { nowISO, type ISODateString } from '@/lib/datetime';
 
 export type DiaryFolderType = 'all' | 'trade' | 'day' | 'custom';
 
@@ -37,20 +37,20 @@ export const DEFAULT_FOLDERS: DiaryFolder[] = [
     name: 'All Notes',
     type: 'all',
     isDefault: true,
-    createdAt: new Date().toISOString(),
+    createdAt: nowISO(),
   },
   {
     id: 'trade-notes',
     name: 'Trade Notes',
     type: 'trade',
     isDefault: true,
-    createdAt: new Date().toISOString(),
+    createdAt: nowISO(),
   },
   {
     id: 'day-notes',
     name: 'Day Notes',
     type: 'day',
     isDefault: true,
-    createdAt: new Date().toISOString(),
+    createdAt: nowISO(),
   },
 ];
