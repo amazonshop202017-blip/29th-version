@@ -10,6 +10,8 @@ import { calculateTradeMetrics } from "@/types/trade";
 import {
   computeAccountStats,
   computeDrawdownFloor,
+  computeDrawdownFloorSeries,
+  getActiveDrawdownSpec,
   resolveTargetAmount,
   resolveDrawdownAmount,
   fmtUsd,
