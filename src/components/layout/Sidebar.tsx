@@ -39,9 +39,9 @@ const chartRoomItems = [
 
 const toolsItems = [
   { label: 'Monte Carlo', path: '/tools/monte-carlo' },
+  { label: 'Streak Analysis', path: '/tools/streak-analysis' },
   { label: 'Risk of Ruin', path: '/tools/risk-of-ruin' },
   { label: 'Kelly Criterion', path: '/tools/kelly-criterion' },
-  { label: 'Streak Analysis', path: '/tools/streak-analysis' },
   { label: 'Forex Clock', path: '/tools/forex-clock' },
 ];
 
