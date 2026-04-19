@@ -6,6 +6,7 @@ import { useStrategiesContext } from "@/contexts/StrategiesContext";
 import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, generateChallengeId, createDefaultStepRules, createDefaultFundedRules, type Challenge, type ChallengeRulesSchema, type StepRules as NewStepRules, type FundedRules as NewFundedRules } from "@/contexts/ChallengesContext";
 import { toast } from "sonner";
+import { toISO, nowISO, isoToDateInputValue } from "@/lib/datetime";
 
 type TrackAccountModalProps = { open: boolean; onClose: () => void; mode?: 'create' | 'edit'; challengeId?: string };
 type Phase = "Evaluation" | "Funded";
@@ -420,7 +421,7 @@ export function TrackAccountModal({ open, onClose, mode = 'create', challengeId:
         setPhase(c.steps === 0 ? "Funded" : "Evaluation");
         setStatus(c.status === 'breached' ? "Breached" : "Active");
         setSteps(c.steps === 2 ? "2 Steps" : "1 Step");
-        setStartDate(c.startDate || "");
+        setStartDate(isoToDateInputValue(c.startDate) || "");
         setRules({
           balanceAmount: String(c.balanceAmount ?? ""),
           step1: hydrateStepRules(c.rules.step1),
@@ -470,7 +471,7 @@ export function TrackAccountModal({ open, onClose, mode = 'create', challengeId:
         steps: stepsValue,
         status: lcStatus,
         setups: strategyIds,
-        startDate,
+        startDate: toISO(startDate),
         evaluationFee: parseFloat(evaluationFee) || 0,
         activationFee: parseFloat(activationFee) || 0,
         rules: structuredRules,
@@ -494,11 +495,11 @@ export function TrackAccountModal({ open, onClose, mode = 'create', challengeId:
       steps: stepsValue,
       status: lcStatus,
       setups: strategyIds,
-      startDate,
+      startDate: toISO(startDate),
       evaluationFee: parseFloat(evaluationFee) || 0,
       activationFee: parseFloat(activationFee) || 0,
       rules: structuredRules,
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
     };
 
     addChallenge(challenge);
