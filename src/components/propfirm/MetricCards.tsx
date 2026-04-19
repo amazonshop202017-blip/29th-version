@@ -204,9 +204,9 @@ export function MetricCards() {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground tracking-tight">
-                {m.fundedTotal > 0 ? `${Math.round(m.avgDays)}d` : "—"}
+                {m.avgDaysCount > 0 ? `${Math.round(m.avgDays)}d` : "—"}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">Across {m.fundedTotal} funded</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Across {m.avgDaysCount} funded</div>
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ export function MetricCards() {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground tracking-tight">
-                {m.avgTrades != null ? Math.round(m.avgTrades) : "—"}
+                {m.avgTradesCount > 0 && m.avgTrades != null ? Math.round(m.avgTrades) : "—"}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">Trades per funded account</div>
             </div>
