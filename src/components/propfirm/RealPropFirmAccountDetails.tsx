@@ -343,6 +343,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     allYVals.push(p.balance);
     if (p.floor != null) allYVals.push(p.floor);
   }
+  if (profitTargetLine != null) allYVals.push(profitTargetLine);
   const minB = allYVals.length ? Math.min(...allYVals) : 0;
   const maxB = allYVals.length ? Math.max(...allYVals) : 100;
   const yDomain: [number, number] = allYVals.length
@@ -350,10 +351,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     : [0, 100];
 
   const startBalance = account.startingBalance ?? 0;
-  const profitTargetLine =
-    selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
-      ? startBalance + selectedRules.profitTarget
-      : null;
 
   const phasePill = account.phase === "funded" ? "Funded Account" : "Evaluation Account";
   const pnl = stats?.pnl ?? 0;
