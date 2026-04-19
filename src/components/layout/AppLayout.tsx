@@ -63,7 +63,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                className="hidden md:flex absolute top-3 left-3 z-40 items-center justify-center w-9 h-9 rounded-lg bg-muted/60 dark:bg-[#151515] border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="hidden md:flex absolute top-2.5 lg:top-3 left-4 lg:left-6 z-40 items-center justify-center w-9 h-9 rounded-lg bg-muted/60 dark:bg-[#151515] border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 {isCollapsed ? <ChevronRight className="w-6 h-6" strokeWidth={2} /> : <ChevronLeft className="w-6 h-6" strokeWidth={2} />}
               </button>
