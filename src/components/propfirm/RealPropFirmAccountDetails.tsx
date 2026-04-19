@@ -260,6 +260,11 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     return { pct, totalProfit, bestDay };
   }, [dailyTotals]);
 
+  const drawdownFloorLine = useMemo(
+    () => (account ? computeDrawdownFloor(account, challenge, accountTrades) : null),
+    [account, challenge, accountTrades]
+  );
+
   if (!account) {
     return (
       <div className="space-y-5">
@@ -285,10 +290,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
       ? startBalance + selectedRules.profitTarget
       : null;
-  const drawdownFloorLine = useMemo(
-    () => (account ? computeDrawdownFloor(account, challenge, accountTrades) : null),
-    [account, challenge, accountTrades]
-  );
 
   const phasePill = account.phase === "funded" ? "Funded Account" : "Evaluation Account";
   const pnl = stats?.pnl ?? 0;
