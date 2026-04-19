@@ -351,6 +351,115 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
           </Collapsible>
         )}
 
+        {/* Separator after Chart Room */}
+        <div className="py-2">
+          <Separator className="bg-sidebar-border/50" />
+        </div>
+
+        {/* Tools */}
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <NavLink to="/tools/monte-carlo" className="block">
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200",
+                    isToolsActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                      isToolsActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
+                    )}
+                  >
+                    <Wrench className="w-[15px] h-[15px]" />
+                  </span>
+                </div>
+              </NavLink>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Tools</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                className={cn(
+                  "relative w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
+                  isToolsActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                    isToolsActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
+                  )}
+                >
+                  <Wrench className="w-[15px] h-[15px]" />
+                </span>
+                <span className="flex-1 text-left text-sm">Tools</span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 transition-transform duration-200",
+                    toolsOpen ? "rotate-180" : ""
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="relative ml-5 mt-1 pl-4">
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+                  style={{
+                    height: `calc(100% - ${toolsItems.length > 0 ? "1.125rem" : "0px"})`,
+                  }}
+                />
+                <div className="space-y-0.5">
+                  {toolsItems.map((item) => {
+                    const isSubActive = location.pathname === item.path;
+                    return (
+                      <NavLink key={item.path} to={item.path} className="block">
+                        <div
+                          className={cn(
+                            "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                            isSubActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <svg
+                            aria-hidden
+                            width="16"
+                            height="12"
+                            viewBox="0 0 16 12"
+                            fill="none"
+                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+                          >
+                            <path
+                              d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                              stroke="currentColor"
+                              strokeWidth="1"
+                              fill="none"
+                            />
+                          </svg>
+                          {item.label}
+                        </div>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
       </nav>
 
       {/* Bottom Account */}
