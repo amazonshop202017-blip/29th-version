@@ -217,51 +217,75 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
   }, [challenge, account, accountTab]);
 
   const balanceSeries = useMemo(() => {
-    if (!account) return [] as { date: string; balance: number }[];
+    if (!account) return [] as { date: string; balance: number; floor: number | null }[];
     const startBalance = account.startingBalance ?? 0;
-    const start = { date: formatStartedOn(account.createdAt) || "Start", balance: startBalance };
+    const startDayKey = (account.createdAt || "").slice(0, 10);
+    const start = {
+      date: formatStartedOn(account.createdAt) || "Start",
+      balance: startBalance,
+      runningBalance: startBalance,
+      dayKey: startDayKey,
+    };
 
-    if (enriched.length === 0) return [start];
+    type Pt = { date: string; balance: number; runningBalance: number; dayKey: string };
+    let raw: Pt[] = [start];
 
-    const fmtDay = (iso: string) =>
-      new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
-    const fmtHour = (iso: string) =>
-      new Date(iso).toLocaleString("en-US", { month: "short", day: "2-digit", hour: "2-digit" });
-    const fmtTrade = (iso: string, idx: number) =>
-      `#${idx + 1} ${new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}`;
+    if (enriched.length > 0) {
+      const fmtDay = (iso: string) =>
+        new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+      const fmtHour = (iso: string) =>
+        new Date(iso).toLocaleString("en-US", { month: "short", day: "2-digit", hour: "2-digit" });
+      const fmtTrade = (iso: string, idx: number) =>
+        `#${idx + 1} ${new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}`;
 
-    if (chartView === "Per Trade") {
-      let running = startBalance;
-      const series = [start];
-      enriched.forEach(({ m }, i) => {
-        running += m.netPnl || 0;
-        series.push({ date: fmtTrade(m.closeDate || account.createdAt, i), balance: running });
-      });
-      return series;
+      if (chartView === "Per Trade") {
+        let running = startBalance;
+        enriched.forEach(({ m }, i) => {
+          running += m.netPnl || 0;
+          const iso = m.closeDate || account.createdAt;
+          raw.push({
+            date: fmtTrade(iso, i),
+            balance: running,
+            runningBalance: running,
+            dayKey: (iso || "").slice(0, 10),
+          });
+        });
+      } else {
+        const bucket = new Map<string, { label: string; pnl: number; ts: number; dayKey: string }>();
+        for (const { m } of enriched) {
+          const iso = m.closeDate || account.createdAt;
+          const d = new Date(iso);
+          const key =
+            chartView === "Hourly"
+              ? `${d.toISOString().slice(0, 13)}`
+              : d.toISOString().slice(0, 10);
+          const label = chartView === "Hourly" ? fmtHour(iso) : fmtDay(iso);
+          const dayKey = d.toISOString().slice(0, 10);
+          const existing = bucket.get(key);
+          if (existing) existing.pnl += m.netPnl || 0;
+          else bucket.set(key, { label, pnl: m.netPnl || 0, ts: d.getTime(), dayKey });
+        }
+        const ordered = [...bucket.values()].sort((a, b) => a.ts - b.ts);
+        let running = startBalance;
+        for (const b of ordered) {
+          running += b.pnl;
+          raw.push({ date: b.label, balance: running, runningBalance: running, dayKey: b.dayKey });
+        }
+      }
     }
 
-    const bucket = new Map<string, { label: string; pnl: number; ts: number }>();
-    for (const { m } of enriched) {
-      const iso = m.closeDate || account.createdAt;
-      const d = new Date(iso);
-      const key =
-        chartView === "Hourly"
-          ? `${d.toISOString().slice(0, 13)}`
-          : d.toISOString().slice(0, 10);
-      const label = chartView === "Hourly" ? fmtHour(iso) : fmtDay(iso);
-      const existing = bucket.get(key);
-      if (existing) existing.pnl += m.netPnl || 0;
-      else bucket.set(key, { label, pnl: m.netPnl || 0, ts: d.getTime() });
-    }
-    const ordered = [...bucket.values()].sort((a, b) => a.ts - b.ts);
-    let running = startBalance;
-    const series = [start];
-    for (const b of ordered) {
-      running += b.pnl;
-      series.push({ date: b.label, balance: running });
-    }
-    return series;
-  }, [enriched, account?.startingBalance, account?.createdAt, chartView]);
+    // Compute floor per point using the SAME logic as computeAccountStats / computeDrawdownFloor.
+    const ddSpec = challenge ? getActiveDrawdownSpec(challenge, account) : null;
+    const ddType = ddSpec?.type ?? 'static';
+    const ddAmount = selectedRules?.maxDrawdown ?? null;
+    const floors = computeDrawdownFloorSeries(
+      startBalance,
+      ddType,
+      ddAmount,
+      raw.map((p) => ({ runningBalance: p.runningBalance, dayKey: p.dayKey }))
+    );
+    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i] }));
+  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown]);
 
   const today = new Date().toISOString().slice(0, 10);
   const dailyLoss = useMemo(() => {
