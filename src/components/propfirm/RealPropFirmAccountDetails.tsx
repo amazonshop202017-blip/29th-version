@@ -24,10 +24,27 @@ type AccountTab = "STEP 1" | "STEP 2" | "FUNDING";
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const balanceEntry = payload.find((p: any) => p.dataKey === "balance");
+    const floorEntry = payload.find((p: any) => p.dataKey === "floor");
+    const fmt = (v: number) =>
+      `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return (
-      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
+      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs space-y-1">
         <p className="text-muted-foreground">{label}</p>
-        <p className="font-bold text-foreground">${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+        {balanceEntry && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(250,80%,65%)" }} />
+            <span className="text-muted-foreground">Balance:</span>
+            <span className="font-bold text-foreground">{fmt(balanceEntry.value)}</span>
+          </div>
+        )}
+        {floorEntry && floorEntry.value != null && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(0,70%,60%)" }} />
+            <span className="text-muted-foreground">Minimum Balance:</span>
+            <span className="font-bold text-foreground">{fmt(floorEntry.value)}</span>
+          </div>
+        )}
       </div>
     );
   }
