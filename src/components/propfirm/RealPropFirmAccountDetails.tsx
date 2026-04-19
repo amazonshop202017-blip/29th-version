@@ -27,6 +27,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const balanceEntry = payload.find((p: any) => p.dataKey === "balance");
     const floorEntry = payload.find((p: any) => p.dataKey === "floor");
+    const targetVal = payload[0]?.payload?.profitTarget;
     const fmt = (v: number) =>
       `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return (
@@ -44,6 +45,13 @@ function CustomTooltip({ active, payload, label }: any) {
             <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(0,70%,60%)" }} />
             <span className="text-muted-foreground">Minimum Balance:</span>
             <span className="font-bold text-foreground">{fmt(floorEntry.value)}</span>
+          </div>
+        )}
+        {targetVal != null && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(145,60%,50%)" }} />
+            <span className="text-muted-foreground">Profit Target:</span>
+            <span className="font-bold text-foreground">{fmt(targetVal)}</span>
           </div>
         )}
       </div>
