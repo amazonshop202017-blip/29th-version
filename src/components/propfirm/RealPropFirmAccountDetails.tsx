@@ -321,10 +321,14 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     );
   }
 
-  const balanceVals = balanceSeries.map((p) => p.balance);
-  const minB = Math.min(...balanceVals);
-  const maxB = Math.max(...balanceVals);
-  const yDomain: [number, number] = balanceVals.length
+  const allYVals: number[] = [];
+  for (const p of balanceSeries) {
+    allYVals.push(p.balance);
+    if (p.floor != null) allYVals.push(p.floor);
+  }
+  const minB = allYVals.length ? Math.min(...allYVals) : 0;
+  const maxB = allYVals.length ? Math.max(...allYVals) : 100;
+  const yDomain: [number, number] = allYVals.length
     ? [Math.floor(minB * 0.98), Math.ceil(maxB * 1.02 || minB * 1.02 + 100)]
     : [0, 100];
 
