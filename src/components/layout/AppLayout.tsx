@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { GlobalHeader } from './GlobalHeader';
 import { SelectedFiltersBar } from './SelectedFiltersBar';
@@ -13,6 +14,8 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const isToolsRoute = location.pathname.startsWith('/tools');
 
   return (
     <SidebarCollapseProvider value={{ isCollapsed, setIsCollapsed, toggle: () => setIsCollapsed(!isCollapsed) }}>
