@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 import { GlobalHeader } from './GlobalHeader';
 import { SelectedFiltersBar } from './SelectedFiltersBar';
 import { cn } from '@/lib/utils';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SidebarCollapseProvider } from '@/contexts/SidebarCollapseContext';
 
 interface AppLayoutProps {
@@ -52,12 +52,21 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           !isCollapsed ? "lg:ml-[229px]" : "lg:ml-[70px]",
           isCollapsed ? "md:ml-[70px]" : "md:ml-[229px]"
         )}>
-          <main className="h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(0_0%_5%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
+          <main className="relative h-full bg-[hsl(210_20%_96%)] dark:bg-[hsl(0_0%_5%)] rounded-2xl shadow-[0_2px_8px_0_hsl(0_0%_0%/0.07)] border border-border/40 flex flex-col overflow-hidden">
             {!isToolsRoute && (
               <div className="flex-shrink-0">
                 <GlobalHeader />
                 <SelectedFiltersBar />
               </div>
+            )}
+            {isToolsRoute && (
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="hidden md:flex absolute top-3 left-3 z-40 items-center justify-center w-9 h-9 rounded-lg bg-muted/60 dark:bg-[#151515] border border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                {isCollapsed ? <ChevronRight className="w-6 h-6" strokeWidth={2} /> : <ChevronLeft className="w-6 h-6" strokeWidth={2} />}
+              </button>
             )}
             <div className={cn(
               "flex-1 overflow-y-auto",
