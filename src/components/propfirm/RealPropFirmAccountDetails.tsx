@@ -132,6 +132,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     () =>
       accountTrades
         .map((t) => ({ t, m: calculateTradeMetrics(t) }))
+        .filter(({ m }) => m.positionStatus === 'CLOSED')
         .sort((a, b) => new Date(a.m.closeDate || 0).getTime() - new Date(b.m.closeDate || 0).getTime()),
     [accountTrades]
   );
