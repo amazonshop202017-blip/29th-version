@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useScreenshotTagsContext } from '@/contexts/ScreenshotTagsContext';
 import { TradeScreenshot } from '@/types/trade';
 import { cn } from '@/lib/utils';
+import { nowISO } from '@/lib/datetime';
 
 interface ScreenshotsTabProps {
   screenshots: TradeScreenshot[];

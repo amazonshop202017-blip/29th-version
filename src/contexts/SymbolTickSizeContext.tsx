@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { setContractSizeRegistry, setTickSizeRegistry } from '@/lib/contractSizeRegistry';
-import type { ISODateString } from '@/lib/datetime';
+import { nowISO, type ISODateString } from '@/lib/datetime';
 
 export interface TickPipRule {
   id: string;

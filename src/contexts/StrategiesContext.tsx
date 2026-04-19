@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { ISODateString } from '@/lib/datetime';
+import { nowISO, type ISODateString } from '@/lib/datetime';
 
 export interface Strategy {
   id: string;

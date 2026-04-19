@@ -12,6 +12,7 @@ import { useAccountsContext, type Account } from "@/contexts/AccountsContext";
 import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
 import { computeAccountStats, accountToRow } from "@/lib/propFirmStats";
+import { nowISO } from "@/lib/datetime";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
