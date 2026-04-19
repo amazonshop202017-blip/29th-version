@@ -28,6 +28,7 @@ import { TradeFormData, TradeEntry, ScaleEntry, TradeScreenshot, calculateTradeM
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
 import { loadFeeRules, findMatchingFeeRule, calculateFeeFromRule } from '@/lib/feeCalculation';
 import { loadTpSlRules, findMatchingTpSlRule, computeAutoTpSl } from '@/lib/tpslCalculation';
+import { toISO, nowISO, isoToDateTimeLocalInputValue } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import { TradeModalErrorBoundary } from './TradeModalErrorBoundary';
 
@@ -159,7 +160,7 @@ export const TradeModal = () => {
       newEntries.push({
         id: entries[0]?.id || crypto.randomUUID(),
         type: direction === 'LONG' ? 'BUY' : 'SELL',
-        datetime: entryDate,
+        datetime: toISO(entryDate) || nowISO(),
         quantity: quantityNum,
         price: entryPriceNum,
         charges: 0,
@@ -171,7 +172,7 @@ export const TradeModal = () => {
       newEntries.push({
         id: entries[1]?.id || crypto.randomUUID(),
         type: direction === 'LONG' ? 'SELL' : 'BUY',
-        datetime: exitDate,
+        datetime: toISO(exitDate) || nowISO(),
         quantity: quantityNum,
         price: exitPriceNum,
         charges: feesNum,
@@ -230,12 +231,12 @@ export const TradeModal = () => {
         
         // Determine direction from first entry
         setDirection(firstEntry.type === 'BUY' ? 'LONG' : 'SHORT');
-        setEntryDate(firstEntry.datetime);
+        setEntryDate(isoToDateTimeLocalInputValue(firstEntry.datetime));
         setEntryPrice(firstEntry.price.toString());
         setQuantity(firstEntry.quantity.toString());
         
         if (lastEntry && lastEntry.id !== firstEntry.id) {
-          setExitDate(lastEntry.datetime);
+          setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
           setExitPrice(lastEntry.price.toString());
         }
         
@@ -268,7 +269,7 @@ export const TradeModal = () => {
       resetForm();
       // If an initial entry date was provided (e.g. from calendar), use it
       if (initialEntryDate) {
-        setEntryDate(initialEntryDate);
+        setEntryDate(isoToDateTimeLocalInputValue(initialEntryDate) || initialEntryDate);
       }
       // Auto-select account when exactly one account is selected in global filter (Add Trade only)
       // globalSelectedAccounts now contains account IDs (UUIDs)
@@ -288,7 +289,7 @@ export const TradeModal = () => {
     setSelectedChecklistItems([]);
     setNotes('');
     setDirection('LONG');
-    setEntryDate(new Date().toISOString().slice(0, 16));
+    setEntryDate(isoToDateTimeLocalInputValue(nowISO()));
     setEntryPrice('');
     setQuantity('');
     setStopLoss('');
@@ -360,7 +361,7 @@ export const TradeModal = () => {
         fullEntries.push({
           id: se.id,
           type: entryType,
-          datetime: entryDate || new Date().toISOString(),
+          datetime: toISO(entryDate) || nowISO(),
           quantity: se.quantity,
           price: se.price,
           charges: 0,
@@ -370,7 +371,7 @@ export const TradeModal = () => {
         fullEntries.push({
           id: sx.id,
           type: exitType,
-          datetime: exitDate || new Date().toISOString(),
+          datetime: toISO(exitDate) || nowISO(),
           quantity: sx.quantity,
           price: sx.price,
           charges: 0,

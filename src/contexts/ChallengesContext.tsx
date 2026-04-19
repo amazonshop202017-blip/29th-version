@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { toISO, type ISODateString } from '@/lib/datetime';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -52,11 +53,12 @@ export interface Challenge {
   steps: ChallengeSteps;
   status: ChallengeStatus;
   setups: string[];
-  startDate: string;
+  /** Full ISO 8601 UTC timestamp. */
+  startDate: ISODateString;
   evaluationFee: number;
   activationFee: number;
   rules: ChallengeRulesSchema;
-  createdAt: string;
+  createdAt: ISODateString;
 }
 
 // ─── Context ─────────────────────────────────────────────────────
@@ -82,13 +84,25 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
       if (stored) {
         const parsed: Challenge[] = JSON.parse(stored);
         // Migrate legacy data
-        const migrated = parsed.map(c => ({
-          ...c,
-          steps: migrateSteps(c.steps),
-          status: migrateStatus(c.status),
-        }));
+        let didNormalizeDates = false;
+        const migrated = parsed.map(c => {
+          const nextStart = toISO(c.startDate) || c.startDate;
+          const nextCreated = toISO(c.createdAt) || c.createdAt;
+          if (nextStart !== c.startDate || nextCreated !== c.createdAt) didNormalizeDates = true;
+          return {
+            ...c,
+            steps: migrateSteps(c.steps),
+            status: migrateStatus(c.status),
+            startDate: nextStart,
+            createdAt: nextCreated,
+          };
+        });
         setChallenges(migrated);
+        // Always persist (migrateSteps/Status may have changed values too); harmless if identical.
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        if (didNormalizeDates) {
+          console.log('[ChallengesContext] Normalized legacy date fields to ISO UTC.');
+        }
       }
     } catch (e) {
       console.error('Error loading challenges:', e);

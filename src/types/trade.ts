@@ -1,9 +1,12 @@
 // contractSize is now stored per trade — no registry import needed
+import type { ISODateString } from '@/lib/datetime';
+export type { ISODateString };
 
 export interface TradeEntry {
   id: string;
   type: 'BUY' | 'SELL';
-  datetime: string;
+  /** Full ISO 8601 UTC string (e.g. 2025-04-19T14:30:00.000Z). */
+  datetime: ISODateString;
   quantity: number;
   price: number;
   charges: number;
@@ -21,7 +24,7 @@ export interface TradeScreenshot {
   id: string;
   imageData: string; // Base64 encoded image data
   tagId?: string; // Optional screenshot tag reference
-  createdAt: string;
+  createdAt: ISODateString;
 }
 
 export interface Trade {
@@ -39,8 +42,8 @@ export interface Trade {
   selectedChecklistItems?: string[];
   tags: string[];
   notes: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
   // Stop Loss and Take Profit
   stopLoss?: number;
   takeProfit?: number;

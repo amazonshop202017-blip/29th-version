@@ -1,3 +1,5 @@
+import type { ISODateString } from '@/lib/datetime';
+
 export type DiaryFolderType = 'all' | 'trade' | 'day' | 'custom';
 
 export interface DiaryFolder {
@@ -5,7 +7,7 @@ export interface DiaryFolder {
   name: string;
   type: DiaryFolderType;
   isDefault: boolean;
-  createdAt: string;
+  createdAt: ISODateString;
 }
 
 export interface DiaryNote {
@@ -14,9 +16,10 @@ export interface DiaryNote {
   content: string; // HTML content from rich text editor
   folderId: string | null; // null means it's in "All Notes" only
   linkedTradeId: string | null; // Link to a specific trade
-  linkedDate: string | null; // Link to a specific day (YYYY-MM-DD format)
-  createdAt: string;
-  updatedAt: string;
+  /** Calendar-day key in YYYY-MM-DD form (NOT a timestamp — intentionally tz-naive). */
+  linkedDate: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export interface DiaryNoteFormData {
