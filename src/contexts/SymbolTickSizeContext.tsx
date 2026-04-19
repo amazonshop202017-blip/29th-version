@@ -136,7 +136,7 @@ export const SymbolTickSizeProvider = ({ children }: { children: ReactNode }) =>
 
   // Rule CRUD
   const addTickPipRule = (rule: Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const newRule: TickPipRule = {
       ...rule,
       id: crypto.randomUUID(),
@@ -150,7 +150,7 @@ export const SymbolTickSizeProvider = ({ children }: { children: ReactNode }) =>
 
   const updateTickPipRule = (id: string, patch: Partial<Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>>) => {
     const updated = tickPipRules.map(r =>
-      r.id === id ? { ...r, ...patch, updatedAt: new Date().toISOString() } : r
+      r.id === id ? { ...r, ...patch, updatedAt: nowISO() } : r
     );
     setTickPipRules(updated);
     saveRules(updated);

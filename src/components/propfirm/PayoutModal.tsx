@@ -46,7 +46,7 @@ export function PayoutModal({ open, onClose }: PayoutModalProps) {
       accountId: fundedAcct?.id,
       firm: challenge.firm,
       status: 'reviewed',
-      date: date.toISOString(),
+      date: toISO(date),
       description: `Payout — ${challenge.nickname}`,
     });
     toast.success("Payout recorded");

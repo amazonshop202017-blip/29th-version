@@ -190,7 +190,7 @@ export const FeesSettings = () => {
         mode: formMode,
         apply: formApply,
         feeValue: parseFloat(formFeeValue) || 0,
-        createdAt: new Date().toISOString(),
+        createdAt: nowISO(),
       };
       const updated = [...rules, newRule];
       setRules(updated);

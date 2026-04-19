@@ -126,7 +126,7 @@ export function AddEditTransactionModal({ open, onClose, editing }: Props) {
       firm: data.firm,
       category: data.category as TxCategory,
       amount: data.amount,
-      date: data.date.toISOString(),
+      date: toISO(data.date),
       description: data.description?.trim() || undefined,
       status: data.status,
     };

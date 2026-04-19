@@ -227,7 +227,7 @@ export const TpSlSettings = () => {
         profitTargetValue: parseFloat(formPtValue) || 0,
         stopLossUnit: formSlUnit,
         stopLossValue: parseFloat(formSlValue) || 0,
-        createdAt: new Date().toISOString(),
+        createdAt: nowISO(),
       };
       const updated = [...rules, newRule];
       setRules(updated);

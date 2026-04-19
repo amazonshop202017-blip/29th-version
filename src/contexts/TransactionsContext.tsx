@@ -58,7 +58,13 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setTransactions(JSON.parse(stored));
+      if (stored) {
+        const parsed: PropFirmTransaction[] = JSON.parse(stored);
+        setTransactions(parsed);
+        // Audit: warn if any persisted date escaped canonical ISO
+        const bad = parsed.filter(t => !isCanonicalISO(t.date) || !isCanonicalISO(t.createdAt) || !isCanonicalISO(t.updatedAt)).length;
+        if (bad > 0) console.warn(`[TransactionsContext] ${bad} transaction(s) hold non-canonical ISO date(s).`);
+      }
     } catch (e) {
       console.error('Error loading propfirm transactions:', e);
     }
@@ -93,7 +99,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
 
   const bulkUpdateStatus = useCallback((ids: string[], status: TxStatus) => {
     const set = new Set(ids);
-    setTransactions(prev => persist(prev.map(t => set.has(t.id) ? { ...t, status, updatedAt: new Date().toISOString() } : t)));
+    setTransactions(prev => persist(prev.map(t => set.has(t.id) ? { ...t, status, updatedAt: nowISO() } : t)));
   }, []);
 
   const bulkDelete = useCallback((ids: string[]) => {
@@ -109,7 +115,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
     setTransactions(prev => {
       if (prev.some(predicate)) return prev;
       const input = factory();
-      const now = new Date().toISOString();
+      const now = nowISO();
       const tx: PropFirmTransaction = {
         ...input,
         id: uid(),

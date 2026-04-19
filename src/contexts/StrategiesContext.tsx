@@ -48,7 +48,7 @@ export const StrategiesProvider = ({ children }: { children: ReactNode }) => {
       id: crypto.randomUUID(),
       name: trimmedName,
       description: description.trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
       checklistItems: [],
     };
     saveStrategies([...strategies, newStrategy]);

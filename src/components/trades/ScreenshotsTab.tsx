@@ -52,7 +52,7 @@ export const ScreenshotsTab = ({ screenshots, onScreenshotsChange }: Screenshots
     const newScreenshot: TradeScreenshot = {
       id: crypto.randomUUID(),
       imageData,
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
     };
     onScreenshotsChange([...screenshots, newScreenshot]);
     setInputValue('');

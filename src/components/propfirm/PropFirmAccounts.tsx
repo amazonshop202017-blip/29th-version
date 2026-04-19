@@ -333,7 +333,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     if (!failedDialog.accountId) return;
     const acc = accounts.find(a => a.id === failedDialog.accountId);
     if (!acc) return;
-    const breachedAt = new Date().toISOString();
+    const breachedAt = nowISO();
     if (acc.challengeId) {
       // Patch ALL accounts linked to this challenge in one go: mark target breached, archive all
       accounts
