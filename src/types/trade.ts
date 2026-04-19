@@ -24,7 +24,7 @@ export interface TradeScreenshot {
   id: string;
   imageData: string; // Base64 encoded image data
   tagId?: string; // Optional screenshot tag reference
-  createdAt: string;
+  createdAt: ISODateString;
 }
 
 export interface Trade {
