@@ -325,13 +325,13 @@ export default function StreakAnalysis() {
                 <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
                   <button
                     onClick={() => setRiskMode("percent")}
-                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
+                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     % Risk
                   </button>
                   <button
                     onClick={() => setRiskMode("dollar")}
-                    className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
+                    className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     $ Win/Loss
                   </button>
@@ -428,7 +428,7 @@ export default function StreakAnalysis() {
             <button
               onClick={runSimulation}
               disabled={isRunning}
-              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
+              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
             >
               {isRunning ? (
                 <>
@@ -491,7 +491,7 @@ export default function StreakAnalysis() {
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-emerald-400 inline-block rounded-full" />Best</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-blue-400 inline-block rounded-full" />Most Possible</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-rose-400 inline-block rounded-full" />Worst</span>
-                    <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-white/15 inline-block rounded-full" />Other paths</span>
+                    <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-muted-foreground/30 inline-block rounded-full" />Other paths</span>
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
@@ -549,12 +549,12 @@ export default function StreakAnalysis() {
               <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
                 <button
                   onClick={() => setCalcMode("mathematical")}
-                  className={`px-3 py-1.5 transition-colors ${calcMode === "mathematical" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
+                  className={`px-3 py-1.5 transition-colors ${calcMode === "mathematical" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
                   Mathematical
                 </button>
                 <button
                   onClick={() => setCalcMode("simulation")}
-                  className={`px-3 py-1.5 transition-colors border-l border-border ${calcMode === "simulation" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
+                  className={`px-3 py-1.5 transition-colors border-l border-border ${calcMode === "simulation" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}>
                   Simulation
                 </button>
               </div>

@@ -143,7 +143,7 @@ function CaseMetricsCard({ label, color, stats, initialCapital }: { label: strin
         <span className={`text-xs font-bold uppercase tracking-widest ${c.label}`}>{label}</span>
         <span className={`ml-auto text-lg font-bold ${c.accent}`}>{formatCurrency(stats.finalBalance)}</span>
       </div>
-      <div className="px-5 bg-white/[0.02]">
+      <div className="px-5 bg-muted/20">
         <MetricRow label="Initial Balance" value={formatCurrency(initialCapital)} valueClass="text-foreground/70" />
         <MetricRow label="Result Balance" value={formatCurrency(stats.finalBalance)} valueClass={c.accent} />
         <MetricRow
@@ -242,13 +242,13 @@ export default function MonteCarlo() {
                 <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
                   <button
                     onClick={() => setRiskMode("percent")}
-                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
+                    className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     % Risk
                   </button>
                   <button
                     onClick={() => setRiskMode("dollar")}
-                    className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-foreground" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
+                    className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     $ Win/Loss
                   </button>
@@ -345,7 +345,7 @@ export default function MonteCarlo() {
             <button
               onClick={runSimulation}
               disabled={isRunning}
-              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
+              className="mt-1 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-150 shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2"
             >
               {isRunning ? (
                 <>
@@ -408,7 +408,7 @@ export default function MonteCarlo() {
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-emerald-400 inline-block rounded-full" />Best</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-blue-400 inline-block rounded-full" />Most Possible</span>
                     <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-rose-400 inline-block rounded-full" />Worst</span>
-                    <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-white/15 inline-block rounded-full" />Other paths</span>
+                    <span className="flex items-center gap-1.5"><span className="w-5 h-0.5 bg-muted-foreground/30 inline-block rounded-full" />Other paths</span>
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
