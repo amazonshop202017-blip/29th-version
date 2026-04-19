@@ -124,3 +124,48 @@ export function isoToDateTimeLocalInputValue(iso: string | null | undefined): st
 export function isCanonicalISO(s: unknown): s is ISODateString {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(s);
 }
+
+/**
+ * Local calendar day-key (`YYYY-MM-DD`) derived from a UTC ISO instant.
+ * Critical for "today / EOD / per-day bucketing" so a trade closed at
+ * 23:30 LOCAL time on Apr 19 buckets into Apr 19 (not Apr 20 in UTC slice).
+ */
+export function localDayKey(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) {
+    if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}/.test(iso)) return iso.slice(0, 10);
+    return '';
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Local calendar hour-key (`YYYY-MM-DD HH`) derived from a UTC ISO instant.
+ * Used for hourly chart bucketing in the user's local clock.
+ */
+export function localHourKey(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  return `${y}-${m}-${day} ${h}`;
+}
+
+/** Walks a list of date-like values and warns once per non-canonical entry. */
+export function auditISOValues(label: string, values: Array<string | null | undefined>): void {
+  if (typeof console === 'undefined') return;
+  let bad = 0;
+  for (const v of values) {
+    if (v && !isCanonicalISO(v)) bad++;
+  }
+  if (bad > 0) {
+    console.warn(`[datetime audit] ${label}: ${bad} non-canonical ISO value(s) detected after migration.`);
+  }
+}
