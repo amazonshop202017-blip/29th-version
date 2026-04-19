@@ -430,6 +430,10 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                     <stop offset="5%" stopColor="hsl(250,80%,70%)" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="hsl(250,80%,70%)" stopOpacity={0.02} />
                   </linearGradient>
+                  <linearGradient id="pfRealFloorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(0,75%,60%)" stopOpacity={0.30} />
+                    <stop offset="95%" stopColor="hsl(0,75%,60%)" stopOpacity={0.02} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
@@ -446,12 +450,12 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                 <Area
                   type="monotone"
                   dataKey="floor"
-                  stroke="hsl(0,70%,60%)"
+                  stroke="hsl(0,75%,60%)"
                   strokeWidth={2}
-                  strokeDasharray="4 4"
-                  fill="none"
+                  strokeDasharray="5 4"
+                  fill="url(#pfRealFloorGradient)"
                   dot={false}
-                  activeDot={{ r: 3, fill: "hsl(0,70%,60%)" }}
+                  activeDot={{ r: 3, fill: "hsl(0,75%,60%)" }}
                   name="Minimum Balance"
                   connectNulls
                   isAnimationActive={false}
