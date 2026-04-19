@@ -289,7 +289,7 @@ export const TradeModal = () => {
     setSelectedChecklistItems([]);
     setNotes('');
     setDirection('LONG');
-    setEntryDate(new Date().toISOString().slice(0, 16));
+    setEntryDate(isoToDateTimeLocalInputValue(nowISO()));
     setEntryPrice('');
     setQuantity('');
     setStopLoss('');
@@ -361,7 +361,7 @@ export const TradeModal = () => {
         fullEntries.push({
           id: se.id,
           type: entryType,
-          datetime: entryDate || new Date().toISOString(),
+          datetime: toISO(entryDate) || nowISO(),
           quantity: se.quantity,
           price: se.price,
           charges: 0,
@@ -371,7 +371,7 @@ export const TradeModal = () => {
         fullEntries.push({
           id: sx.id,
           type: exitType,
-          datetime: exitDate || new Date().toISOString(),
+          datetime: toISO(exitDate) || nowISO(),
           quantity: sx.quantity,
           price: sx.price,
           charges: 0,
