@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { X, Trash2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useGlobalFilters, DayFilter, OutcomeFilter, DirectionFilter, ReturnPercentRange, RMultipleRange } from '@/contexts/GlobalFiltersContext';
@@ -36,6 +37,8 @@ const R_MULTIPLE_LABELS: Record<RMultipleRange, string> = {
 };
 
 export const SelectedFiltersBar = () => {
+  const location = useLocation();
+  const isToolsRoute = location.pathname.startsWith('/tools');
   const {
     selectedSymbols, setSelectedSymbols,
     selectedOutcomes, setSelectedOutcomes,
@@ -227,6 +230,7 @@ export const SelectedFiltersBar = () => {
     setSelectedTradeComments({ entryComments: [], tradeManagements: [], exitComments: [] });
   };
 
+  if (isToolsRoute) return null;
   if (chips.length === 0) return null;
 
   return (
