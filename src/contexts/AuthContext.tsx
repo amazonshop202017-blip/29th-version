@@ -36,6 +36,8 @@ interface StoredUser {
   email: string;
   password: string;
   userId: string;
+  firstName?: string;
+  lastName?: string;
   preferences?: UserPreferences;
 }
 
