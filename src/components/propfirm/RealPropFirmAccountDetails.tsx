@@ -27,7 +27,6 @@ function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const balanceEntry = payload.find((p: any) => p.dataKey === "balance");
     const floorEntry = payload.find((p: any) => p.dataKey === "floor");
-    const targetVal = payload[0]?.payload?.profitTarget;
     const fmt = (v: number) =>
       `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return (
@@ -45,13 +44,6 @@ function CustomTooltip({ active, payload, label }: any) {
             <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(0,70%,60%)" }} />
             <span className="text-muted-foreground">Minimum Balance:</span>
             <span className="font-bold text-foreground">{fmt(floorEntry.value)}</span>
-          </div>
-        )}
-        {targetVal != null && (
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ background: "hsl(145,60%,50%)" }} />
-            <span className="text-muted-foreground">Profit Target:</span>
-            <span className="font-bold text-foreground">{fmt(targetVal)}</span>
           </div>
         )}
       </div>
@@ -225,16 +217,8 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     };
   }, [challenge, account, accountTab]);
 
-  const profitTargetLine = useMemo(() => {
-    if (!account) return null;
-    const startBal = account.startingBalance ?? 0;
-    return selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
-      ? startBal + selectedRules.profitTarget
-      : null;
-  }, [account, selectedRules]);
-
   const balanceSeries = useMemo(() => {
-    if (!account) return [] as { date: string; balance: number; floor: number | null; profitTarget: number | null }[];
+    if (!account) return [] as { date: string; balance: number; floor: number | null }[];
     const startBalance = account.startingBalance ?? 0;
     const startDayKey = localDayKey(account.createdAt);
     const start = {
@@ -301,8 +285,8 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
       ddAmount,
       raw.map((p) => ({ runningBalance: p.runningBalance, dayKey: p.dayKey }))
     );
-    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i], profitTarget: profitTargetLine }));
-  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown, profitTargetLine]);
+    return raw.map((p, i) => ({ date: p.date, balance: p.balance, floor: floors[i] }));
+  }, [enriched, account?.startingBalance, account?.createdAt, account, challenge, chartView, selectedRules?.maxDrawdown]);
 
   const today = localDayKey(new Date().toISOString());
   const dailyLoss = useMemo(() => {
@@ -343,7 +327,6 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     allYVals.push(p.balance);
     if (p.floor != null) allYVals.push(p.floor);
   }
-  if (profitTargetLine != null) allYVals.push(profitTargetLine);
   const minB = allYVals.length ? Math.min(...allYVals) : 0;
   const maxB = allYVals.length ? Math.max(...allYVals) : 100;
   const yDomain: [number, number] = allYVals.length
@@ -351,6 +334,10 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
     : [0, 100];
 
   const startBalance = account.startingBalance ?? 0;
+  const profitTargetLine =
+    selectedRules && !selectedRules.isFunded && selectedRules.profitTarget != null
+      ? startBalance + selectedRules.profitTarget
+      : null;
 
   const phasePill = account.phase === "funded" ? "Funded Account" : "Evaluation Account";
   const pnl = stats?.pnl ?? 0;
@@ -458,7 +445,7 @@ export default function RealPropFirmAccountDetails({ accountId, onBack }: Props)
                     y={profitTargetLine}
                     stroke="hsl(145,60%,50%)"
                     strokeDasharray="5 4"
-                    label={{ value: "Profit Target", position: "insideTopRight", fontSize: 10, fontWeight: 600, fill: "hsl(145,60%,45%)" }}
+                    label={{ value: `Profit Target`, position: "right", fontSize: 10, fill: "hsl(145,60%,45%)" }}
                   />
                 )}
                 <Area
