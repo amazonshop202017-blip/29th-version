@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('auth_users', JSON.stringify(users));
   }, [user]);
 
-  const updateProfile = useCallback((update: { firstName?: string; lastName?: string; email?: string }) => {
+  const updateProfile = useCallback((update: { firstName?: string; lastName?: string; email?: string; avatarDataUrl?: string | null }) => {
     if (!user) return { success: false, error: 'Not signed in' };
     const users = getUsers();
     const idx = users.findIndex(u => u.userId === user.userId);
@@ -147,11 +147,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const nextFirst = update.firstName !== undefined ? update.firstName.trim() || undefined : users[idx].firstName;
     const nextLast = update.lastName !== undefined ? update.lastName.trim() || undefined : users[idx].lastName;
+    const nextAvatar = update.avatarDataUrl !== undefined ? update.avatarDataUrl : users[idx].avatarDataUrl;
 
-    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast };
+    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar };
     localStorage.setItem('auth_users', JSON.stringify(users));
 
-    const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast };
+    const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar ?? null };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
