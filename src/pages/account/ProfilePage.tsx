@@ -83,7 +83,12 @@ const ProfilePage = () => {
   };
 
   const handleSave = () => {
-    toast({ title: 'Profile updated successfully' });
+    const result = updateProfile({ firstName, lastName, email });
+    if (result.success) {
+      toast({ title: 'Profile updated successfully' });
+    } else {
+      toast({ title: 'Could not update profile', description: result.error, variant: 'destructive' });
+    }
   };
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
