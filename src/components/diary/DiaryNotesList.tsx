@@ -17,8 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SelectDayModal } from './SelectDayModal';
-
-const DEFAULT_FOLDER_IDS = new Set(['all-notes', 'trade-notes', 'day-notes']);
+import { DEFAULT_FOLDER_IDS } from '@/types/diary';
 
 export const DiaryNotesList = () => {
   const { 

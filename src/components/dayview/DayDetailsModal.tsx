@@ -114,9 +114,9 @@ export const DayDetailsModal = ({ isOpen, onClose, date, trades }: DayDetailsMod
       title: `Day Note: ${dayTitle}`,
       linkedDate: dayDateStr,
     });
-    
+
     setSelectedFolderId('day-notes');
-    setSelectedNoteId(newNote.id);
+    if (newNote) setSelectedNoteId(newNote.id);
     onClose();
     navigate('/diary');
   };
