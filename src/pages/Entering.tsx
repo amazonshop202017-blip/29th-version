@@ -256,7 +256,7 @@ const Entering = () => {
                       {passwordChecks.map((c) => (
                         <div key={c.label} className="flex items-center gap-1.5 text-xs">
                           {c.valid ? (
-                            <Check className="w-3.5 h-3.5 shrink-0 text-emerald-500" strokeWidth={3} />
+                            <Check className="w-3.5 h-3.5 shrink-0 text-profit" strokeWidth={3} />
                           ) : (
                             <X className="w-3.5 h-3.5 shrink-0 text-muted-foreground" strokeWidth={2.5} />
                           )}
