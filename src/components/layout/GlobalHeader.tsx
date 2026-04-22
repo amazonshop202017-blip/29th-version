@@ -62,7 +62,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/chart-room/risk-distribution': 'Risk Distribution',
   '/chart-room/trade-management': 'Trade Management',
   '/prop-firm': 'Prop Firm',
-  '/exit-analyzer': 'Exit Analyzer',
+  '/edge-lab/opportunity-analysis': 'Opportunity Analysis',
+  '/edge-lab/exit-analysis': 'Exit Analysis',
 };
 
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
