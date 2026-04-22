@@ -16,13 +16,15 @@ export interface UserPreferences {
 interface User {
   email: string;
   userId: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (email: string, password: string) => { success: boolean; error?: string };
+  signup: (email: string, password: string, firstName?: string, lastName?: string) => { success: boolean; error?: string };
   logout: () => void;
   getPreferences: () => UserPreferences;
   updatePreferences: (update: Partial<UserPreferences>) => void;
@@ -34,6 +36,8 @@ interface StoredUser {
   email: string;
   password: string;
   userId: string;
+  firstName?: string;
+  lastName?: string;
   preferences?: UserPreferences;
 }
 
@@ -72,16 +76,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = useCallback((email: string, password: string) => {
+  const signup = useCallback((email: string, password: string, firstName?: string, lastName?: string) => {
     const users = getUsers();
     if (users.find(u => u.email === email)) {
       return { success: false, error: 'An account with this email already exists' };
     }
     const existingIds = new Set(users.map(u => u.userId).filter(Boolean));
     const userId = generateUserId(existingIds);
-    users.push({ email, password, userId, preferences: {} });
+    const trimmedFirst = firstName?.trim() || undefined;
+    const trimmedLast = lastName?.trim() || undefined;
+    users.push({ email, password, userId, firstName: trimmedFirst, lastName: trimmedLast, preferences: {} });
     localStorage.setItem('auth_users', JSON.stringify(users));
-    const userData = { email, userId };
+    const userData: User = { email, userId, firstName: trimmedFirst, lastName: trimmedLast };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
@@ -98,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       found.userId = generateUserId(existingIds);
       localStorage.setItem('auth_users', JSON.stringify(users));
     }
-    const userData = { email, userId: found.userId };
+    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
