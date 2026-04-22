@@ -112,9 +112,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const [toolsOpen, setToolsOpen] = useState(
     location.pathname.startsWith('/tools')
   );
+  const [edgeLabOpen, setEdgeLabOpen] = useState(
+    location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis'
+  );
 
-  const isChartRoomActive = location.pathname.startsWith('/chart-room');
+  const isChartRoomActive = location.pathname.startsWith('/chart-room') && location.pathname !== '/chart-room/exit-analysis';
   const isToolsActive = location.pathname.startsWith('/tools');
+  const isEdgeLabActive = location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis';
 
   return (
     <aside
