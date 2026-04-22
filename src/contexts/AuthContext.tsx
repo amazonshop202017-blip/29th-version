@@ -28,6 +28,7 @@ interface AuthContextType {
   logout: () => void;
   getPreferences: () => UserPreferences;
   updatePreferences: (update: Partial<UserPreferences>) => void;
+  updateProfile: (update: { firstName?: string; lastName?: string; email?: string }) => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
