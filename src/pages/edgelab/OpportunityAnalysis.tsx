@@ -2,8 +2,9 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint } from '@/lib/exitAnalyzerCalc';
-import { Info, X, Zap, PenLine } from 'lucide-react';
+import { Info, X, Zap, PenLine, Lightbulb } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -469,6 +470,62 @@ const OpportunityAnalysis = () => {
           </div>
         ))}
       </div>
+
+      {/* Methodology note */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+        className="glass-card rounded-2xl px-5 py-4 flex items-start justify-between gap-4"
+      >
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <p className="text-sm text-foreground">
+            Results are based on the price ranges you recorded (MFE/MAE).
+            This analysis assumes price could reach both profit and loss levels, without considering the order of movement.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            For best accuracy, use a consistent method — either record MFE/MAE only until exit, or record the full price range after entry.
+          </p>
+        </div>
+        <HoverCard openDelay={100} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <button
+              type="button"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors"
+            >
+              <Lightbulb className="h-3.5 w-3.5 text-primary" />
+              Example
+            </button>
+          </HoverCardTrigger>
+          <HoverCardContent side="left" align="start" className="w-96">
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Example</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  How MFE / MAE shape the simulated outcome.
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-secondary/40 p-3 space-y-2 text-xs">
+                <div className="font-mono text-foreground">
+                  Trade: LONG · Entry @ 100
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-muted-foreground">
+                  <span>MFE recorded:</span><span className="text-foreground">+30 ticks (peak 130)</span>
+                  <span>MAE recorded:</span><span className="text-foreground">−15 ticks (low 85)</span>
+                </div>
+              </div>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p>
+                  If you test <span className="font-mono text-foreground">SL 10 / TP 20</span>:
+                  the trade hit −15 (≥ SL 10) <em>and</em> +30 (≥ TP 20).
+                  The model assumes <strong className="text-foreground">both levels were reachable</strong> — order of movement is not considered.
+                </p>
+                <p>
+                  This is why consistency matters: if you sometimes stop tracking MFE/MAE after exit and sometimes track the full post-entry range, the same SL/TP grid will produce inconsistent results.
+                </p>
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      </motion.div>
 
       {activeTab === 'auto' ? (
       <>
