@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       found.userId = generateUserId(existingIds);
       localStorage.setItem('auth_users', JSON.stringify(users));
     }
-    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName };
+    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: found.avatarDataUrl ?? null };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
