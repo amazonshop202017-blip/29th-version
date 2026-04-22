@@ -42,12 +42,19 @@ const ProfilePage = () => {
       setEmail(user.email);
       const namePart = user.email.split('@')[0];
       setUsername(namePart);
-      const parts = namePart.split(/[._-]/);
-      if (parts.length >= 2) {
-        setFirstName(parts[0].charAt(0).toUpperCase() + parts[0].slice(1));
-        setLastName(parts[1].charAt(0).toUpperCase() + parts[1].slice(1));
+
+      // Prefer real stored names from signup; fall back to email-derived
+      if (user.firstName || user.lastName) {
+        setFirstName(user.firstName ?? '');
+        setLastName(user.lastName ?? '');
       } else {
-        setFirstName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        const parts = namePart.split(/[._-]/);
+        if (parts.length >= 2) {
+          setFirstName(parts[0].charAt(0).toUpperCase() + parts[0].slice(1));
+          setLastName(parts[1].charAt(0).toUpperCase() + parts[1].slice(1));
+        } else {
+          setFirstName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        }
       }
     }
   }, [user]);
