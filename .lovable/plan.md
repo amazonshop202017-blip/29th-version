@@ -1,98 +1,46 @@
-## Goal
 
-The Profit Target reference line already exists on the Account Balance Over Time chart (lines 443–450 of `RealPropFirmAccountDetails.tsx`), but it has two problems:
 
-1. The **tooltip does not show the Profit Target value** on hover.
-2. The **label is poorly positioned** (`position: "right"` clips outside the plot area on most viewports).
+## Diary: Enable "New Note" in Custom Folders
 
-The math itself is already correct and reuses `resolveTargetAmount` from `@/lib/propFirmStats` — the same helper that drives the "Path to funding" side panel and account card progress %. No duplication is needed.
+Currently, the "New note" button only appears in the default **Trade Notes** and **Day Notes** folders. Custom folders created by the user have no way to add notes. This plan extends note creation to all custom folders with a small chooser to pick the note type.
 
-## Plan
+### What changes for the user
 
-### 1. Inject `profitTarget` into chart data points
+1. **Custom folders** (and "All Notes") now show the **+ New note** button at the top of the notes list, just like Trade Notes / Day Notes.
+2. Clicking **+ New note** in a custom folder opens a small dialog asking:
+   - **Trade Note** — creates a blank trade note in this folder (linked to a trade later via the existing link flow).
+   - **Day Note** — opens the existing "Select Day" modal, then creates a day note linked to that date in this folder.
+3. The new note is saved into the **currently selected folder** (`folderId` set), so it appears under that folder immediately.
+4. Behavior in default Trade Notes / Day Notes folders is unchanged.
 
-In the `balanceSeries` useMemo (line 220), add a `profitTarget: number | null` field to every point, set to `profitTargetLine` (computed below). This makes the value available to Recharts' tooltip payload.
+### Implementation details
 
-Move the `profitTargetLine` calculation (currently at line 337) **above** `balanceSeries` so it can be referenced inside the memo, and add it to the dependency array.
+**File: `src/components/diary/DiaryNotesList.tsx`**
 
-### 2. Update `CustomTooltip`
+- Replace the `canCreateNote` gate so the **+ New note** button shows for: `trade`, `day`, `all`, and `custom` folder types (every folder).
+- Add new state: `isNoteTypeChooserOpen: boolean` and `pendingFolderId: string | null`.
+- Update `handleNewNote()`:
+  - If `currentFolder.type === 'trade'` → keep current behavior (create blank trade note, no `folderId`… see note below).
+  - If `currentFolder.type === 'day'` → open `SelectDayModal` as today.
+  - If `currentFolder.type === 'custom'` or `'all'` → open new **Note Type Chooser** dialog.
+- Pass the active `folderId` into both creation paths so notes are stored in the selected custom folder:
+  - Trade note path: `createNote({ title: '', content: '', folderId: selectedFolderId })` (only set folderId when not a default folder; for default Trade Notes folder leave as today).
+  - Day note path (`handleDayNoteCreate`): include `folderId: selectedFolderId` when the active folder is custom.
+- Add a new lightweight inline component **`NoteTypeChooserDialog`** (built with existing `Dialog` from `@/components/ui/dialog`) with two large buttons: **Trade Note** and **Day Note**. Selecting Day Note closes this dialog and opens `SelectDayModal`.
 
-Extend `CustomTooltip` (line 26) to look for `profitTarget` in the payload and render a third row when present:
+**Folder assignment rule (kept simple):**
+- Default folders (`all-notes`, `trade-notes`, `day-notes`) are virtual buckets — notes are filtered into them by `linkedTradeId` / `linkedDate`. So when creating from those, do **not** set `folderId`.
+- Custom folders — set `folderId: selectedFolderId` so `getNotesForFolder` returns it.
 
-```
-● Profit Target:  $X,XXX.XX
-```
+**No changes needed to** `DiaryContext`, `DiaryFolderSidebar`, or `types/diary.ts` — `DiaryNote.folderId` and `createNote` already support this.
 
-Use green dot color `hsl(145,60%,50%)` to match the reference line.
+### Edge cases handled
 
-### 3. Improve the ReferenceLine label
+- "All Notes" also gets the **+ New note** button (chooser dialog), since users may want a quick capture there. Created note has no `folderId` (lives only in All Notes view) but is typed as trade or day note correctly.
+- Cancelling either dialog leaves no partial note.
+- Existing keyboard/escape behavior of `Dialog` is reused.
 
-Change the label config so it stays inside the plot:
+### Out of scope
 
-- `position: "insideTopRight"`
-- Slightly bolder fill, same green hue
-- Keep dashed stroke (`5 4`), color `hsl(145,60%,50%)`
+- Renaming custom folders, drag-to-move notes between folders, multi-select bulk actions — not requested.
 
-### 4. Confirm dynamic updates
-
-`profitTargetLine` already depends on `selectedRules`, which depends on `accountTab` — switching STEP 1 ↔ STEP 2 ↔ FUNDING already re-renders the line correctly (FUNDING phase hides it, by design). No additional wiring needed.
-
-### Why no logic duplication
-
-- Profit target amount = `resolveTargetAmount(step.profitTarget, challenge.balanceAmount)` — identical helper used by `computeAccountStats` and `accountToRow`.
-- Target balance for the chart line = `account.startingBalance + profitTargetAmount` — same reference frame the side panel uses (`pnl` vs `profitTarget`).
-
-## Files changed
-
-```
-EDIT  src/components/propfirm/RealPropFirmAccountDetails.tsx
-        - Move profitTargetLine calc above balanceSeries memo
-        - Add profitTarget field to each balanceSeries point
-        - Extend CustomTooltip to render Profit Target row
-        - Adjust ReferenceLine label position to insideTopRight
-```
-
-No new files, no new helpers, no changes to `propFirmStats.ts` or `ChallengesContext.tsx`.
-
-## Verification
-
-1. Open a prop firm account on STEP 1 with a profit target → green dashed line visible across the chart, label "Profit Target" inside top-right.
-2. Hover any point → tooltip shows Balance, Minimum Balance (if present), and **Profit Target** with the same dollar value as the side panel's "Target: $X" row.
-3. Switch tab STEP 1 → STEP 2 → line moves to the new step's target.
-4. Switch to FUNDING tab → line disappears (no profit target in funded phase, by design).
-5. Confirm the chart's profit target dollar amount equals `startingBalance + (Path to funding → Target row)`.
-
-&nbsp;
-
----
-
-## SAFETY & EDGE CASE HANDLING
-
-- Only render Profit Target when `profitTargetLine` is a valid number  
-(skip for funded phase or missing rules)
-- Ensure chart Y-axis domain includes `profitTargetLine`  
-so the green line is always visible within the chart bounds
-- Tooltip must safely handle missing values  
-(do not render Profit Target row if value is null)
-
----
-
-## CONSISTENCY GUARANTEE
-
-- Profit Target MUST use the same calculation source as:
-  - account card progress %
-  - "Path to funding" target value
-- Do NOT introduce any new calculation logic  
-→ reuse `resolveTargetAmount` only
-
----
-
-## VALIDATION
-
-After implementation, verify:
-
-1. Profit Target line is visible and correctly positioned within chart bounds
-2. Tooltip shows Profit Target value on hover
-3. Value matches exactly with "Path to funding → Target"
-4. Line updates correctly when switching STEP 1 ↔ STEP 2
-5. Line is hidden in FUNDED phase
