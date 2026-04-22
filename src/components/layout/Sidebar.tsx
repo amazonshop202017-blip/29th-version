@@ -36,8 +36,8 @@ const chartRoomItems = [
 ];
 
 const edgeLabItems = [
-  { label: 'Exit Analysis', path: '/chart-room/exit-analysis' },
-  { label: 'Exit Analyzer', path: '/exit-analyzer' },
+  { label: 'Exit Analysis', path: '/edge-lab/exit-analysis' },
+  { label: 'Exit Analyzer', path: '/edge-lab/exit-analyzer' },
 ];
 
 const toolsItems = [
@@ -113,12 +113,12 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
     location.pathname.startsWith('/tools')
   );
   const [edgeLabOpen, setEdgeLabOpen] = useState(
-    location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis'
+    location.pathname.startsWith('/edge-lab')
   );
 
-  const isChartRoomActive = location.pathname.startsWith('/chart-room') && location.pathname !== '/chart-room/exit-analysis';
+  const isChartRoomActive = location.pathname.startsWith('/chart-room');
   const isToolsActive = location.pathname.startsWith('/tools');
-  const isEdgeLabActive = location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis';
+  const isEdgeLabActive = location.pathname.startsWith('/edge-lab');
 
   return (
     <aside
