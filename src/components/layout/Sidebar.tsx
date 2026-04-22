@@ -21,13 +21,11 @@ const tradingViewItems = [
 const analysisItems = [
   { icon: Target, label: 'Setups', path: '/strategies' },
   { icon: FileText, label: 'Reports', path: '/reports' },
-  { icon: Crosshair, label: 'Exit Analyzer', path: '/exit-analyzer' },
 ];
 
 const chartRoomItems = [
   { label: 'Drawdown', path: '/chart-room/drawdown' },
   { label: 'Consecutive Winners/Losers', path: '/chart-room/consecutive' },
-  { label: 'Exit Analysis', path: '/chart-room/exit-analysis' },
   { label: 'Holding Time', path: '/chart-room/holding-time' },
   { label: 'Performance by Symbol', path: '/chart-room/performance-by-symbol' },
   { label: 'Performance by Setup', path: '/chart-room/performance-by-setup' },
@@ -35,6 +33,11 @@ const chartRoomItems = [
   { label: 'Tags/Comments Analysis', path: '/chart-room/tags-analytics' },
   { label: 'Risk Distribution', path: '/chart-room/risk-distribution' },
   { label: 'Trade Management', path: '/chart-room/trade-management' },
+];
+
+const edgeLabItems = [
+  { label: 'Exit Analysis', path: '/chart-room/exit-analysis' },
+  { label: 'Exit Analyzer', path: '/exit-analyzer' },
 ];
 
 const toolsItems = [
