@@ -18,6 +18,7 @@ interface User {
   userId: string;
   firstName?: string;
   lastName?: string;
+  avatarDataUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -28,7 +29,7 @@ interface AuthContextType {
   logout: () => void;
   getPreferences: () => UserPreferences;
   updatePreferences: (update: Partial<UserPreferences>) => void;
-  updateProfile: (update: { firstName?: string; lastName?: string; email?: string }) => { success: boolean; error?: string };
+  updateProfile: (update: { firstName?: string; lastName?: string; email?: string; avatarDataUrl?: string | null }) => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +40,7 @@ interface StoredUser {
   userId: string;
   firstName?: string;
   lastName?: string;
+  avatarDataUrl?: string | null;
   preferences?: UserPreferences;
 }
 
