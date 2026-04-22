@@ -18,7 +18,7 @@ const ProfilePage = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [timezone, setTimezone] = useState('');
   const [localTime, setLocalTime] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(user?.avatarDataUrl ?? null);
 
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
