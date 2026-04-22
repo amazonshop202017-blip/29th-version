@@ -2,8 +2,9 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint } from '@/lib/exitAnalyzerCalc';
-import { Info, X, Zap, PenLine } from 'lucide-react';
+import { Info, X, Zap, PenLine, Lightbulb } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
