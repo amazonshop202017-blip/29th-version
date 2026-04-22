@@ -495,33 +495,59 @@ const OpportunityAnalysis = () => {
               Example
             </button>
           </HoverCardTrigger>
-          <HoverCardContent side="left" align="start" className="w-96">
+          <HoverCardContent side="left" align="start" sideOffset={8} className="w-[560px] z-[100] shadow-xl">
             <div className="space-y-3">
               <div>
                 <h4 className="text-sm font-semibold text-foreground">Example</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  How MFE / MAE shape the simulated outcome.
+                  Same trade — what really happened vs. how the system reads it.
                 </p>
               </div>
-              <div className="rounded-md border border-border bg-secondary/40 p-3 space-y-2 text-xs">
-                <div className="font-mono text-foreground">
-                  Trade: LONG · Entry @ 100
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left column — what actually happened */}
+                <div className="rounded-md border border-border bg-secondary/40 p-3 space-y-2.5 text-xs">
+                  <div className="font-semibold text-foreground">What actually happened</div>
+                  <div className="space-y-0.5 font-mono text-muted-foreground">
+                    <div className="text-foreground">Trade</div>
+                    <div>Entry: <span className="text-foreground">60</span></div>
+                    <div>Exit: <span className="text-foreground">61</span></div>
+                  </div>
+                  <div className="space-y-0.5 font-mono text-muted-foreground">
+                    <div className="text-foreground">Price movement</div>
+                    <div>Before exit:</div>
+                    <div className="text-foreground">60 → 65 → 59 → exit at 61</div>
+                    <div className="pt-1">After exit:</div>
+                    <div className="text-foreground">61 → 58 → 68 → 57</div>
+                  </div>
+                  <div className="space-y-0.5 font-mono">
+                    <div className="text-foreground">Key detail</div>
+                    <div className="text-muted-foreground">68 was reached <span className="text-foreground">BEFORE</span> 57</div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-muted-foreground">
-                  <span>MFE recorded:</span><span className="text-foreground">+30 ticks (peak 130)</span>
-                  <span>MAE recorded:</span><span className="text-foreground">−15 ticks (low 85)</span>
+
+                {/* Right column — how the system reads it */}
+                <div className="rounded-md border border-border bg-secondary/40 p-3 space-y-2.5 text-xs">
+                  <div className="font-semibold text-foreground">How the system reads it</div>
+                  <div className="space-y-0.5 font-mono text-muted-foreground">
+                    <div className="text-foreground">Recorded values (from your input)</div>
+                    <div>MFE = <span className="text-foreground">68</span> <span className="opacity-70">(+8 from entry)</span></div>
+                    <div>MAE = <span className="text-foreground">57</span> <span className="opacity-70">(−3 from entry)</span></div>
+                  </div>
+                  <div className="space-y-0.5 font-mono">
+                    <div className="text-foreground">Assumption</div>
+                    <div className="text-muted-foreground">• +8 and −3 were possible at any time</div>
+                  </div>
+                  <div className="space-y-0.5 font-mono">
+                    <div className="text-foreground">Result</div>
+                    <div className="text-muted-foreground">
+                      Some trades may be slightly over- or under-estimated depending on how values are recorded.
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-1.5 text-xs text-muted-foreground">
-                <p>
-                  If you test <span className="font-mono text-foreground">SL 10 / TP 20</span>:
-                  the trade hit −15 (≥ SL 10) <em>and</em> +30 (≥ TP 20).
-                  The model assumes <strong className="text-foreground">both levels were reachable</strong> — order of movement is not considered.
-                </p>
-                <p>
-                  This is why consistency matters: if you sometimes stop tracking MFE/MAE after exit and sometimes track the full post-entry range, the same SL/TP grid will produce inconsistent results.
-                </p>
-              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Tip: stay consistent — either record MFE/MAE only <em>up to exit</em>, or record the <em>full post-entry range</em>. Mixing both styles makes the SL/TP grid less reliable.
+              </p>
             </div>
           </HoverCardContent>
         </HoverCard>
