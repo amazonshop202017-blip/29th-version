@@ -40,6 +40,10 @@ const Entering = () => {
     }
 
     if (mode === 'signup') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name');
+        return;
+      }
       if (password !== confirmPassword) {
         setError('Passwords do not match');
         return;
@@ -50,7 +54,9 @@ const Entering = () => {
       }
     }
 
-    const result = mode === 'login' ? login(email, password) : signup(email, password);
+    const result = mode === 'login'
+      ? login(email, password)
+      : signup(email, password, firstName, lastName);
     if (!result.success) {
       setError(result.error || 'Something went wrong');
     }
