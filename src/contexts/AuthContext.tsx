@@ -110,8 +110,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       found.userId = generateUserId(existingIds);
       localStorage.setItem('auth_users', JSON.stringify(users));
     }
-    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: found.avatarDataUrl ?? null };
-    localStorage.setItem('auth_session', JSON.stringify(userData));
+    const avatar = localStorage.getItem(`auth_avatar_${found.userId}`);
+    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: avatar };
+    const sessionData = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName };
+    localStorage.setItem('auth_session', JSON.stringify(sessionData));
     setUser(userData);
     return { success: true };
   }, []);
