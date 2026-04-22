@@ -51,7 +51,7 @@ import PerformanceByTime from "./pages/chartroom/PerformanceByTime";
 import TagsAnalytics from "./pages/chartroom/TagsAnalytics";
 import RiskDistribution from "./pages/chartroom/RiskDistribution";
 import TradeManagement from "./pages/chartroom/TradeManagement";
-import ExitAnalyzer from "./pages/edgelab/ExitAnalyzer";
+import OpportunityAnalysis from "./pages/edgelab/OpportunityAnalysis";
 import MonteCarlo from "./pages/tools/MonteCarlo";
 import StreakAnalysis from "./pages/tools/StreakAnalysis";
 import PropFirmLayout from "./pages/propfirm/PropFirmLayout";
@@ -122,8 +122,9 @@ const AuthenticatedApp = () => {
                                   <Route path="/chart-room/tags-analytics" element={<TagsAnalytics />} />
                                   <Route path="/chart-room/risk-distribution" element={<RiskDistribution />} />
                                   <Route path="/chart-room/trade-management" element={<TradeManagement />} />
-                                  <Route path="/edge-lab/exit-analyzer" element={<ExitAnalyzer />} />
-                                  <Route path="/exit-analyzer" element={<Navigate to="/edge-lab/exit-analyzer" replace />} />
+                                  <Route path="/edge-lab/opportunity-analysis" element={<OpportunityAnalysis />} />
+                                  <Route path="/edge-lab/exit-analyzer" element={<Navigate to="/edge-lab/opportunity-analysis" replace />} />
+                                  <Route path="/exit-analyzer" element={<Navigate to="/edge-lab/opportunity-analysis" replace />} />
                                   <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
                                   <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>

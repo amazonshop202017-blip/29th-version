@@ -353,7 +353,7 @@ const ManualExitTab = () => {
   );
 };
 
-const ExitAnalyzer = () => {
+const OpportunityAnalysis = () => {
   const { filteredTrades } = useFilteredTrades();
 
   // Inputs
@@ -811,4 +811,4 @@ const ExitAnalyzer = () => {
   );
 };
 
-export default ExitAnalyzer;
+export default OpportunityAnalysis;

@@ -37,7 +37,7 @@ const chartRoomItems = [
 
 const edgeLabItems = [
   { label: 'Exit Analysis', path: '/edge-lab/exit-analysis' },
-  { label: 'Exit Analyzer', path: '/edge-lab/exit-analyzer' },
+  { label: 'Opportunity Analysis', path: '/edge-lab/opportunity-analysis' },
 ];
 
 const toolsItems = [
