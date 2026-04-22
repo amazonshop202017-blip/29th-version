@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, FileText, CalendarDays } from 'lucide-react';
 import { useDiaryContext } from '@/contexts/DiaryContext';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -7,9 +7,18 @@ import { calculateTradeMetrics, Trade } from '@/types/trade';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SelectDayModal } from './SelectDayModal';
+
+const DEFAULT_FOLDER_IDS = new Set(['all-notes', 'trade-notes', 'day-notes']);
 
 export const DiaryNotesList = () => {
   const { 
@@ -18,43 +27,61 @@ export const DiaryNotesList = () => {
     setSelectedNoteId, 
     getNotesForFolder,
     createNote,
-    linkNoteToDay,
     folders,
   } = useDiaryContext();
   const { trades } = useFilteredTrades();
   const { formatCurrency } = useGlobalFilters();
 
   const [isSelectDayModalOpen, setIsSelectDayModalOpen] = useState(false);
+  const [isNoteTypeChooserOpen, setIsNoteTypeChooserOpen] = useState(false);
 
   const notes = getNotesForFolder(selectedFolderId);
   const currentFolder = folders.find(f => f.id === selectedFolderId);
 
-  // Determine if "New note" button should be shown
-  const canCreateNote = currentFolder?.type === 'trade' || currentFolder?.type === 'day';
-  const isDayNotes = currentFolder?.type === 'day';
-  const isTradeNotes = currentFolder?.type === 'trade';
+  const folderType = currentFolder?.type;
+  const isDefaultFolder = currentFolder ? DEFAULT_FOLDER_IDS.has(currentFolder.id) : false;
+  // Only set folderId for non-default (custom) folders. Default folders are virtual buckets.
+  const folderIdForNewNote = !isDefaultFolder && currentFolder ? currentFolder.id : null;
+
+  // Show "New note" button for all folder types
+  const canCreateNote = !!currentFolder;
 
   const handleNewNote = () => {
-    if (isDayNotes) {
-      // Open date selection modal for Day Notes
+    if (folderType === 'day') {
       setIsSelectDayModalOpen(true);
-    } else if (isTradeNotes) {
-      // Create a trade note (will need to be linked)
-      // Use empty title - will be auto-named when linked to a trade
+    } else if (folderType === 'trade') {
       createNote({
         title: '',
         content: '',
+        folderId: folderIdForNewNote,
       });
+    } else {
+      // 'all' or 'custom' → ask user which note type
+      setIsNoteTypeChooserOpen(true);
     }
   };
 
+  const handleChooseTradeNote = () => {
+    setIsNoteTypeChooserOpen(false);
+    createNote({
+      title: '',
+      content: '',
+      folderId: folderIdForNewNote,
+    });
+  };
+
+  const handleChooseDayNote = () => {
+    setIsNoteTypeChooserOpen(false);
+    setIsSelectDayModalOpen(true);
+  };
+
   const handleDayNoteCreate = (dateStr: string) => {
-    // Create a day note and link it to the selected date
     const formattedDate = format(new Date(dateStr), 'MMM dd, yyyy');
-    const newNote = createNote({
+    createNote({
       title: `Day Note : ${formattedDate}`,
       content: '',
       linkedDate: dateStr,
+      folderId: folderIdForNewNote,
     });
   };
 
@@ -126,7 +153,6 @@ export const DiaryNotesList = () => {
               const isSelected = selectedNoteId === note.id;
               const tradeInfo = getTradeInfo(note.linkedTradeId);
               
-              // Use saved return percent if available, otherwise calculate
               let netPnl: number | undefined;
               if (note.linkedTradeId && tradeInfo) {
                 netPnl = tradeInfo.metrics.netPnl;
@@ -165,6 +191,37 @@ export const DiaryNotesList = () => {
           )}
         </div>
       </ScrollArea>
+
+      {/* Note Type Chooser (for All Notes & custom folders) */}
+      <Dialog open={isNoteTypeChooserOpen} onOpenChange={setIsNoteTypeChooserOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New note</DialogTitle>
+            <DialogDescription>
+              Choose the type of note to add{currentFolder && !isDefaultFolder ? ` to "${currentFolder.name}"` : ''}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3 py-2">
+            <button
+              onClick={handleChooseTradeNote}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/60 bg-card/40 p-4 transition-colors hover:bg-primary/10 hover:border-primary/50"
+            >
+              <FileText className="h-6 w-6 text-primary" />
+              <span className="text-sm font-medium">Trade Note</span>
+              <span className="text-xs text-muted-foreground text-center">Link to a trade</span>
+            </button>
+            <button
+              onClick={handleChooseDayNote}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/60 bg-card/40 p-4 transition-colors hover:bg-primary/10 hover:border-primary/50"
+            >
+              <CalendarDays className="h-6 w-6 text-primary" />
+              <span className="text-sm font-medium">Day Note</span>
+              <span className="text-xs text-muted-foreground text-center">Link to a date</span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Select Day Modal for Day Notes */}
       <SelectDayModal
