@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench } from 'lucide-react';
+import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTradeModal } from '@/contexts/TradeModalContext';
@@ -21,13 +21,11 @@ const tradingViewItems = [
 const analysisItems = [
   { icon: Target, label: 'Setups', path: '/strategies' },
   { icon: FileText, label: 'Reports', path: '/reports' },
-  { icon: Crosshair, label: 'Exit Analyzer', path: '/exit-analyzer' },
 ];
 
 const chartRoomItems = [
   { label: 'Drawdown', path: '/chart-room/drawdown' },
   { label: 'Consecutive Winners/Losers', path: '/chart-room/consecutive' },
-  { label: 'Exit Analysis', path: '/chart-room/exit-analysis' },
   { label: 'Holding Time', path: '/chart-room/holding-time' },
   { label: 'Performance by Symbol', path: '/chart-room/performance-by-symbol' },
   { label: 'Performance by Setup', path: '/chart-room/performance-by-setup' },
@@ -35,6 +33,11 @@ const chartRoomItems = [
   { label: 'Tags/Comments Analysis', path: '/chart-room/tags-analytics' },
   { label: 'Risk Distribution', path: '/chart-room/risk-distribution' },
   { label: 'Trade Management', path: '/chart-room/trade-management' },
+];
+
+const edgeLabItems = [
+  { label: 'Exit Analysis', path: '/chart-room/exit-analysis' },
+  { label: 'Exit Analyzer', path: '/exit-analyzer' },
 ];
 
 const toolsItems = [
@@ -109,9 +112,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const [toolsOpen, setToolsOpen] = useState(
     location.pathname.startsWith('/tools')
   );
+  const [edgeLabOpen, setEdgeLabOpen] = useState(
+    location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis'
+  );
 
-  const isChartRoomActive = location.pathname.startsWith('/chart-room');
+  const isChartRoomActive = location.pathname.startsWith('/chart-room') && location.pathname !== '/chart-room/exit-analysis';
   const isToolsActive = location.pathname.startsWith('/tools');
+  const isEdgeLabActive = location.pathname === '/exit-analyzer' || location.pathname === '/chart-room/exit-analysis';
 
   return (
     <aside
@@ -352,6 +359,118 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
         )}
 
         {/* Separator after Chart Room */}
+        <div className="py-2">
+          <Separator className="bg-sidebar-border/50" />
+        </div>
+
+        {/* Edge Lab */}
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <NavLink to="/chart-room/exit-analysis" className="block">
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200",
+                    isEdgeLabActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                      isEdgeLabActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
+                    )}
+                  >
+                    <FlaskConical className="w-[15px] h-[15px]" />
+                  </span>
+                </div>
+              </NavLink>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Edge Lab</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Collapsible open={edgeLabOpen} onOpenChange={setEdgeLabOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                className={cn(
+                  "relative w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all duration-200",
+                  isEdgeLabActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0",
+                    isEdgeLabActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
+                  )}
+                >
+                  <FlaskConical className="w-[15px] h-[15px]" />
+                </span>
+                <span className="flex-1 text-left text-sm">Edge Lab</span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 transition-transform duration-200",
+                    edgeLabOpen ? "rotate-180" : ""
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="relative ml-5 mt-1 pl-4">
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+                  style={{
+                    height: `calc(100% - ${edgeLabItems.length > 0 ? "1.125rem" : "0px"})`,
+                  }}
+                />
+                <div className="space-y-0.5">
+                  {edgeLabItems.map((item, idx) => {
+                    const isSubActive = location.pathname === item.path;
+                    return (
+                      <NavLink key={item.path} to={item.path} className="block">
+                        <div
+                          className={cn(
+                            "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                            isSubActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <svg
+                            aria-hidden
+                            width="16"
+                            height="12"
+                            viewBox="0 0 16 12"
+                            fill="none"
+                            className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+                          >
+                            <path
+                              d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                              stroke="currentColor"
+                              strokeWidth="1"
+                              fill="none"
+                            />
+                          </svg>
+                          <span className="text-[10px] font-semibold text-muted-foreground/70 tabular-nums">
+                            {idx === 0 ? 'STEP 1' : 'STEP 2'}
+                          </span>
+                          <span>{item.label}</span>
+                        </div>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Separator after Edge Lab */}
         <div className="py-2">
           <Separator className="bg-sidebar-border/50" />
         </div>
