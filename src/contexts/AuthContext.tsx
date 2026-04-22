@@ -132,8 +132,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('auth_users', JSON.stringify(users));
   }, [user]);
 
+  const updateProfile = useCallback((update: { firstName?: string; lastName?: string; email?: string }) => {
+    if (!user) return { success: false, error: 'Not signed in' };
+    const users = getUsers();
+    const idx = users.findIndex(u => u.userId === user.userId);
+    if (idx === -1) return { success: false, error: 'User not found' };
+
+    const nextEmail = update.email?.trim() || users[idx].email;
+    if (nextEmail !== users[idx].email && users.some((u, i) => i !== idx && u.email === nextEmail)) {
+      return { success: false, error: 'An account with this email already exists' };
+    }
+
+    const nextFirst = update.firstName !== undefined ? update.firstName.trim() || undefined : users[idx].firstName;
+    const nextLast = update.lastName !== undefined ? update.lastName.trim() || undefined : users[idx].lastName;
+
+    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast };
+    localStorage.setItem('auth_users', JSON.stringify(users));
+
+    const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast };
+    localStorage.setItem('auth_session', JSON.stringify(userData));
+    setUser(userData);
+    return { success: true };
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, getPreferences, updatePreferences }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, getPreferences, updatePreferences, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
