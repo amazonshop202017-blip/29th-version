@@ -477,7 +477,7 @@ const OpportunityAnalysis = () => {
         className="glass-card rounded-2xl px-5 py-4 flex items-start justify-between gap-4"
       >
         <div className="space-y-1.5 flex-1 min-w-0">
-          <p className="text-sm font-semibold text-primary">
+          <p className="text-sm font-semibold" style={{ color: 'hsl(var(--chart-1))' }}>
             Results are based on the price ranges you recorded (MFE/MAE).
             This analysis assumes price could reach both profit and loss levels, without considering the order of movement.
           </p>
