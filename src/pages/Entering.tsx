@@ -256,9 +256,9 @@ const Entering = () => {
                       {passwordChecks.map((c) => (
                         <div key={c.label} className="flex items-center gap-1.5 text-xs">
                           {c.valid ? (
-                            <Check className="w-3.5 h-3.5 text-[hsl(var(--profit))]" />
+                            <Check className="w-3.5 h-3.5 shrink-0 text-profit" strokeWidth={3} />
                           ) : (
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
+                            <X className="w-3.5 h-3.5 shrink-0 text-muted-foreground" strokeWidth={2.5} />
                           )}
                           <span className={cn(c.valid ? 'text-foreground' : 'text-muted-foreground')}>
                             {c.label}
