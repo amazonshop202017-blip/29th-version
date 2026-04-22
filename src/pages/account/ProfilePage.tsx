@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
@@ -42,12 +42,19 @@ const ProfilePage = () => {
       setEmail(user.email);
       const namePart = user.email.split('@')[0];
       setUsername(namePart);
-      const parts = namePart.split(/[._-]/);
-      if (parts.length >= 2) {
-        setFirstName(parts[0].charAt(0).toUpperCase() + parts[0].slice(1));
-        setLastName(parts[1].charAt(0).toUpperCase() + parts[1].slice(1));
+
+      // Prefer real stored names from signup; fall back to email-derived
+      if (user.firstName || user.lastName) {
+        setFirstName(user.firstName ?? '');
+        setLastName(user.lastName ?? '');
       } else {
-        setFirstName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        const parts = namePart.split(/[._-]/);
+        if (parts.length >= 2) {
+          setFirstName(parts[0].charAt(0).toUpperCase() + parts[0].slice(1));
+          setLastName(parts[1].charAt(0).toUpperCase() + parts[1].slice(1));
+        } else {
+          setFirstName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        }
       }
     }
   }, [user]);
@@ -76,7 +83,12 @@ const ProfilePage = () => {
   };
 
   const handleSave = () => {
-    toast({ title: 'Profile updated successfully' });
+    const result = updateProfile({ firstName, lastName, email });
+    if (result.success) {
+      toast({ title: 'Profile updated successfully' });
+    } else {
+      toast({ title: 'Could not update profile', description: result.error, variant: 'destructive' });
+    }
   };
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
