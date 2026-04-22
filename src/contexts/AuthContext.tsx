@@ -16,13 +16,15 @@ export interface UserPreferences {
 interface User {
   email: string;
   userId: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (email: string, password: string) => { success: boolean; error?: string };
+  signup: (email: string, password: string, firstName?: string, lastName?: string) => { success: boolean; error?: string };
   logout: () => void;
   getPreferences: () => UserPreferences;
   updatePreferences: (update: Partial<UserPreferences>) => void;
