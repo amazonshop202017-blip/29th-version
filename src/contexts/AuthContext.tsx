@@ -64,7 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const session = localStorage.getItem('auth_session');
     if (session) {
       try {
-        setUser(JSON.parse(session));
+        const parsed = JSON.parse(session) as User;
+        // Re-attach avatar from its dedicated key
+        const avatar = parsed.userId ? localStorage.getItem(`auth_avatar_${parsed.userId}`) : null;
+        setUser({ ...parsed, avatarDataUrl: avatar });
       } catch {
         localStorage.removeItem('auth_session');
       }
