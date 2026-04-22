@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
-import { DiaryNote, DiaryFolder, DiaryNoteFormData, DEFAULT_FOLDERS, DiaryFolderType } from '@/types/diary';
+import {
+  DiaryNote,
+  DiaryFolder,
+  DiaryNoteFormData,
+  VIRTUAL_FOLDERS,
+  DEFAULT_FOLDER_IDS,
+} from '@/types/diary';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { nowISO, auditISOValues } from '@/lib/datetime';
 
 interface DiaryContextType {
@@ -11,7 +18,7 @@ interface DiaryContextType {
   setSelectedFolderId: (id: string) => void;
   setSelectedNoteId: (id: string | null) => void;
   getNotesForFolder: (folderId: string) => DiaryNote[];
-  createNote: (data?: Partial<DiaryNoteFormData>) => DiaryNote;
+  createNote: (data?: Partial<DiaryNoteFormData>) => DiaryNote | null;
   updateNote: (id: string, data: Partial<DiaryNoteFormData>) => void;
   deleteNote: (id: string) => void;
   linkNoteToTrade: (noteId: string, tradeId: string) => void;
@@ -19,140 +26,211 @@ interface DiaryContextType {
   linkNoteToDay: (noteId: string, date: string) => void;
   getNoteByTradeId: (tradeId: string) => DiaryNote | undefined;
   getSelectedNote: () => DiaryNote | undefined;
-  createFolder: (name: string) => DiaryFolder;
+  createFolder: (name: string) => DiaryFolder | null;
   deleteFolder: (id: string) => void;
 }
 
 const DiaryContext = createContext<DiaryContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'diary_notes';
-const FOLDERS_STORAGE_KEY = 'diary_folders';
+const NOTES_KEY = (userId: string) => `diary_notes_v1_${userId}`;
+const FOLDERS_KEY = (userId: string) => `diary_folders_v1_${userId}`;
+const LEGACY_NOTES_KEY = 'diary_notes';
+const LEGACY_FOLDERS_KEY = 'diary_folders';
+
+/** Coerce a folderId so it's either null or a real custom-folder id (never a virtual id). */
+function sanitizeFolderId(folderId: string | null | undefined): string | null {
+  if (!folderId) return null;
+  if (DEFAULT_FOLDER_IDS.has(folderId)) return null;
+  return folderId;
+}
 
 export const DiaryProvider = ({ children }: { children: ReactNode }) => {
   const { trades } = useTradesContext();
+  const { user } = useAuth();
+  const userId = user?.userId ?? null;
 
-  // Load notes from localStorage
-  const [notes, setNotes] = useState<DiaryNote[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed: DiaryNote[] = JSON.parse(saved);
-        // Audit: createdAt/updatedAt must be canonical ISO UTC.
-        // linkedDate intentionally stays YYYY-MM-DD (calendar key) — do NOT audit.
-        auditISOValues('DiaryContext.notes', parsed.flatMap(n => [n.createdAt, n.updatedAt]));
-        return parsed;
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  // Load custom folders from localStorage (merge with defaults)
-  const [customFolders, setCustomFolders] = useState<DiaryFolder[]>(() => {
-    const saved = localStorage.getItem(FOLDERS_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  // Combine default folders with custom folders
-  const folders = useMemo(() => [...DEFAULT_FOLDERS, ...customFolders], [customFolders]);
-
+  const [notes, setNotes] = useState<DiaryNote[]>([]);
+  const [customFolders, setCustomFolders] = useState<DiaryFolder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('all-notes');
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Persist notes to localStorage
+  // Load (and one-time migrate) per-user data when the signed-in user changes.
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes]);
+    setHydrated(false);
+    if (!userId) {
+      setNotes([]);
+      setCustomFolders([]);
+      setSelectedFolderId('all-notes');
+      setSelectedNoteId(null);
+      setHydrated(true);
+      return;
+    }
 
-  // Persist custom folders to localStorage
+    const notesKey = NOTES_KEY(userId);
+    const foldersKey = FOLDERS_KEY(userId);
+
+    let loadedNotes: DiaryNote[] = [];
+    let loadedFolders: DiaryFolder[] = [];
+
+    try {
+      const raw = localStorage.getItem(notesKey);
+      if (raw) loadedNotes = JSON.parse(raw);
+    } catch { loadedNotes = []; }
+
+    try {
+      const raw = localStorage.getItem(foldersKey);
+      if (raw) loadedFolders = JSON.parse(raw);
+    } catch { loadedFolders = []; }
+
+    // One-time legacy migration: if scoped storage is empty but legacy global keys exist,
+    // adopt them for this user and stamp userId.
+    const hasScopedData = loadedNotes.length > 0 || loadedFolders.length > 0;
+    if (!hasScopedData) {
+      let legacyNotes: Array<Partial<DiaryNote>> = [];
+      let legacyFolders: Array<Partial<DiaryFolder>> = [];
+      try {
+        const raw = localStorage.getItem(LEGACY_NOTES_KEY);
+        if (raw) legacyNotes = JSON.parse(raw);
+      } catch { /* ignore */ }
+      try {
+        const raw = localStorage.getItem(LEGACY_FOLDERS_KEY);
+        if (raw) legacyFolders = JSON.parse(raw);
+      } catch { /* ignore */ }
+
+      if (legacyNotes.length > 0 || legacyFolders.length > 0) {
+        loadedNotes = legacyNotes.map(n => ({
+          id: n.id ?? crypto.randomUUID(),
+          userId,
+          title: n.title ?? 'Untitled',
+          content: n.content ?? '',
+          folderId: sanitizeFolderId(n.folderId ?? null),
+          linkedTradeId: n.linkedTradeId ?? null,
+          linkedDate: n.linkedDate ?? null,
+          createdAt: n.createdAt ?? nowISO(),
+          updatedAt: n.updatedAt ?? nowISO(),
+        }));
+        loadedFolders = legacyFolders
+          .filter(f => f.id && !DEFAULT_FOLDER_IDS.has(f.id))
+          .map(f => ({
+            id: f.id!,
+            userId,
+            name: f.name ?? 'Folder',
+            type: 'custom',
+            isDefault: false,
+            createdAt: f.createdAt ?? nowISO(),
+          }));
+        // Remove legacy keys after migration so we don't migrate again.
+        localStorage.removeItem(LEGACY_NOTES_KEY);
+        localStorage.removeItem(LEGACY_FOLDERS_KEY);
+      }
+    }
+
+    // Defensive: backfill userId on any record missing it (e.g. older scoped data from before this change).
+    loadedNotes = loadedNotes.map(n => ({
+      ...n,
+      userId: n.userId || userId,
+      folderId: sanitizeFolderId(n.folderId),
+    }));
+    loadedFolders = loadedFolders.map(f => ({
+      ...f,
+      userId: f.userId || userId,
+    }));
+
+    auditISOValues('DiaryContext.notes', loadedNotes.flatMap(n => [n.createdAt, n.updatedAt]));
+
+    setNotes(loadedNotes);
+    setCustomFolders(loadedFolders);
+    setSelectedFolderId('all-notes');
+    setSelectedNoteId(null);
+    setHydrated(true);
+  }, [userId]);
+
+  // Persist notes (per-user). Skip until hydrated and only when signed in.
   useEffect(() => {
-    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(customFolders));
-  }, [customFolders]);
+    if (!hydrated || !userId) return;
+    localStorage.setItem(NOTES_KEY(userId), JSON.stringify(notes));
+  }, [notes, userId, hydrated]);
+
+  // Persist custom folders (per-user).
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    localStorage.setItem(FOLDERS_KEY(userId), JSON.stringify(customFolders));
+  }, [customFolders, userId, hydrated]);
+
+  // FK cleanup parity with Postgres ON DELETE SET NULL: if a linked trade no longer exists, null the link.
+  useEffect(() => {
+    if (!hydrated) return;
+    const tradeIds = new Set(trades.map(t => t.id));
+    setNotes(prev => {
+      let changed = false;
+      const next = prev.map(n => {
+        if (n.linkedTradeId && !tradeIds.has(n.linkedTradeId)) {
+          changed = true;
+          return { ...n, linkedTradeId: null, updatedAt: nowISO() };
+        }
+        return n;
+      });
+      return changed ? next : prev;
+    });
+  }, [trades, hydrated]);
+
+  // Combine virtual folders with the user's custom folders for UI.
+  const folders = useMemo<DiaryFolder[]>(() => {
+    const virtual: DiaryFolder[] = VIRTUAL_FOLDERS.map(f => ({ ...f, userId: userId ?? '' }));
+    return [...virtual, ...customFolders];
+  }, [customFolders, userId]);
 
   // Get notes for a specific folder
   const getNotesForFolder = useCallback((folderId: string): DiaryNote[] => {
     const folder = folders.find(f => f.id === folderId);
     if (!folder) return [];
 
-    let filtered: DiaryNote[];
+    const sortByCreatedDesc = (a: DiaryNote, b: DiaryNote) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
     switch (folder.type) {
       case 'all':
-        // All notes, sorted by date (newest first)
-        filtered = [...notes].sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        break;
+        return [...notes].sort(sortByCreatedDesc);
       case 'trade':
-        // Only notes linked to trades
-        filtered = notes
-          .filter(n => n.linkedTradeId !== null)
-          .sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        break;
+        return notes.filter(n => n.linkedTradeId !== null).sort(sortByCreatedDesc);
       case 'day':
-        // Only notes linked to specific days
-        filtered = notes
-          .filter(n => n.linkedDate !== null)
-          .sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        break;
+        return notes.filter(n => n.linkedDate !== null).sort(sortByCreatedDesc);
       case 'custom':
-        // Notes in this custom folder
-        filtered = notes
-          .filter(n => n.folderId === folderId)
-          .sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        break;
+        return notes.filter(n => n.folderId === folderId).sort(sortByCreatedDesc);
       default:
-        filtered = [];
+        return [];
     }
-
-    return filtered;
   }, [notes, folders]);
 
   // Create a new note
-  const createNote = useCallback((data?: Partial<DiaryNoteFormData>): DiaryNote => {
+  const createNote = useCallback((data?: Partial<DiaryNoteFormData>): DiaryNote | null => {
+    if (!userId) return null;
     const now = nowISO();
-    
-    // Determine default title based on linked data
+
     let defaultTitle = 'Untitled';
-    
-    // If linking to a trade, use "SYMBOL : DATE" format
     if (data?.linkedTradeId) {
       const trade = trades.find(t => t.id === data.linkedTradeId);
       if (trade) {
-        // Display in user's local time (toLocaleDateString uses local tz automatically)
-        const openDate = trade.entries[0]?.datetime 
-          ? new Date(trade.entries[0].datetime).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: '2-digit', 
-              year: 'numeric' 
+        const openDate = trade.entries[0]?.datetime
+          ? new Date(trade.entries[0].datetime).toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+              year: 'numeric',
             })
           : '';
         defaultTitle = `${trade.symbol} : ${openDate}`;
       }
     } else if (data?.title) {
-      // Use provided title (for Day Notes)
       defaultTitle = data.title;
     }
-    
+
     const newNote: DiaryNote = {
       id: crypto.randomUUID(),
+      userId,
       title: defaultTitle,
       content: data?.content || '',
-      folderId: data?.folderId || null,
+      folderId: sanitizeFolderId(data?.folderId ?? null),
       linkedTradeId: data?.linkedTradeId || null,
       linkedDate: data?.linkedDate || null,
       createdAt: now,
@@ -162,15 +240,19 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
     setNotes(prev => [newNote, ...prev]);
     setSelectedNoteId(newNote.id);
     return newNote;
-  }, [trades]);
+  }, [trades, userId]);
 
   // Update a note
   const updateNote = useCallback((id: string, data: Partial<DiaryNoteFormData>) => {
     setNotes(prev => prev.map(note => {
       if (note.id !== id) return note;
+      const sanitized: Partial<DiaryNoteFormData> = { ...data };
+      if ('folderId' in data) {
+        sanitized.folderId = sanitizeFolderId(data.folderId ?? null);
+      }
       return {
         ...note,
-        ...data,
+        ...sanitized,
         updatedAt: nowISO(),
       };
     }));
@@ -188,17 +270,16 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
   const linkNoteToTrade = useCallback((noteId: string, tradeId: string) => {
     setNotes(prev => prev.map(note => {
       if (note.id !== noteId) return note;
-      
-      // Find the trade to update title
+
       const trade = trades.find(t => t.id === tradeId);
       let title = note.title;
-      
+
       if (trade) {
-        const openDate = trade.entries[0]?.datetime 
-          ? new Date(trade.entries[0].datetime).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: '2-digit', 
-              year: 'numeric' 
+        const openDate = trade.entries[0]?.datetime
+          ? new Date(trade.entries[0].datetime).toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+              year: 'numeric',
             })
           : '';
         title = `${trade.symbol} : ${openDate}`;
@@ -208,7 +289,7 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
         ...note,
         title,
         linkedTradeId: tradeId,
-        linkedDate: null, // Clear day link when linking to trade
+        linkedDate: null,
         updatedAt: nowISO(),
       };
     }));
@@ -233,27 +314,27 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
       return {
         ...note,
         linkedDate: date,
-        linkedTradeId: null, // Clear trade link when linking to day
+        linkedTradeId: null,
         updatedAt: nowISO(),
       };
     }));
   }, []);
 
-  // Get a note by trade ID
   const getNoteByTradeId = useCallback((tradeId: string): DiaryNote | undefined => {
     return notes.find(n => n.linkedTradeId === tradeId);
   }, [notes]);
 
-  // Get the currently selected note
   const getSelectedNote = useCallback((): DiaryNote | undefined => {
     if (!selectedNoteId) return undefined;
     return notes.find(n => n.id === selectedNoteId);
   }, [notes, selectedNoteId]);
 
   // Create a custom folder
-  const createFolder = useCallback((name: string): DiaryFolder => {
+  const createFolder = useCallback((name: string): DiaryFolder | null => {
+    if (!userId) return null;
     const newFolder: DiaryFolder = {
       id: crypto.randomUUID(),
+      userId,
       name,
       type: 'custom',
       isDefault: false,
@@ -261,23 +342,21 @@ export const DiaryProvider = ({ children }: { children: ReactNode }) => {
     };
     setCustomFolders(prev => [...prev, newFolder]);
     return newFolder;
-  }, []);
+  }, [userId]);
 
   // Delete a custom folder
   const deleteFolder = useCallback((id: string) => {
-    // Don't delete default folders
     const folder = folders.find(f => f.id === id);
     if (folder?.isDefault) return;
 
     setCustomFolders(prev => prev.filter(f => f.id !== id));
-    
-    // Move notes from deleted folder to no folder
+
+    // Move notes from deleted folder to no folder (parity with ON DELETE SET NULL)
     setNotes(prev => prev.map(note => {
       if (note.folderId !== id) return note;
-      return { ...note, folderId: null };
+      return { ...note, folderId: null, updatedAt: nowISO() };
     }));
 
-    // Reset selection if viewing deleted folder
     if (selectedFolderId === id) {
       setSelectedFolderId('all-notes');
     }
