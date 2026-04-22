@@ -134,7 +134,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       {/* Collapse/Expand toggle moved to GlobalHeader. Mobile-only spacer kept. */}
 
       {/* Logo — extra left padding on mobile to avoid overlap with burger/close button */}
-      <div className="p-4 max-md:pl-14">
+      <div className="px-1 py-4 max-md:pl-14">
         <div className="flex flex-col items-center justify-center">
           <AnimatePresence>
             {!isCollapsed ? (
@@ -162,7 +162,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       </div>
 
       {/* Add Trade Button */}
-      <div className="px-3 pt-3 pb-1">
+      <div className="px-1 pt-3 pb-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.button
@@ -199,7 +199,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto pt-1">
+      <nav className="flex-1 px-1 space-y-0.5 overflow-y-auto pt-1">
         {/* Dashboard */}
         <NavItem
           icon={dashboardItem.icon}
@@ -582,7 +582,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
       </nav>
 
       {/* Bottom Account */}
-      <div className="px-3 pb-3 max-md:pb-8 mt-auto">
+      <div className="px-1 pb-3 max-md:pb-8 mt-auto">
         <Separator className="bg-sidebar-border/50 mb-2" />
         <div className="relative rounded-xl overflow-hidden">
           {/* Liquid glass effect background */}
