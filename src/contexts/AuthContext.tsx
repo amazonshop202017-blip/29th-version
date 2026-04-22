@@ -64,7 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const session = localStorage.getItem('auth_session');
     if (session) {
       try {
-        setUser(JSON.parse(session));
+        const parsed = JSON.parse(session) as User;
+        // Re-attach avatar from its dedicated key
+        const avatar = parsed.userId ? localStorage.getItem(`auth_avatar_${parsed.userId}`) : null;
+        setUser({ ...parsed, avatarDataUrl: avatar });
       } catch {
         localStorage.removeItem('auth_session');
       }
@@ -107,8 +110,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       found.userId = generateUserId(existingIds);
       localStorage.setItem('auth_users', JSON.stringify(users));
     }
-    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: found.avatarDataUrl ?? null };
-    localStorage.setItem('auth_session', JSON.stringify(userData));
+    const avatar = localStorage.getItem(`auth_avatar_${found.userId}`);
+    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: avatar };
+    const sessionData = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName };
+    localStorage.setItem('auth_session', JSON.stringify(sessionData));
     setUser(userData);
     return { success: true };
   }, []);
@@ -147,13 +152,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const nextFirst = update.firstName !== undefined ? update.firstName.trim() || undefined : users[idx].firstName;
     const nextLast = update.lastName !== undefined ? update.lastName.trim() || undefined : users[idx].lastName;
-    const nextAvatar = update.avatarDataUrl !== undefined ? update.avatarDataUrl : users[idx].avatarDataUrl;
 
-    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar };
-    localStorage.setItem('auth_users', JSON.stringify(users));
+    // Persist avatar in its own key per user so it never bloats the users list
+    let nextAvatar: string | null | undefined = users[idx].avatarDataUrl;
+    if (update.avatarDataUrl !== undefined) {
+      nextAvatar = update.avatarDataUrl;
+      try {
+        if (update.avatarDataUrl) {
+          localStorage.setItem(`auth_avatar_${user.userId}`, update.avatarDataUrl);
+        } else {
+          localStorage.removeItem(`auth_avatar_${user.userId}`);
+        }
+      } catch (err) {
+        return { success: false, error: 'Image too large to save. Try a smaller picture.' };
+      }
+    }
+
+    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast };
+    // Do NOT store avatar inside the users list (keeps it small)
+    delete (users[idx] as { avatarDataUrl?: unknown }).avatarDataUrl;
+    try {
+      localStorage.setItem('auth_users', JSON.stringify(users));
+    } catch {
+      return { success: false, error: 'Could not save profile (storage full)' };
+    }
 
     const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar ?? null };
-    localStorage.setItem('auth_session', JSON.stringify(userData));
+    try {
+      // Session never includes the avatar data URL (kept lightweight)
+      const sessionData = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast };
+      localStorage.setItem('auth_session', JSON.stringify(sessionData));
+    } catch {
+      /* non-fatal */
+    }
     setUser(userData);
     return { success: true };
   }, [user]);
