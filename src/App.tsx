@@ -113,7 +113,8 @@ const AuthenticatedApp = () => {
                                   <Route path="/reports/*" element={<Reports />} />
                                   <Route path="/chart-room/drawdown" element={<Drawdown />} />
                                   <Route path="/chart-room/consecutive" element={<ConsecutiveWinnersLosers />} />
-                                  <Route path="/chart-room/exit-analysis" element={<ExitAnalysis />} />
+                                  <Route path="/edge-lab/exit-analysis" element={<ExitAnalysis />} />
+                                  <Route path="/chart-room/exit-analysis" element={<Navigate to="/edge-lab/exit-analysis" replace />} />
                                   <Route path="/chart-room/holding-time" element={<HoldingTime />} />
                                   <Route path="/chart-room/performance-by-symbol" element={<PerformanceBySymbol />} />
                                   <Route path="/chart-room/performance-by-setup" element={<PerformanceBySetup />} />
@@ -121,7 +122,8 @@ const AuthenticatedApp = () => {
                                   <Route path="/chart-room/tags-analytics" element={<TagsAnalytics />} />
                                   <Route path="/chart-room/risk-distribution" element={<RiskDistribution />} />
                                   <Route path="/chart-room/trade-management" element={<TradeManagement />} />
-                                  <Route path="/exit-analyzer" element={<ExitAnalyzer />} />
+                                  <Route path="/edge-lab/exit-analyzer" element={<ExitAnalyzer />} />
+                                  <Route path="/exit-analyzer" element={<Navigate to="/edge-lab/exit-analyzer" replace />} />
                                   <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
                                   <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>
