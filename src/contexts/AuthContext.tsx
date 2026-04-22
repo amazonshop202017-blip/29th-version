@@ -18,6 +18,7 @@ interface User {
   userId: string;
   firstName?: string;
   lastName?: string;
+  avatarDataUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -28,7 +29,7 @@ interface AuthContextType {
   logout: () => void;
   getPreferences: () => UserPreferences;
   updatePreferences: (update: Partial<UserPreferences>) => void;
-  updateProfile: (update: { firstName?: string; lastName?: string; email?: string }) => { success: boolean; error?: string };
+  updateProfile: (update: { firstName?: string; lastName?: string; email?: string; avatarDataUrl?: string | null }) => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +40,7 @@ interface StoredUser {
   userId: string;
   firstName?: string;
   lastName?: string;
+  avatarDataUrl?: string | null;
   preferences?: UserPreferences;
 }
 
@@ -105,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       found.userId = generateUserId(existingIds);
       localStorage.setItem('auth_users', JSON.stringify(users));
     }
-    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName };
+    const userData: User = { email, userId: found.userId, firstName: found.firstName, lastName: found.lastName, avatarDataUrl: found.avatarDataUrl ?? null };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };
@@ -132,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('auth_users', JSON.stringify(users));
   }, [user]);
 
-  const updateProfile = useCallback((update: { firstName?: string; lastName?: string; email?: string }) => {
+  const updateProfile = useCallback((update: { firstName?: string; lastName?: string; email?: string; avatarDataUrl?: string | null }) => {
     if (!user) return { success: false, error: 'Not signed in' };
     const users = getUsers();
     const idx = users.findIndex(u => u.userId === user.userId);
@@ -145,11 +147,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const nextFirst = update.firstName !== undefined ? update.firstName.trim() || undefined : users[idx].firstName;
     const nextLast = update.lastName !== undefined ? update.lastName.trim() || undefined : users[idx].lastName;
+    const nextAvatar = update.avatarDataUrl !== undefined ? update.avatarDataUrl : users[idx].avatarDataUrl;
 
-    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast };
+    users[idx] = { ...users[idx], email: nextEmail, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar };
     localStorage.setItem('auth_users', JSON.stringify(users));
 
-    const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast };
+    const userData: User = { email: nextEmail, userId: user.userId, firstName: nextFirst, lastName: nextLast, avatarDataUrl: nextAvatar ?? null };
     localStorage.setItem('auth_session', JSON.stringify(userData));
     setUser(userData);
     return { success: true };

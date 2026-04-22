@@ -18,7 +18,7 @@ const ProfilePage = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [timezone, setTimezone] = useState('');
   const [localTime, setLocalTime] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(user?.avatarDataUrl ?? null);
 
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -59,27 +59,65 @@ const ProfilePage = () => {
     }
   }, [user]);
 
+  // Keep profile image in sync with auth user (e.g. on login or external update)
+  useEffect(() => {
+    setProfileImage(user?.avatarDataUrl ?? null);
+  }, [user?.avatarDataUrl]);
+
+  // Downscale large images to keep localStorage usage reasonable
+  const downscaleImage = (dataUrl: string, maxSize = 512): Promise<string> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+
   const handleImageUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          setProfileImage(ev.target?.result as string);
-          toast({ title: 'Profile image updated' });
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'Image too large', description: 'Please choose an image under 5 MB.', variant: 'destructive' });
+        return;
       }
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const raw = ev.target?.result as string;
+        const resized = await downscaleImage(raw);
+        const result = updateProfile({ avatarDataUrl: resized });
+        if (result.success) {
+          setProfileImage(resized);
+          toast({ title: 'Profile image updated' });
+        } else {
+          toast({ title: 'Could not update image', description: result.error, variant: 'destructive' });
+        }
+      };
+      reader.readAsDataURL(file);
     };
     input.click();
   };
 
   const handleRemoveImage = () => {
-    setProfileImage(null);
-    toast({ title: 'Profile image removed' });
+    const result = updateProfile({ avatarDataUrl: null });
+    if (result.success) {
+      setProfileImage(null);
+      toast({ title: 'Profile image removed' });
+    }
   };
 
   const handleSave = () => {

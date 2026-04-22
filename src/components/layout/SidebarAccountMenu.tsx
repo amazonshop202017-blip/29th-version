@@ -18,7 +18,10 @@ export const SidebarAccountMenu = ({ isCollapsed }: { isCollapsed: boolean }) =>
   const isDark = theme === 'dark';
   const [showThemePopup, setShowThemePopup] = useState(false);
 
-  const displayName = user?.email?.split('@')[0] || 'Account';
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+  const displayName = fullName || user?.email?.split('@')[0] || 'Account';
+  const initial = (user?.firstName?.[0] || displayName[0] || 'U').toUpperCase();
+  const avatarUrl = user?.avatarDataUrl || null;
 
   return (
     <Popover>
@@ -32,12 +35,16 @@ export const SidebarAccountMenu = ({ isCollapsed }: { isCollapsed: boolean }) =>
               )}
             >
               <div className={cn(
-                "rounded-full bg-primary flex items-center justify-center flex-shrink-0",
+                "rounded-full bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden",
                 isCollapsed ? "w-8 h-8" : "w-9 h-9"
               )}>
-                <span className="text-xs font-bold text-primary-foreground uppercase">
-                  {displayName.slice(0, 1)}
-                </span>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold text-primary-foreground uppercase">
+                    {initial}
+                  </span>
+                )}
               </div>
               <AnimatePresence>
                 {!isCollapsed && (
