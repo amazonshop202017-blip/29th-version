@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
