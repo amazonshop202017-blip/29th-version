@@ -82,8 +82,15 @@ const ExitAnalysis = () => {
       const exitPrice = metrics.avgExitPrice;
       const stopLoss = trade.stopLoss!;
       const takeProfit = trade.takeProfit!;
-      const farthestPriceInProfit = trade.preMfePrice!;
-      const farthestPriceInLoss = trade.preMaePrice!;
+      // Missing → no movement in that direction → use entry price (yields 0% updraw/drawdown).
+      const farthestPriceInProfit =
+        trade.preMfePrice !== undefined && trade.preMfePrice !== null
+          ? trade.preMfePrice
+          : entryPrice;
+      const farthestPriceInLoss =
+        trade.preMaePrice !== undefined && trade.preMaePrice !== null
+          ? trade.preMaePrice
+          : entryPrice;
       const side = trade.side;
 
       // Calculate Risk & Reward Ranges (Normalization)
