@@ -435,6 +435,20 @@ const OpportunityAnalysis = () => {
     [filteredTrades, treatMissingAsZero, analysisMode]
   );
 
+  // Count of trades with exactly one of MFE/MAE present (only added when toggle is on).
+  // Mode-aware: execution → pre fields; opportunity → post fields.
+  const partialDataCount = useMemo(() => {
+    let count = 0;
+    for (const trade of filteredTrades) {
+      const mfe = analysisMode === 'execution' ? trade.preMfeTickPip : trade.postMaxTickPip;
+      const mae = analysisMode === 'execution' ? trade.preMaeTickPip : trade.postMinTickPip;
+      const hasMfe = mfe !== undefined && mfe !== null;
+      const hasMae = mae !== undefined && mae !== null;
+      if (hasMfe !== hasMae) count++;
+    }
+    return count;
+  }, [filteredTrades, analysisMode]);
+
   // Compute heatmap
   const heatmapRange = { minSL, maxSL, minTP, maxTP, slStep, tpStep };
   const isValidRange = heatmapRange.minSL > 0 && heatmapRange.maxSL >= heatmapRange.minSL &&
