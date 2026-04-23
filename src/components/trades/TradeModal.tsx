@@ -32,6 +32,16 @@ import { toISO, nowISO, isoToDateTimeLocalInputValue } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import { TradeModalErrorBoundary } from './TradeModalErrorBoundary';
 
+function roundForPlaceholder(price: number): number {
+  const abs = Math.abs(price);
+  let step: number;
+  if (abs >= 1000) step = 10;
+  else if (abs >= 10) step = 1;
+  else if (abs >= 1) step = 0.1;
+  else step = 0.01;
+  return Math.round(price / step) * step;
+}
+
 const defaultEntry = (): TradeEntry => ({
   id: crypto.randomUUID(),
   type: 'BUY',
@@ -402,6 +412,14 @@ export const TradeModal = () => {
 
     return computeAutoTpSl(rule, ep, direction, tickSize);
   }, [selectedAccountId, symbol, entryPrice, direction, accounts, getTickSizeForAccountSymbol]);
+
+  // Dynamic placeholder for MFE/MAE inputs based on current entry price
+  const mfeMaePlaceholder = useMemo(() => {
+    const ep = parseFloat(entryPrice);
+    if (!isFinite(ep) || ep <= 0) return '0.00';
+    const rounded = roundForPlaceholder(ep);
+    return `e.g. ${parseFloat(rounded.toFixed(2)).toString()}`;
+  }, [entryPrice]);
 
   // For editing, use the original trade's metrics for auto-calculated gross PnL
   // so multi-entry trades retain correct values instead of using rebuilt simplified entries
@@ -1177,7 +1195,7 @@ export const TradeModal = () => {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      placeholder="0.00"
+                      placeholder={mfeMaePlaceholder}
                       value={farthestPriceInProfit}
                       disabled={openQuantity > 0}
                       onChange={(e) => {
@@ -1197,7 +1215,7 @@ export const TradeModal = () => {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      placeholder="0.00"
+                      placeholder={mfeMaePlaceholder}
                       value={farthestPriceInLoss}
                       disabled={openQuantity > 0}
                       onChange={(e) => {
