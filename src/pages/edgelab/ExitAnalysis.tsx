@@ -42,6 +42,7 @@ interface ExitAnalysisData {
 const ExitAnalysis = () => {
   const { filteredTrades } = useFilteredTrades();
   const [displayType, setDisplayType] = useState('percentage');
+  const [treatMissingAsZero, setTreatMissingAsZero] = useState(false);
 
   // Calculate exit analysis data for each trade
   const exitAnalysisData = useMemo(() => {
