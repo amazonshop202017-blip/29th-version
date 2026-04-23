@@ -179,7 +179,7 @@ const ExitAnalysis = () => {
         barRange: [roundedDrawdown, roundedUpdraw] as [number, number],
       };
     });
-  }, [filteredTrades]);
+  }, [filteredTrades, treatMissingAsZero]);
 
   // Find Y-axis bounds
   const yAxisDomain = useMemo(() => {
