@@ -129,7 +129,7 @@ function SingleMonthCalendar({ month, onMonthChange, selected, onSelect }: Singl
                     onClick={() => handleYearSelect(y)}
                     className={cn(
                       "w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      y === month.getFullYear() && "bg-accent font-medium"
+                      y === month.getFullYear() && "bg-accent text-accent-foreground font-medium"
                     )}
                   >
                     {y}
