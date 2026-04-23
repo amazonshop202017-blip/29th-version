@@ -16,18 +16,30 @@ export interface ExitAnalyzerTrade {
   realizedR: number;
 }
 
+export type AnalysisMode = 'execution' | 'opportunity';
+
 /**
  * Prepare trades for exit analysis. Filters and normalizes.
+ *
+ * @param mode  'execution' uses pre-exit MFE/MAE ticks (movement before exit).
+ *              'opportunity' uses post-exit Max/Min ticks (full movement after exit).
+ *              `realizedR` is always derived from the actual trade outcome and
+ *              is identical across both modes.
  */
 export function prepareExitTrades(
   trades: Trade[],
-  treatMissingAsZero: boolean
+  treatMissingAsZero: boolean,
+  mode: AnalysisMode = 'execution'
 ): ExitAnalyzerTrade[] {
   const result: ExitAnalyzerTrade[] = [];
 
   for (const trade of trades) {
-    const mfe = trade.preMfeTickPip;
-    const mae = trade.preMaeTickPip;
+    const mfe = mode === 'execution'
+      ? trade.preMfeTickPip
+      : (trade.postMaxTickPip ?? null);
+    const mae = mode === 'execution'
+      ? trade.preMaeTickPip
+      : (trade.postMinTickPip ?? null);
 
     // Both missing → always skip
     if (mfe == null && mae == null) continue;
