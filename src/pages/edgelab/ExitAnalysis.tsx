@@ -42,6 +42,7 @@ interface ExitAnalysisData {
 const ExitAnalysis = () => {
   const { filteredTrades } = useFilteredTrades();
   const [displayType, setDisplayType] = useState('percentage');
+  const [treatMissingAsZero, setTreatMissingAsZero] = useState(false);
 
   // Calculate exit analysis data for each trade
   const exitAnalysisData = useMemo(() => {
@@ -49,16 +50,23 @@ const ExitAnalysis = () => {
     const sortedTrades = [...filteredTrades]
       .filter((trade: Trade) => {
         const metrics = calculateTradeMetrics(trade);
-        return (
-          metrics.positionStatus === 'CLOSED' &&
-          metrics.closeDate &&
-          trade.stopLoss !== undefined &&
-          trade.takeProfit !== undefined &&
-          trade.preMfePrice !== undefined && trade.preMfePrice !== null &&
-          trade.preMaePrice !== undefined && trade.preMaePrice !== null &&
-          metrics.avgEntryPrice > 0 &&
-          metrics.avgExitPrice > 0
-        );
+        if (
+          metrics.positionStatus !== 'CLOSED' ||
+          !metrics.closeDate ||
+          trade.stopLoss === undefined ||
+          trade.takeProfit === undefined ||
+          metrics.avgEntryPrice <= 0 ||
+          metrics.avgExitPrice <= 0
+        ) {
+          return false;
+        }
+        const hasMfe = trade.preMfePrice !== undefined && trade.preMfePrice !== null;
+        const hasMae = trade.preMaePrice !== undefined && trade.preMaePrice !== null;
+        // Both missing → always skip; both present → include;
+        // one missing → include only when "Fill missing as 0" is on.
+        if (!hasMfe && !hasMae) return false;
+        if (hasMfe && hasMae) return true;
+        return treatMissingAsZero;
       })
       .sort((a, b) => {
         const metricsA = calculateTradeMetrics(a);
@@ -74,8 +82,15 @@ const ExitAnalysis = () => {
       const exitPrice = metrics.avgExitPrice;
       const stopLoss = trade.stopLoss!;
       const takeProfit = trade.takeProfit!;
-      const farthestPriceInProfit = trade.preMfePrice!;
-      const farthestPriceInLoss = trade.preMaePrice!;
+      // Missing → no movement in that direction → use entry price (yields 0% updraw/drawdown).
+      const farthestPriceInProfit =
+        trade.preMfePrice !== undefined && trade.preMfePrice !== null
+          ? trade.preMfePrice
+          : entryPrice;
+      const farthestPriceInLoss =
+        trade.preMaePrice !== undefined && trade.preMaePrice !== null
+          ? trade.preMaePrice
+          : entryPrice;
       const side = trade.side;
 
       // Calculate Risk & Reward Ranges (Normalization)
@@ -164,7 +179,7 @@ const ExitAnalysis = () => {
         barRange: [roundedDrawdown, roundedUpdraw] as [number, number],
       };
     });
-  }, [filteredTrades]);
+  }, [filteredTrades, treatMissingAsZero]);
 
   // Find Y-axis bounds
   const yAxisDomain = useMemo(() => {
@@ -294,6 +309,29 @@ const ExitAnalysis = () => {
                 <SelectItem value="percentage">Percentage</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Fill missing as 0 toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={treatMissingAsZero}
+                onChange={(e) => setTreatMissingAsZero(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-[260px] text-xs">
+                      If a trade has one value (e.g. Highest Price) but the other is empty (e.g. Lowest Price), the missing one is treated as no movement in that direction. Trades with both values missing are always excluded.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </label>
 
             {/* Legend */}
             <div className="flex items-center gap-4">
