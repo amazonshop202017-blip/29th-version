@@ -363,7 +363,7 @@ const PerformanceRatio = () => {
                       "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
                       selectionType === 'tradeComments'
                         ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-foreground"
+                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                     )}
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -379,7 +379,7 @@ const PerformanceRatio = () => {
                       "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
                       selectionType === 'tags'
                         ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-foreground"
+                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                     )}
                   >
                     <Tag className="w-4 h-4" />

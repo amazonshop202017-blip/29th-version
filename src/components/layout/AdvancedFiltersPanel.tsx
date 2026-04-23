@@ -223,7 +223,7 @@ export const AdvancedFiltersPanel = () => {
               "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
               activeSection === item.key
                 ? "bg-primary text-primary-foreground"
-                : "hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-foreground"
+                : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
             )}
           >
             {item.icon}
