@@ -1242,7 +1242,7 @@ export const TradeModal = () => {
                   <button
                     type="button"
                     onClick={() => setAfterExitOpen((v) => !v)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
+                    className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors"
                   >
                     <ChevronDown
                       className={cn(
