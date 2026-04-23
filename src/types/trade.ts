@@ -68,6 +68,9 @@ export interface Trade {
   // Maximum Favorable/Adverse Excursion in ticks/pips (storage only, no auto-calculation)
   preMfeTickPip: number | null;
   preMaeTickPip: number | null;
+  // Post-exit favorable/adverse excursion in ticks/pips
+  postMaxTickPip?: number | null;
+  postMinTickPip?: number | null;
   // Saved Return (%) - calculated at trade creation based on account balance
   savedReturnPercent?: number;
   // Saved R-Multiple - calculated at trade creation based on trade risk
