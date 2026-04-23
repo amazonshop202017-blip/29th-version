@@ -1,102 +1,47 @@
 
 
-## Add Execution vs Opportunity Mode to Opportunity Analysis
+## Fix Hover Text Color on Filter Menu Items
 
-Introduce a global `analysisMode` toggle (`execution` | `opportunity`) that controls whether the analyzer reads pre-exit MFE/MAE ticks or post-exit Max/Min ticks. Logic centralized in `prepareExitTrades()`; UI components stay mode-agnostic.
+### Problem
 
-### 1. Data layer — `src/lib/exitAnalyzerCalc.ts`
+In **light mode**, `--accent` is dark navy (`#26303d`) and `--accent-foreground` is white. Many menu items use `hover:bg-accent` **without** `hover:text-accent-foreground`, so on hover the row turns dark while the text/icon stays dark → **black text on black background, invisible**.
 
-Extend `prepareExitTrades` signature:
+The same pattern exists in 16 files across the app. This plan fixes them everywhere.
 
-```ts
-export type AnalysisMode = 'execution' | 'opportunity';
+### Affected areas (confirmed)
 
-export function prepareExitTrades(
-  trades: Trade[],
-  treatMissingAsZero: boolean,
-  mode: AnalysisMode = 'execution'
-): ExitAnalyzerTrade[]
-```
+1. **Currency / Display Mode menu** (`DisplayModeSelector.tsx`) — Dollar / Percentage / Privacy / Tick rows.
+2. **Date Range popover** (`GlobalHeader.tsx`):
+   - Right-side preset list: All time, Today, This week, This month, Last 30 days, Last month, This quarter, YTD.
+3. **Date Range Calendar dropdowns** (`DateRangeCalendar.tsx`):
+   - Month dropdown items (January … December)
+   - Year dropdown items (2015 … 2035)
+   - Month/year trigger buttons themselves (use `hover:bg-accent`)
+4. **Basic Filters popover rows** (`GlobalHeader.tsx`): Symbol, Setup, Checklist, Outcome, Direction, Day, Hour, Return %, R-Multiple, Year picker grid cells.
+5. **Other components flagged by the same pattern** — sweep via search across all 16 files (e.g. AdvancedFiltersPanel, AccountSidebar, SettingsSidebar, ChartLibraryModal, etc.) and apply the same fix wherever `hover:bg-accent` appears without `hover:text-accent-foreground`.
 
-Inside the loop, pick source fields by mode:
+### The fix
 
-- `execution` → `mfe = trade.preMfeTickPip`, `mae = trade.preMaeTickPip`
-- `opportunity` → `mfe = trade.postMaxTickPip ?? null`, `mae = trade.postMinTickPip ?? null`
+Add the paired class everywhere it's missing:
 
-Apply identical missing-data rules to both modes:
-- both missing → skip
-- both present → include
-- one missing + `treatMissingAsZero` → fill 0
-- one missing + flag off → skip
+- `hover:bg-accent` → `hover:bg-accent hover:text-accent-foreground`
 
-`realizedR` calculation is unchanged (always derived from actual trade outcome via `savedRMultiple` or `netPnl / tradeRisk`). It does NOT depend on mode.
+For rows containing icons styled with `text-muted-foreground`, also add `group` + `group-hover:text-accent-foreground` on the icon (or rely on `currentColor` where SVGs already inherit) so the icon flips to white on hover.
 
-No changes to `simulateExit`, `computeHeatmap`, `computeSLSweep`, `computeTPSweep` — they consume the prepared dataset only.
-
-### 2. UI — `src/pages/edgelab/OpportunityAnalysis.tsx`
-
-**a. Add state at the parent component level:**
-```ts
-const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('execution');
-```
-This state lives in the parent so it persists across Auto ↔ Manual tab switches.
-
-**b. Lift `treatMissingAsZero` & `minTradeCount` to parent** (currently duplicated in `ManualExitTab`) so both tabs share the prepared dataset and toggle. Pass `analysisMode`, `treatMissingAsZero`, `minTradeCount` (and their setters) into `ManualExitTab` via props.
-
-**c. New mode toggle row** rendered just below the Auto/Manual sub-tabs (above the methodology card):
-
-```
-Analysis Mode:  [ Execution ]  [ Opportunity ]
-                  (default)
-```
-- Pill-style segmented control matching the existing "Coloring" / "Optimise" toggles.
-- Small info tooltip: "Execution = movement before exit · Opportunity = full movement after exit."
-
-**d. Update memoization** in both Auto view and `ManualExitTab`:
-```ts
-const exitTrades = useMemo(
-  () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
-  [filteredTrades, treatMissingAsZero, analysisMode]
-);
-```
-
-**e. Mode-aware labels** (single source: derive a `labels` object from `analysisMode`):
-- Scatter chart title:
-  - execution → "MFE / MAE Scatter"
-  - opportunity → "Post-Exit Max / Min Scatter"
-- Scatter axis labels:
-  - execution → `MAE (ticks)` / `MFE (ticks)`
-  - opportunity → `Post Min (ticks)` / `Post Max (ticks)`
-- Scatter "TP hit" / "SL hit" counters keep working (they read `mfe`/`mae` from the prepared data, which now point to the correct source).
-- Empty state copy:
-  - execution → "No trades with MFE/MAE data available."
-  - opportunity → "No trades with post-exit Max/Min data available."
-
-**f. Updated methodology card** (top of page):
-- Headline (mode-aware):
-  - execution → "Based on price movement **before exit** (MFE/MAE)."
-  - opportunity → "Based on full price movement **after exit** (Post Max/Min). Results may appear more optimistic — this is expected."
-- Persistent sub-line under both modes:
-  *"This analysis is based on price ranges and does not consider the order of movement."*
-
-### 3. Behavior guarantees
-
-- Default mode = `execution` → existing heatmap, sweeps, scatter, quick calculator outputs are byte-identical to current behavior.
-- Mode persists when switching Auto ↔ Manual.
-- No fallback between datasets: opportunity mode never reads pre-exit fields; execution mode never reads post-exit fields.
-- `realizedR` is always the real outcome — identical across modes.
-- All downstream computations (heatmap, sweeps, quick calc, scatter) consume only the output of `prepareExitTrades` — no mode branching in chart/table code.
-- Memoization keys include `analysisMode`, preventing stale recomputes.
-
-### 4. Out of scope
-
-- No new fields on `Trade`.
-- No changes to Exit Analysis page.
-- No MT5 import auto-calc.
-- No persistence of selected mode across page reloads (session-only state).
+For non-active items in the date preset list and month/year pickers, the same paired class fix applies. Active state (`bg-primary text-primary-foreground` / `bg-accent font-medium`) is already correct and unchanged.
 
 ### Files touched
 
-- `src/lib/exitAnalyzerCalc.ts` — add `mode` param + `AnalysisMode` type.
-- `src/pages/edgelab/OpportunityAnalysis.tsx` — add toggle, lift shared state, mode-aware labels, methodology copy, propagate `mode` into `prepareExitTrades` calls.
+- `src/components/layout/DisplayModeSelector.tsx`
+- `src/components/layout/DateRangeCalendar.tsx`
+- `src/components/layout/GlobalHeader.tsx`
+- `src/components/layout/AdvancedFiltersPanel.tsx`
+- `src/components/layout/SidebarAccountMenu.tsx` (if affected)
+- Plus a sweep through the remaining ~12 files where `hover:bg-accent` appears without the paired text class — same single-class addition each time.
+
+### Out of scope
+
+- No theme variable changes (don't repaint `--accent`).
+- No layout/spacing changes.
+- shadcn primitives (`DropdownMenuItem`, `SelectItem`, `Command`) already pair `focus:bg-accent focus:text-accent-foreground` internally — they don't need edits.
 
