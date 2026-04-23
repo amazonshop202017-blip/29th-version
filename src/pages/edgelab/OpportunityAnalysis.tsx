@@ -564,11 +564,10 @@ const OpportunityAnalysis = () => {
       >
         <div className="space-y-1.5 flex-1 min-w-0">
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--chart-1))' }}>
-            Results are based on the price ranges you recorded (MFE/MAE).
-            This analysis assumes price could reach both profit and loss levels, without considering the order of movement.
+            {labels.methodologyHeadline}
           </p>
           <p className="text-xs text-muted-foreground">
-            For best accuracy, use a consistent method — either record MFE/MAE only until exit, or record the full price range after entry.
+            This analysis is based on price ranges and does not consider the order of movement.
           </p>
         </div>
         <HoverCard openDelay={100} closeDelay={100}>
