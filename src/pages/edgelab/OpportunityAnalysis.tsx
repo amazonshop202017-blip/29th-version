@@ -710,8 +710,8 @@ const OpportunityAnalysis = () => {
             </label>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-[10px] font-mono text-muted-foreground cursor-help">
-                  {partialDataCount}
+                <span className="text-xs text-muted-foreground cursor-help">
+                  Effected trades: <span className="font-bold text-foreground">{partialDataCount}</span>
                 </span>
               </TooltipTrigger>
               <TooltipContent>
