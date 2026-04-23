@@ -257,8 +257,8 @@ export const TradeModal = () => {
       setEntryComment(editingTrade.entryComment || '');
       setTradeManagement(editingTrade.tradeManagement || '');
       setExitComment(editingTrade.exitComment || '');
-      setFarthestPriceInProfit(editingTrade.farthestPriceInProfit != null ? editingTrade.farthestPriceInProfit.toString() : '');
-      setFarthestPriceInLoss(editingTrade.farthestPriceInLoss != null ? editingTrade.farthestPriceInLoss.toString() : '');
+      setFarthestPriceInProfit(editingTrade.preMfePrice != null ? editingTrade.preMfePrice.toString() : '');
+      setFarthestPriceInLoss(editingTrade.preMaePrice != null ? editingTrade.preMaePrice.toString() : '');
       setPriceReachedFirst(editingTrade.priceReachedFirst || '');
       setBreakEven(editingTrade.breakEven ?? null);
       
@@ -331,8 +331,8 @@ export const TradeModal = () => {
       contractSize: editingTrade
         ? editingTrade.contractSize
         : (getContractSizeForAccountSymbol(selectedAccountId, symbol.trim())),
-      mfeTickPip: null,
-      maeTickPip: null,
+      preMfeTickPip: null,
+      preMaeTickPip: null,
     };
     return calculateTradeMetrics(formData);
   }, [symbol, direction, entries, tradeRisk, tradeTarget, selectedAccountId, strategyId, selectedTags, notes, editingTrade]);
@@ -546,8 +546,8 @@ export const TradeModal = () => {
       entryComment: entryComment || undefined,
       tradeManagement: tradeManagement || undefined,
       exitComment: exitComment || undefined,
-      farthestPriceInProfit: farthestPriceInProfit !== '' ? parseFloat(farthestPriceInProfit) : null,
-      farthestPriceInLoss: farthestPriceInLoss !== '' ? parseFloat(farthestPriceInLoss) : null,
+      preMfePrice: farthestPriceInProfit !== '' ? parseFloat(farthestPriceInProfit) : null,
+      preMaePrice: farthestPriceInLoss !== '' ? parseFloat(farthestPriceInLoss) : null,
       priceReachedFirst: priceReachedFirst || undefined,
       breakEven: breakEven ?? undefined,
       savedReturnPercent: editingTrade && !pnlFieldsChanged 
@@ -563,8 +563,8 @@ export const TradeModal = () => {
       contractSize: editingTrade
         ? editingTrade.contractSize
         : (getContractSizeForAccountSymbol(selectedAccountId, symbol.trim())),
-      mfeTickPip: editingTrade ? editingTrade.mfeTickPip ?? null : null,
-      maeTickPip: editingTrade ? editingTrade.maeTickPip ?? null : null,
+      preMfeTickPip: editingTrade ? editingTrade.preMfeTickPip ?? null : null,
+      preMaeTickPip: editingTrade ? editingTrade.preMaeTickPip ?? null : null,
       screenshots: screenshots.length > 0 ? screenshots : undefined,
     };
 
@@ -582,9 +582,9 @@ export const TradeModal = () => {
         const profitTicks = direction === 'LONG'
           ? (fpProfit - ep) / tickSize
           : (ep - fpProfit) / tickSize;
-        tradeData.mfeTickPip = Math.max(0, Math.floor(profitTicks));
+        tradeData.preMfeTickPip = Math.max(0, Math.floor(profitTicks));
       } else {
-        tradeData.mfeTickPip = null;
+        tradeData.preMfeTickPip = null;
       }
 
       // MAE — independent
@@ -592,12 +592,12 @@ export const TradeModal = () => {
         const lossTicks = direction === 'LONG'
           ? (ep - fpLoss) / tickSize
           : (fpLoss - ep) / tickSize;
-        tradeData.maeTickPip = Math.max(0, Math.floor(lossTicks));
+        tradeData.preMaeTickPip = Math.max(0, Math.floor(lossTicks));
       } else {
-        tradeData.maeTickPip = null;
+        tradeData.preMaeTickPip = null;
       }
 
-      console.log('[MFE/MAE Debug] Saving mfeTickPip:', tradeData.mfeTickPip, 'maeTickPip:', tradeData.maeTickPip);
+      console.log('[MFE/MAE Debug] Saving preMfeTickPip:', tradeData.preMfeTickPip, 'preMaeTickPip:', tradeData.preMaeTickPip);
     }
 
     if (editingTrade) {

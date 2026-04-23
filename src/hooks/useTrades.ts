@@ -98,12 +98,30 @@ export const useTrades = () => {
             }
           }
           
-          // Migration: Normalize mfeTickPip/maeTickPip — ensure they are number|null, never undefined
-          if (updated.mfeTickPip === undefined) {
-            updated = { ...updated, mfeTickPip: null };
+          // Migration: Rename old field names → new camelCase names
+          if ('farthestPriceInProfit' in updated) {
+            const { farthestPriceInProfit, ...rest } = updated;
+            updated = { ...rest, preMfePrice: farthestPriceInProfit };
           }
-          if (updated.maeTickPip === undefined) {
-            updated = { ...updated, maeTickPip: null };
+          if ('farthestPriceInLoss' in updated) {
+            const { farthestPriceInLoss, ...rest } = updated;
+            updated = { ...rest, preMaePrice: farthestPriceInLoss };
+          }
+          if ('mfeTickPip' in updated) {
+            const { mfeTickPip, ...rest } = updated;
+            updated = { ...rest, preMfeTickPip: mfeTickPip };
+          }
+          if ('maeTickPip' in updated) {
+            const { maeTickPip, ...rest } = updated;
+            updated = { ...rest, preMaeTickPip: maeTickPip };
+          }
+
+          // Migration: Normalize preMfeTickPip/preMaeTickPip — ensure they are number|null, never undefined
+          if (updated.preMfeTickPip === undefined) {
+            updated = { ...updated, preMfeTickPip: null };
+          }
+          if (updated.preMaeTickPip === undefined) {
+            updated = { ...updated, preMaeTickPip: null };
           }
 
           // CRITICAL MIGRATION: accountName → accountId (UUID)
@@ -175,7 +193,7 @@ export const useTrades = () => {
           return updated;
           } catch (err) {
             console.error('[useTrades] Migration error for trade:', trade?.id, err);
-            return { ...trade, mfeTickPip: trade.mfeTickPip ?? null, maeTickPip: trade.maeTickPip ?? null };
+            return { ...trade, preMfeTickPip: trade.preMfeTickPip ?? trade.mfeTickPip ?? null, preMaeTickPip: trade.preMaeTickPip ?? trade.maeTickPip ?? null };
           }
         }).filter(Boolean);
 

@@ -328,12 +328,12 @@ const TableWithStickyHorizontalScroll = ({
                   )}
                   {isColumnVisible('farthestProfitTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.mfeTickPip === 'number' ? trade.mfeTickPip : ''}
+                      {typeof trade.preMfeTickPip === 'number' ? trade.preMfeTickPip : ''}
                     </TableCell>
                   )}
                   {isColumnVisible('farthestLossTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.maeTickPip === 'number' ? trade.maeTickPip : ''}
+                      {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
                     </TableCell>
                   )}
                 </TableRow>

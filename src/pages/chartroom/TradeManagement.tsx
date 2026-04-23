@@ -95,18 +95,18 @@ const TradeManagement = () => {
         // If SL was hit first, potential is -1R
         potentialR = -1;
       } else {
-        // Calculate based on farthestPriceInProfit (direction-aware)
-        if (trade.farthestPriceInProfit !== undefined && trade.farthestPriceInProfit > 0) {
+        // Calculate based on preMfePrice (direction-aware)
+        if (trade.preMfePrice !== undefined && trade.preMfePrice !== null && trade.preMfePrice > 0) {
           if (trade.side === 'LONG') {
             const risk = entry - sl;
             if (risk > 0) {
-              potentialR = Math.max(-1, (trade.farthestPriceInProfit - entry) / risk);
+              potentialR = Math.max(-1, (trade.preMfePrice - entry) / risk);
             }
           } else {
-            // SHORT: profit = entry - farthestPriceInProfit
+            // SHORT: profit = entry - preMfePrice
             const risk = sl - entry;
             if (risk > 0) {
-              potentialR = Math.max(-1, (entry - trade.farthestPriceInProfit) / risk);
+              potentialR = Math.max(-1, (entry - trade.preMfePrice) / risk);
             }
           }
         }

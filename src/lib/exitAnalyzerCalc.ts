@@ -26,8 +26,8 @@ export function prepareExitTrades(
   const result: ExitAnalyzerTrade[] = [];
 
   for (const trade of trades) {
-    const mfe = trade.mfeTickPip;
-    const mae = trade.maeTickPip;
+    const mfe = trade.preMfeTickPip;
+    const mae = trade.preMaeTickPip;
 
     // Both missing → always skip
     if (mfe == null && mae == null) continue;

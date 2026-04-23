@@ -352,8 +352,8 @@ export function parseCSVToTrades(
         accountBalanceSnapshot,
         // Snapshot contract size from registry at import time
         contractSize: contractSizes?.[symbol] ?? 1,
-        mfeTickPip: null,
-        maeTickPip: null,
+        preMfeTickPip: null,
+        preMaeTickPip: null,
       };
       
       trades.push(trade);
