@@ -522,6 +522,41 @@ const OpportunityAnalysis = () => {
         ))}
       </div>
 
+      {/* Analysis Mode Toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}
+        className="flex items-center gap-3"
+      >
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Analysis Mode
+        </span>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          <button
+            onClick={() => setAnalysisMode('execution')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${analysisMode === 'execution' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          >
+            Execution
+          </button>
+          <button
+            onClick={() => setAnalysisMode('opportunity')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${analysisMode === 'opportunity' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          >
+            Opportunity
+          </button>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-[260px] text-xs">
+              <strong>Execution</strong> = movement before exit (MFE/MAE).<br />
+              <strong>Opportunity</strong> = full movement after exit (Post Max/Min).
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </motion.div>
+
       {/* Methodology note */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
