@@ -310,6 +310,29 @@ const ExitAnalysis = () => {
               </SelectContent>
             </Select>
 
+            {/* Fill missing as 0 toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={treatMissingAsZero}
+                onChange={(e) => setTreatMissingAsZero(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-[260px] text-xs">
+                      If a trade has one value (e.g. Highest Price) but the other is empty (e.g. Lowest Price), the missing one is treated as no movement in that direction. Trades with both values missing are always excluded.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </label>
+
             {/* Legend */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
