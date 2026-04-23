@@ -33,7 +33,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'performance',
     label: 'Performance',
-    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR', 'farthestProfitTicks', 'farthestLossTicks'],
+    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR', 'farthestProfitTicks', 'farthestLossTicks', 'postMaxPrice', 'postMinPrice'],
   },
 ];
 
@@ -63,6 +63,8 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'plannedRRR', label: 'Planned RR / R-Multiple', group: 'performance', visible: false },
   { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'performance', visible: false },
   { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'performance', visible: false },
+  { id: 'postMaxPrice', label: 'Highest Price', group: 'performance', visible: false },
+  { id: 'postMinPrice', label: 'Lowest Price', group: 'performance', visible: false },
 ];
 
 const STORAGE_KEY = 'trades-column-visibility';

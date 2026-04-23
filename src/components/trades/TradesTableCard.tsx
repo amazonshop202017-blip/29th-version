@@ -150,6 +150,8 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('plannedRRR') && <TableHead className="px-2">Planned RR</TableHead>}
               {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
               {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">MAE (pre-exit, ticks)</TableHead>}
+              {isColumnVisible('postMaxPrice') && <TableHead className="px-2 text-right">Highest Price</TableHead>}
+              {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -334,6 +336,16 @@ const TableWithStickyHorizontalScroll = ({
                   {isColumnVisible('farthestLossTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('postMaxPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.postMaxPrice === 'number' ? trade.postMaxPrice : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('postMinPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.postMinPrice === 'number' ? trade.postMinPrice : ''}
                     </TableCell>
                   )}
                 </TableRow>
