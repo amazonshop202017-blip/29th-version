@@ -145,23 +145,6 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
     setIsHovered(false);
   };
 
-  const handleMouseEnter = () => {
-    if (!isCollapsed) return;
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    hoverTimerRef.current = window.setTimeout(() => setIsHovered(true), 120);
-  };
-
-  const handleMouseLeave = () => {
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setIsHovered(false);
-  };
-
   return (
     <aside
       onMouseEnter={handleMouseEnter}
@@ -169,7 +152,7 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
       className={cn(
         "fixed left-0 top-0 bg-sidebar flex flex-col transition-all duration-300 ease-out",
         // Width: hover-overlay expands visually without pushing layout
-        isVisuallyExpanded ? "w-[229px]" : "w-[70px]",
+        isCollapsed ? "w-[70px]" : "w-[229px]",
         // Elevation: lift above content when in hover-overlay mode
         isOverlayExpanded
           ? "z-50 shadow-2xl border-r border-sidebar-border"
