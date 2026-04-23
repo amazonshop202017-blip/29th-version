@@ -60,6 +60,9 @@ export interface Trade {
   exitComment?: string;
   preMfePrice?: number | null;
   preMaePrice?: number | null;
+  // Post-exit price extremes (after the trade was closed)
+  postMaxPrice?: number | null;
+  postMinPrice?: number | null;
   priceReachedFirst?: 'takeProfit' | 'stopLoss';
   breakEven?: boolean;
   // Maximum Favorable/Adverse Excursion in ticks/pips (storage only, no auto-calculation)

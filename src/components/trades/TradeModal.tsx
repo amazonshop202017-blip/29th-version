@@ -147,7 +147,7 @@ export const TradeModal = () => {
   const [farthestPriceInLoss, setFarthestPriceInLoss] = useState<string>('');
   const [priceReachedFirst, setPriceReachedFirst] = useState<'takeProfit' | 'stopLoss' | ''>('');
   const [breakEven, setBreakEven] = useState<boolean | null>(null);
-  // After-exit (visual only — not persisted yet)
+  // After-exit prices (postMaxPrice / postMinPrice)
   const [afterExitOpen, setAfterExitOpen] = useState(false);
   const [afterExitHighest, setAfterExitHighest] = useState<string>('');
   const [afterExitLowest, setAfterExitLowest] = useState<string>('');
@@ -275,6 +275,9 @@ export const TradeModal = () => {
       setExitComment(editingTrade.exitComment || '');
       setFarthestPriceInProfit(editingTrade.preMfePrice != null ? editingTrade.preMfePrice.toString() : '');
       setFarthestPriceInLoss(editingTrade.preMaePrice != null ? editingTrade.preMaePrice.toString() : '');
+      setAfterExitHighest(editingTrade.postMaxPrice != null ? editingTrade.postMaxPrice.toString() : '');
+      setAfterExitLowest(editingTrade.postMinPrice != null ? editingTrade.postMinPrice.toString() : '');
+      setAfterExitOpen(editingTrade.postMaxPrice != null || editingTrade.postMinPrice != null);
       setPriceReachedFirst(editingTrade.priceReachedFirst || '');
       setBreakEven(editingTrade.breakEven ?? null);
       
@@ -327,6 +330,9 @@ export const TradeModal = () => {
     setExitComment('');
     setFarthestPriceInProfit('');
     setFarthestPriceInLoss('');
+    setAfterExitHighest('');
+    setAfterExitLowest('');
+    setAfterExitOpen(false);
     setPriceReachedFirst('');
     setBreakEven(null);
     // Reset screenshots
@@ -572,6 +578,8 @@ export const TradeModal = () => {
       exitComment: exitComment || undefined,
       preMfePrice: farthestPriceInProfit !== '' ? parseFloat(farthestPriceInProfit) : null,
       preMaePrice: farthestPriceInLoss !== '' ? parseFloat(farthestPriceInLoss) : null,
+      postMaxPrice: afterExitHighest !== '' ? parseFloat(afterExitHighest) : null,
+      postMinPrice: afterExitLowest !== '' ? parseFloat(afterExitLowest) : null,
       priceReachedFirst: priceReachedFirst || undefined,
       breakEven: breakEven ?? undefined,
       savedReturnPercent: editingTrade && !pnlFieldsChanged 
