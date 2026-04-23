@@ -103,7 +103,7 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onMobileClose }: SidebarProps) => {
+export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobileOpen = false, onMobileClose }: SidebarProps) => {
   const location = useLocation();
   const { openModal } = useTradeModal();
   const [chartRoomOpen, setChartRoomOpen] = useState(
@@ -122,9 +122,28 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const isToolsActive = location.pathname.startsWith('/tools');
   const isEdgeLabActive = location.pathname.startsWith('/edge-lab');
 
-  // Visually expanded when not collapsed OR when hovered while collapsed (overlay mode)
-  const isOverlayExpanded = isCollapsed && isHovered;
-  const isVisuallyExpanded = !isCollapsed || isOverlayExpanded;
+  // When the sidebar is collapsed but hovered, expand visually as an overlay.
+  // The layout's left margin still reflects the original collapsed width,
+  // so the page does NOT shift — the sidebar simply floats above content.
+  const isOverlayExpanded = isCollapsedProp && isHovered;
+  const isCollapsed = isCollapsedProp && !isHovered;
+
+  const handleMouseEnter = () => {
+    if (!isCollapsedProp) return;
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    hoverTimerRef.current = window.setTimeout(() => setIsHovered(true), 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setIsHovered(false);
+  };
 
   const handleMouseEnter = () => {
     if (!isCollapsed) return;
