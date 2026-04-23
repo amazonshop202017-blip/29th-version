@@ -1148,7 +1148,29 @@ export const TradeModal = () => {
 
               {/* Advanced Price Data */}
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Price Movement</h4>
+                <div className="flex items-start gap-1.5">
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground">Price Movement</h4>
+                    <p className="text-xs text-muted-foreground">Until Exit</p>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help mt-0.5" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <p className="font-semibold">MFE — Maximum favorable excursion</p>
+                          <p className="text-muted-foreground">Highest price reached before exit</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold">MAE — Maximum adverse excursion</p>
+                          <p className="text-muted-foreground">Lowest price reached before exit</p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className={`space-y-1.5 ${openQuantity > 0 ? 'opacity-60' : ''}`}>
                     <Label className="text-xs text-muted-foreground">MFE</Label>
