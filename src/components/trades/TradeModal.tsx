@@ -35,10 +35,11 @@ import { TradeModalErrorBoundary } from './TradeModalErrorBoundary';
 function roundForPlaceholder(price: number): number {
   const abs = Math.abs(price);
   let step: number;
-  if (abs >= 1000) step = 10;
-  else if (abs >= 10) step = 1;
-  else if (abs >= 1) step = 0.1;
-  else step = 0.01;
+  if (abs >= 1000) step = 10;      // 5664 → 5660
+  else if (abs >= 100) step = 1;   // 234.7 → 235
+  else if (abs >= 10) step = 0.1;  // 65.46 → 65.5
+  else if (abs >= 1) step = 0.01;  // 5.436 → 5.44
+  else step = 0.001;               // 0.0846 → 0.085
   return Math.round(price / step) * step;
 }
 
@@ -418,7 +419,7 @@ export const TradeModal = () => {
     const ep = parseFloat(entryPrice);
     if (!isFinite(ep) || ep <= 0) return '0.00';
     const rounded = roundForPlaceholder(ep);
-    return `e.g. ${parseFloat(rounded.toFixed(2)).toString()}`;
+    return `e.g. ${parseFloat(rounded.toFixed(3)).toString()}`;
   }, [entryPrice]);
 
   // For editing, use the original trade's metrics for auto-calculated gross PnL
