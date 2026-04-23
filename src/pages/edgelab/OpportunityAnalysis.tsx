@@ -90,6 +90,7 @@ interface ManualExitTabProps {
   minTradeCount: number;
   setMinTradeCount: (v: number) => void;
   labels: ModeLabels;
+  partialDataCount: number;
 }
 
 const ManualExitTab = ({
@@ -99,6 +100,7 @@ const ManualExitTab = ({
   minTradeCount,
   setMinTradeCount,
   labels,
+  partialDataCount,
 }: ManualExitTabProps) => {
   const { filteredTrades } = useFilteredTrades();
 
