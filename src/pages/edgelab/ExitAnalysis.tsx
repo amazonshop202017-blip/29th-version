@@ -54,8 +54,8 @@ const ExitAnalysis = () => {
           metrics.closeDate &&
           trade.stopLoss !== undefined &&
           trade.takeProfit !== undefined &&
-          trade.farthestPriceInProfit !== undefined &&
-          trade.farthestPriceInLoss !== undefined &&
+          trade.preMfePrice !== undefined && trade.preMfePrice !== null &&
+          trade.preMaePrice !== undefined && trade.preMaePrice !== null &&
           metrics.avgEntryPrice > 0 &&
           metrics.avgExitPrice > 0
         );
@@ -74,8 +74,8 @@ const ExitAnalysis = () => {
       const exitPrice = metrics.avgExitPrice;
       const stopLoss = trade.stopLoss!;
       const takeProfit = trade.takeProfit!;
-      const farthestPriceInProfit = trade.farthestPriceInProfit!;
-      const farthestPriceInLoss = trade.farthestPriceInLoss!;
+      const farthestPriceInProfit = trade.preMfePrice!;
+      const farthestPriceInLoss = trade.preMaePrice!;
       const side = trade.side;
 
       // Calculate Risk & Reward Ranges (Normalization)
