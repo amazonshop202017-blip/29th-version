@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
-import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint } from '@/lib/exitAnalyzerCalc';
+import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint, AnalysisMode } from '@/lib/exitAnalyzerCalc';
 import { Info, X, Zap, PenLine, Lightbulb } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -33,6 +33,39 @@ const InputField = ({ label, value, onChange, min }: {
   </div>
 );
 
+// ─── Mode-aware labels (single source of truth) ───
+interface ModeLabels {
+  scatterTitle: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
+  emptyState: string;
+  emptyStateHint: string;
+  methodologyHeadline: string;
+}
+
+function getModeLabels(mode: AnalysisMode): ModeLabels {
+  if (mode === 'opportunity') {
+    return {
+      scatterTitle: 'Post-Exit Max / Min Scatter',
+      xAxisLabel: 'Post Min (ticks)',
+      yAxisLabel: 'Post Max (ticks)',
+      emptyState: 'No trades with post-exit Max/Min data available.',
+      emptyStateHint: 'Add post-exit highest/lowest price values to your trades to use Opportunity mode.',
+      methodologyHeadline:
+        'Based on full price movement after exit (Post Max/Min). Results may appear more optimistic — this is expected.',
+    };
+  }
+  return {
+    scatterTitle: 'MFE / MAE Scatter',
+    xAxisLabel: 'MAE (ticks)',
+    yAxisLabel: 'MFE (ticks)',
+    emptyState: 'No trades with MFE/MAE data available.',
+    emptyStateHint: 'Add MFE/MAE tick values to your trades to use the Exit Analyzer.',
+    methodologyHeadline:
+      'Based on price movement before exit (MFE/MAE).',
+  };
+}
+
 // ─── Color helper ───
 function cellColor(expectancy: number): string {
   if (expectancy > 0.5) return 'hsl(142 76% 35%)';
@@ -50,7 +83,23 @@ function cellTextColor(expectancy: number): string {
 }
 
 // ─── Manual Exit Tab ───
-const ManualExitTab = () => {
+interface ManualExitTabProps {
+  analysisMode: AnalysisMode;
+  treatMissingAsZero: boolean;
+  setTreatMissingAsZero: (v: boolean) => void;
+  minTradeCount: number;
+  setMinTradeCount: (v: number) => void;
+  labels: ModeLabels;
+}
+
+const ManualExitTab = ({
+  analysisMode,
+  treatMissingAsZero,
+  setTreatMissingAsZero,
+  minTradeCount,
+  setMinTradeCount,
+  labels,
+}: ManualExitTabProps) => {
   const { filteredTrades } = useFilteredTrades();
 
   // Inputs
@@ -63,8 +112,6 @@ const ManualExitTab = () => {
   const [tpRangeMax, setTpRangeMax] = useState(80);
   const [tpStep, setTpStep] = useState(1);
   const [optimiseMetric, setOptimiseMetric] = useState<'winrate' | 'expectancy'>('expectancy');
-  const [treatMissingAsZero, setTreatMissingAsZero] = useState(true);
-  const [minTradeCount, setMinTradeCount] = useState(1);
 
   // Quick calculator
   const [quickSL, setQuickSL] = useState(10);
@@ -75,8 +122,8 @@ const ManualExitTab = () => {
   const [selectedTP, setSelectedTP] = useState<number | null>(null);
 
   const exitTrades = useMemo(
-    () => prepareExitTrades(filteredTrades, treatMissingAsZero),
-    [filteredTrades, treatMissingAsZero]
+    () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
+    [filteredTrades, treatMissingAsZero, analysisMode]
   );
 
   const slSweep = useMemo(
@@ -155,8 +202,8 @@ const ManualExitTab = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px]"
       >
-        <p className="text-muted-foreground text-lg">No trades with MFE/MAE data available.</p>
-        <p className="text-muted-foreground text-sm mt-1">Add Farthest Price in Profit/Loss values to your trades to use the Exit Analyzer.</p>
+        <p className="text-muted-foreground text-lg">{labels.emptyState}</p>
+        <p className="text-muted-foreground text-sm mt-1">{labels.emptyStateHint}</p>
       </motion.div>
     );
   }
@@ -365,6 +412,7 @@ const OpportunityAnalysis = () => {
   const [slStep, setSlStep] = useState(5);
   const [tpStep, setTpStep] = useState(5);
   const [activeTab, setActiveTab] = useState('auto');
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('execution');
   const [treatMissingAsZero, setTreatMissingAsZero] = useState(true);
   const [minTradeCount, setMinTradeCount] = useState(1);
   const [coloringMode, setColoringMode] = useState<'expectancy' | 'winrate'>('expectancy');
@@ -378,10 +426,13 @@ const OpportunityAnalysis = () => {
   const [scatterTP, setScatterTP] = useState<number>(0);
   const [scatterSL, setScatterSL] = useState<number>(0);
 
+  // Mode-aware labels (single source for the active mode)
+  const labels = useMemo(() => getModeLabels(analysisMode), [analysisMode]);
+
   // Prepare trades
   const exitTrades = useMemo(
-    () => prepareExitTrades(filteredTrades, treatMissingAsZero),
-    [filteredTrades, treatMissingAsZero]
+    () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
+    [filteredTrades, treatMissingAsZero, analysisMode]
   );
 
   // Compute heatmap
@@ -471,6 +522,41 @@ const OpportunityAnalysis = () => {
         ))}
       </div>
 
+      {/* Analysis Mode Toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}
+        className="flex items-center gap-3"
+      >
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Analysis Mode
+        </span>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          <button
+            onClick={() => setAnalysisMode('execution')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${analysisMode === 'execution' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          >
+            Execution
+          </button>
+          <button
+            onClick={() => setAnalysisMode('opportunity')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${analysisMode === 'opportunity' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          >
+            Opportunity
+          </button>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-[260px] text-xs">
+              <strong>Execution</strong> = movement before exit (MFE/MAE).<br />
+              <strong>Opportunity</strong> = full movement after exit (Post Max/Min).
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </motion.div>
+
       {/* Methodology note */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
@@ -478,11 +564,10 @@ const OpportunityAnalysis = () => {
       >
         <div className="space-y-1.5 flex-1 min-w-0">
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--chart-1))' }}>
-            Results are based on the price ranges you recorded (MFE/MAE).
-            This analysis assumes price could reach both profit and loss levels, without considering the order of movement.
+            {labels.methodologyHeadline}
           </p>
           <p className="text-xs text-muted-foreground">
-            For best accuracy, use a consistent method — either record MFE/MAE only until exit, or record the full price range after entry.
+            This analysis is based on price ranges and does not consider the order of movement.
           </p>
         </div>
         <HoverCard openDelay={100} closeDelay={100}>
@@ -606,8 +691,8 @@ const OpportunityAnalysis = () => {
       {/* Empty state */}
       {exitTrades.length === 0 && (
         <div className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-muted-foreground text-lg">No trades with MFE/MAE data available.</p>
-          <p className="text-muted-foreground text-sm mt-1">Add MFE/MAE tick values to your trades to use the Exit Analyzer.</p>
+          <p className="text-muted-foreground text-lg">{labels.emptyState}</p>
+          <p className="text-muted-foreground text-sm mt-1">{labels.emptyStateHint}</p>
         </div>
       )}
 
@@ -820,7 +905,7 @@ const OpportunityAnalysis = () => {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="glass-card rounded-2xl p-5"
         >
-          <h2 className="text-lg font-semibold mb-3">MFE / MAE Scatter</h2>
+          <h2 className="text-lg font-semibold mb-3">{labels.scatterTitle}</h2>
           <div className="flex items-end gap-4 mb-4">
             <InputField label="Profit (TP) Ticks" value={scatterTP} onChange={setScatterTP} min={0} />
             <InputField label="Loss (SL) Ticks" value={scatterSL} onChange={setScatterSL} min={0} />
@@ -835,14 +920,14 @@ const OpportunityAnalysis = () => {
             <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 47% 18%)" />
               <XAxis
-                type="number" dataKey="x" name="MAE (ticks)"
-                label={{ value: 'MAE (ticks)', position: 'bottom', offset: 0, style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
+                type="number" dataKey="x" name={labels.xAxisLabel}
+                label={{ value: labels.xAxisLabel, position: 'bottom', offset: 0, style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
                 tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }}
                 stroke="hsl(222 47% 18%)"
               />
               <YAxis
-                type="number" dataKey="y" name="MFE (ticks)"
-                label={{ value: 'MFE (ticks)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
+                type="number" dataKey="y" name={labels.yAxisLabel}
+                label={{ value: labels.yAxisLabel, angle: -90, position: 'insideLeft', style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
                 tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }}
                 stroke="hsl(222 47% 18%)"
               />
@@ -887,7 +972,14 @@ const OpportunityAnalysis = () => {
       )}
       </>
       ) : (
-      <ManualExitTab />
+      <ManualExitTab
+        analysisMode={analysisMode}
+        treatMissingAsZero={treatMissingAsZero}
+        setTreatMissingAsZero={setTreatMissingAsZero}
+        minTradeCount={minTradeCount}
+        setMinTradeCount={setMinTradeCount}
+        labels={labels}
+      />
 
       )}
     </div>
