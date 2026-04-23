@@ -331,27 +331,43 @@ const ExitAnalysis = () => {
             </Select>
 
             {/* Fill missing as 0 toggle */}
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={treatMissingAsZero}
-                onChange={(e) => setTreatMissingAsZero(e.target.checked)}
-                className="h-4 w-4 rounded border-border accent-primary"
-              />
-              <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+            <div className="flex flex-col items-center gap-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={treatMissingAsZero}
+                  onChange={(e) => setTreatMissingAsZero(e.target.checked)}
+                  className="h-4 w-4 rounded border-border accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-[260px] text-xs">
+                        If a trade has one value (e.g. Highest Price) but the other is empty (e.g. Lowest Price), the missing one is treated as no movement in that direction. Trades with both values missing are always excluded.
+                      </p>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </label>
               <TooltipProvider>
                 <UITooltip>
                   <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] font-mono text-muted-foreground cursor-help">
+                      {partialDataCount}
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-[260px] text-xs">
-                      If a trade has one value (e.g. Highest Price) but the other is empty (e.g. Lowest Price), the missing one is treated as no movement in that direction. Trades with both values missing are always excluded.
+                    <p className="max-w-[240px] text-xs">
+                      Trades with one value missing — added to the analysis only when this toggle is on.
                     </p>
                   </TooltipContent>
                 </UITooltip>
               </TooltipProvider>
-            </label>
+            </div>
 
             {/* Legend */}
             <div className="flex items-center gap-4">
