@@ -338,14 +338,14 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
                     </TableCell>
                   )}
-                  {isColumnVisible('postMaxPrice') && (
+                  {isColumnVisible('postMaxTickPip') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.postMaxPrice === 'number' ? trade.postMaxPrice : ''}
+                      {typeof trade.postMaxTickPip === 'number' ? trade.postMaxTickPip : ''}
                     </TableCell>
                   )}
-                  {isColumnVisible('postMinPrice') && (
+                  {isColumnVisible('postMinTickPip') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.postMinPrice === 'number' ? trade.postMinPrice : ''}
+                      {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
                     </TableCell>
                   )}
                 </TableRow>
