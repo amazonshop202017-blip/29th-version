@@ -631,7 +631,29 @@ export const TradeModal = () => {
         tradeData.preMaeTickPip = null;
       }
 
-      console.log('[MFE/MAE Debug] Saving preMfeTickPip:', tradeData.preMfeTickPip, 'preMaeTickPip:', tradeData.preMaeTickPip);
+      // POST MAX — favorable after exit
+      const pMax = afterExitHighest !== '' ? parseFloat(afterExitHighest) : NaN;
+      if (canCompute && !isNaN(pMax)) {
+        const ticks = direction === 'LONG'
+          ? (pMax - ep) / tickSize
+          : (ep - pMax) / tickSize;
+        tradeData.postMaxTickPip = Math.max(0, Math.floor(ticks));
+      } else {
+        tradeData.postMaxTickPip = null;
+      }
+
+      // POST MIN — adverse after exit
+      const pMin = afterExitLowest !== '' ? parseFloat(afterExitLowest) : NaN;
+      if (canCompute && !isNaN(pMin)) {
+        const ticks = direction === 'LONG'
+          ? (ep - pMin) / tickSize
+          : (pMin - ep) / tickSize;
+        tradeData.postMinTickPip = Math.max(0, Math.floor(ticks));
+      } else {
+        tradeData.postMinTickPip = null;
+      }
+
+      console.log('[MFE/MAE Debug] Saving preMfeTickPip:', tradeData.preMfeTickPip, 'preMaeTickPip:', tradeData.preMaeTickPip, 'postMaxTickPip:', tradeData.postMaxTickPip, 'postMinTickPip:', tradeData.postMinTickPip);
     }
 
     if (editingTrade) {
