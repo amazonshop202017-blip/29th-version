@@ -1,68 +1,102 @@
-## Add post-exit tick/pip calculations (`postMaxTickPip`, `postMinTickPip`)
 
-Mirror the existing `preMfeTickPip` / `preMaeTickPip` logic for the new post-exit price fields. Data-only — no UI changes.
 
-### 1. `src/types/trade.ts`
+## Add Execution vs Opportunity Mode to Opportunity Analysis
 
-Add two optional fields to the `Trade` interface, next to the existing `postMaxPrice` / `postMinPrice`:
+Introduce a global `analysisMode` toggle (`execution` | `opportunity`) that controls whether the analyzer reads pre-exit MFE/MAE ticks or post-exit Max/Min ticks. Logic centralized in `prepareExitTrades()`; UI components stay mode-agnostic.
 
-```ts
-postMaxTickPip?: number | null;
-postMinTickPip?: number | null;
-```
+### 1. Data layer — `src/lib/exitAnalyzerCalc.ts`
 
-### 2. `src/components/trades/TradeModal.tsx`
-
-**a.** In the initial `tradeData` object (around lines 595–600), seed both fields to `null` (or carry over from `editingTrade`), matching the pattern used for `preMfeTickPip` / `preMaeTickPip`:
+Extend `prepareExitTrades` signature:
 
 ```ts
-postMaxTickPip: editingTrade ? editingTrade.postMaxTickPip ?? null : null,
-postMinTickPip: editingTrade ? editingTrade.postMinTickPip ?? null : null,
+export type AnalysisMode = 'execution' | 'opportunity';
+
+export function prepareExitTrades(
+  trades: Trade[],
+  treatMissingAsZero: boolean,
+  mode: AnalysisMode = 'execution'
+): ExitAnalyzerTrade[]
 ```
 
-**b.** Inside the existing auto-calculation block (lines 603–633), after the MAE branch, append two analogous branches that reuse the already-computed `tickSize`, `ep`, `direction`, and `canCompute`:
+Inside the loop, pick source fields by mode:
 
+- `execution` → `mfe = trade.preMfeTickPip`, `mae = trade.preMaeTickPip`
+- `opportunity` → `mfe = trade.postMaxTickPip ?? null`, `mae = trade.postMinTickPip ?? null`
+
+Apply identical missing-data rules to both modes:
+- both missing → skip
+- both present → include
+- one missing + `treatMissingAsZero` → fill 0
+- one missing + flag off → skip
+
+`realizedR` calculation is unchanged (always derived from actual trade outcome via `savedRMultiple` or `netPnl / tradeRisk`). It does NOT depend on mode.
+
+No changes to `simulateExit`, `computeHeatmap`, `computeSLSweep`, `computeTPSweep` — they consume the prepared dataset only.
+
+### 2. UI — `src/pages/edgelab/OpportunityAnalysis.tsx`
+
+**a. Add state at the parent component level:**
 ```ts
-const pMax = afterExitHighest !== '' ? parseFloat(afterExitHighest) : NaN;
-const pMin = afterExitLowest  !== '' ? parseFloat(afterExitLowest)  : NaN;
+const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('execution');
+```
+This state lives in the parent so it persists across Auto ↔ Manual tab switches.
 
-// POST MAX — favorable after exit
-if (canCompute && !isNaN(pMax)) {
-  const ticks = direction === 'LONG'
-    ? (pMax - ep) / tickSize
-    : (ep - pMax) / tickSize;
-  tradeData.postMaxTickPip = Math.max(0, Math.floor(ticks));
-} else {
-  tradeData.postMaxTickPip = null;
-}
+**b. Lift `treatMissingAsZero` & `minTradeCount` to parent** (currently duplicated in `ManualExitTab`) so both tabs share the prepared dataset and toggle. Pass `analysisMode`, `treatMissingAsZero`, `minTradeCount` (and their setters) into `ManualExitTab` via props.
 
-// POST MIN — adverse after exit
-if (canCompute && !isNaN(pMin)) {
-  const ticks = direction === 'LONG'
-    ? (ep - pMin) / tickSize
-    : (pMin - ep) / tickSize;
-  tradeData.postMinTickPip = Math.max(0, Math.floor(ticks));
-} else {
-  tradeData.postMinTickPip = null;
-}
+**c. New mode toggle row** rendered just below the Auto/Manual sub-tabs (above the methodology card):
+
+```
+Analysis Mode:  [ Execution ]  [ Opportunity ]
+                  (default)
+```
+- Pill-style segmented control matching the existing "Coloring" / "Optimise" toggles.
+- Small info tooltip: "Execution = movement before exit · Opportunity = full movement after exit."
+
+**d. Update memoization** in both Auto view and `ManualExitTab`:
+```ts
+const exitTrades = useMemo(
+  () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
+  [filteredTrades, treatMissingAsZero, analysisMode]
+);
 ```
 
-### Behavior guarantees
+**e. Mode-aware labels** (single source: derive a `labels` object from `analysisMode`):
+- Scatter chart title:
+  - execution → "MFE / MAE Scatter"
+  - opportunity → "Post-Exit Max / Min Scatter"
+- Scatter axis labels:
+  - execution → `MAE (ticks)` / `MFE (ticks)`
+  - opportunity → `Post Min (ticks)` / `Post Max (ticks)`
+- Scatter "TP hit" / "SL hit" counters keep working (they read `mfe`/`mae` from the prepared data, which now point to the correct source).
+- Empty state copy:
+  - execution → "No trades with MFE/MAE data available."
+  - opportunity → "No trades with post-exit Max/Min data available."
 
-- `postMaxPrice` null/empty → `postMaxTickPip = null` (same for min).
-- Invalid `entryPrice` or `tickSize <= 0` → both fields `null` (`canCompute` gate).
-- Negative results clamped to `0` via `Math.max(0, Math.floor(...))`.
-- Direction-aware exactly like pre-exit logic.
+**f. Updated methodology card** (top of page):
+- Headline (mode-aware):
+  - execution → "Based on price movement **before exit** (MFE/MAE)."
+  - opportunity → "Based on full price movement **after exit** (Post Max/Min). Results may appear more optimistic — this is expected."
+- Persistent sub-line under both modes:
+  *"This analysis is based on price ranges and does not consider the order of movement."*
 
-### Out of scope
+### 3. Behavior guarantees
 
-- No UI surfaces (table columns, inputs, settings) for the new tick/pip values.
-- No changes to `calculateTradeMetrics`.
-- No MT5 import auto-calc — imported trades keep these as `null`.
-- No migration needed; missing fields read as `undefined` and are recomputed/written on next save.
+- Default mode = `execution` → existing heatmap, sweeps, scatter, quick calculator outputs are byte-identical to current behavior.
+- Mode persists when switching Auto ↔ Manual.
+- No fallback between datasets: opportunity mode never reads pre-exit fields; execution mode never reads post-exit fields.
+- `realizedR` is always the real outcome — identical across modes.
+- All downstream computations (heatmap, sweeps, quick calc, scatter) consume only the output of `prepareExitTrades` — no mode branching in chart/table code.
+- Memoization keys include `analysisMode`, preventing stale recomputes.
 
-## RECOMPUTATION RULE
+### 4. Out of scope
 
-- If entryPrice, direction, or tickSize changes:  
-→ postMaxTickPip and postMinTickPip must be recomputed on next save
-- Never persist stale values if inputs change
+- No new fields on `Trade`.
+- No changes to Exit Analysis page.
+- No MT5 import auto-calc.
+- No persistence of selected mode across page reloads (session-only state).
+
+### Files touched
+
+- `src/lib/exitAnalyzerCalc.ts` — add `mode` param + `AnalysisMode` type.
+- `src/pages/edgelab/OpportunityAnalysis.tsx` — add toggle, lift shared state, mode-aware labels, methodology copy, propagate `mode` into `prepareExitTrades` calls.
+
