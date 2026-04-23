@@ -68,7 +68,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
         <button
           type="button"
           onClick={() => { setMonthOpen(!monthOpen); setYearOpen(false); }}
-          className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
+          className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent hover:text-accent-foreground rounded px-1.5 py-0.5 transition-colors border-b border-border"
         >
           {MONTH_SHORT[month.getMonth()]}
           <ChevronDown className="h-3 w-3 opacity-60" />
@@ -80,7 +80,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
                 key={i}
                 type="button"
                 onClick={() => { const d = new Date(month); d.setMonth(i); onChange(d); setMonthOpen(false); }}
-                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", i === month.getMonth() && "bg-accent font-medium")}
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors", i === month.getMonth() && "bg-accent font-medium")}
               >
                 {name}
               </button>
@@ -92,7 +92,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
         <button
           type="button"
           onClick={() => { setYearOpen(!yearOpen); setMonthOpen(false); }}
-          className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
+          className="flex items-center gap-0.5 text-sm md:text-base font-semibold hover:bg-accent hover:text-accent-foreground rounded px-1.5 py-0.5 transition-colors border-b border-border"
         >
           {month.getFullYear()}
           <ChevronDown className="h-3 w-3 opacity-60" />
@@ -104,7 +104,7 @@ function MonthYearDropdowns({ month, onChange }: { month: Date; onChange: (d: Da
                 key={y}
                 type="button"
                 onClick={() => { const d = new Date(month); d.setFullYear(y); onChange(d); setYearOpen(false); }}
-                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", y === month.getFullYear() && "bg-accent font-medium")}
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors", y === month.getFullYear() && "bg-accent font-medium")}
               >
                 {y}
               </button>

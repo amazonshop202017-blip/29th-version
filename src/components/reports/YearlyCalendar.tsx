@@ -45,7 +45,7 @@ function YearDropdown({ selectedYear, onChange }: { selectedYear: number; onChan
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-lg font-semibold text-foreground hover:bg-accent rounded px-2 py-0.5 transition-colors border-b border-border"
+        className="flex items-center gap-1 text-lg font-semibold text-foreground hover:bg-accent hover:text-accent-foreground rounded px-2 py-0.5 transition-colors border-b border-border"
       >
         {selectedYear}
         <ChevronDown className="h-3.5 w-3.5 opacity-60" />
@@ -57,7 +57,7 @@ function YearDropdown({ selectedYear, onChange }: { selectedYear: number; onChan
               key={y}
               type="button"
               onClick={() => { onChange(y); setOpen(false); }}
-              className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", y === selectedYear && "bg-accent font-medium")}
+              className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors", y === selectedYear && "bg-accent font-medium")}
             >
               {y}
             </button>

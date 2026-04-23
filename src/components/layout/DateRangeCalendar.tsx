@@ -86,7 +86,7 @@ function SingleMonthCalendar({ month, onMonthChange, selected, onSelect }: Singl
             <button
               type="button"
               onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-              className="flex items-center gap-0.5 text-sm font-medium hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
+              className="flex items-center gap-0.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded px-1.5 py-0.5 transition-colors border-b border-border"
             >
               {MONTH_SHORT[month.getMonth()]}
               <ChevronDown className="h-3 w-3 opacity-60" />
@@ -99,7 +99,7 @@ function SingleMonthCalendar({ month, onMonthChange, selected, onSelect }: Singl
                     type="button"
                     onClick={() => handleMonthSelect(i)}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                      "w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
                       i === month.getMonth() && "bg-accent font-medium"
                     )}
                   >
@@ -115,7 +115,7 @@ function SingleMonthCalendar({ month, onMonthChange, selected, onSelect }: Singl
             <button
               type="button"
               onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-              className="flex items-center gap-0.5 text-sm font-medium hover:bg-accent rounded px-1.5 py-0.5 transition-colors border-b border-border"
+              className="flex items-center gap-0.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded px-1.5 py-0.5 transition-colors border-b border-border"
             >
               {month.getFullYear()}
               <ChevronDown className="h-3 w-3 opacity-60" />
@@ -128,7 +128,7 @@ function SingleMonthCalendar({ month, onMonthChange, selected, onSelect }: Singl
                     type="button"
                     onClick={() => handleYearSelect(y)}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                      "w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
                       y === month.getFullYear() && "bg-accent font-medium"
                     )}
                   >

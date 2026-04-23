@@ -260,7 +260,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               onClick={handleFileBrowseClick}
               className={cn(
                 "flex items-center justify-between p-3 border border-input rounded-md cursor-pointer transition-colors",
-                "hover:bg-accent hover:border-accent",
+                "hover:bg-accent hover:text-accent-foreground hover:border-accent",
                 "bg-background"
               )}
             >

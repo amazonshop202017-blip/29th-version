@@ -614,7 +614,7 @@ export const GlobalHeader = () => {
                         availableSymbols.map((sym) => (
                           <div 
                             key={sym} 
-                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                             onClick={() => handleSymbolToggle(sym)}
                           >
                             <Checkbox checked={selectedSymbols.includes(sym)} />
@@ -661,7 +661,7 @@ export const GlobalHeader = () => {
                         strategies.map((strategy) => (
                           <div 
                             key={strategy.id} 
-                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                             onClick={() => handleSetupToggle(strategy.id)}
                           >
                             <Checkbox checked={selectedSetups.includes(strategy.id)} />
@@ -723,7 +723,7 @@ export const GlobalHeader = () => {
                           {availableChecklistItems.map((item) => (
                             <div 
                               key={item} 
-                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                               onClick={() => handleChecklistItemToggle(item)}
                             >
                               <Checkbox checked={selectedChecklistItems.includes(item)} />
@@ -768,7 +768,7 @@ export const GlobalHeader = () => {
                       {OUTCOME_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleOutcomeToggle(option.value)}
                         >
                           <Checkbox checked={selectedOutcomes.includes(option.value)} />
@@ -811,7 +811,7 @@ export const GlobalHeader = () => {
                       {DIRECTION_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleDirectionToggle(option.value)}
                         >
                           <Checkbox checked={selectedDirections.includes(option.value)} />
@@ -876,7 +876,7 @@ export const GlobalHeader = () => {
                       <div 
                         className={cn(
                           "px-3 py-2 rounded-md text-center text-sm cursor-pointer transition-colors",
-                          selectedYear === null ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                          selectedYear === null ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground"
                         )}
                         onClick={() => handleYearSelect(null)}
                       >
@@ -893,7 +893,7 @@ export const GlobalHeader = () => {
                                 key={year}
                                 className={cn(
                                   "px-3 py-2 rounded-md text-center text-sm cursor-pointer transition-colors",
-                                  selectedYear === year ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                                  selectedYear === year ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground"
                                 )}
                                 onClick={() => handleYearSelect(year)}
                               >
@@ -907,7 +907,7 @@ export const GlobalHeader = () => {
                               key={year}
                               className={cn(
                                 "px-3 py-2 rounded-md text-center text-sm cursor-pointer transition-colors",
-                                selectedYear === year ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                                selectedYear === year ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground"
                               )}
                               onClick={() => handleYearSelect(year)}
                             >
@@ -980,7 +980,7 @@ export const GlobalHeader = () => {
                       {DAY_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleDayToggle(option.value)}
                         >
                           <Checkbox checked={selectedDays.includes(option.value)} />
@@ -1023,7 +1023,7 @@ export const GlobalHeader = () => {
                       {HOUR_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleHourToggle(option.value)}
                         >
                           <Checkbox checked={selectedHours.includes(option.value)} />
@@ -1095,7 +1095,7 @@ export const GlobalHeader = () => {
                       {RETURN_PERCENT_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleReturnRangeToggle(option.value)}
                         >
                           <Checkbox checked={selectedReturnRanges.includes(option.value)} />
@@ -1138,7 +1138,7 @@ export const GlobalHeader = () => {
                       {R_MULTIPLE_OPTIONS.map((option) => (
                         <div 
                           key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleRMultipleRangeToggle(option.value)}
                         >
                           <Checkbox checked={selectedRMultipleRanges.includes(option.value)} />
@@ -1252,7 +1252,7 @@ export const GlobalHeader = () => {
                     setDatePickerOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors",
+                    "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
                     datePreset === 'all' && "bg-accent font-medium"
                   )}
                 >
@@ -1266,7 +1266,7 @@ export const GlobalHeader = () => {
                       setDatePickerOpen(false);
                     }}
                     className={cn(
-                      "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors",
+                      "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
                       datePreset === preset.value && "bg-accent font-medium"
                     )}
                   >

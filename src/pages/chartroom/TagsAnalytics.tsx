@@ -363,7 +363,7 @@ const PerformanceRatio = () => {
                       "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
                       selectionType === 'tradeComments'
                         ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -379,7 +379,7 @@ const PerformanceRatio = () => {
                       "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
                       selectionType === 'tags'
                         ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                        : "hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <Tag className="w-4 h-4" />
@@ -408,7 +408,7 @@ const PerformanceRatio = () => {
                             "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-left transition-colors",
                             selectedCommentCategory === item.key
                               ? "bg-primary/10 text-primary font-medium border border-primary/20"
-                              : "hover:bg-accent text-foreground border border-transparent"
+                              : "hover:bg-accent hover:text-accent-foreground text-foreground border border-transparent"
                           )}
                         >
                           {selectedCommentCategory === item.key && (
