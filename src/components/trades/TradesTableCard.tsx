@@ -148,8 +148,8 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('netPnl') && <TableHead className="px-2">Net P&L</TableHead>}
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
               {isColumnVisible('plannedRRR') && <TableHead className="px-2">Planned RR</TableHead>}
-              {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">Farthest Profit (Ticks)</TableHead>}
-              {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">Farthest Loss (Ticks)</TableHead>}
+              {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
+              {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">MAE (pre-exit, ticks)</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

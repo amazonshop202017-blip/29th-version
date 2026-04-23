@@ -61,8 +61,8 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'netPnl', label: 'Net P&L', group: 'performance', visible: true },
   { id: 'realizedRMultiple', label: 'Realized R Multiple', group: 'performance', visible: true },
   { id: 'plannedRRR', label: 'Planned RR / R-Multiple', group: 'performance', visible: false },
-  { id: 'farthestProfitTicks', label: 'Farthest Profit in Ticks', group: 'performance', visible: false },
-  { id: 'farthestLossTicks', label: 'Farthest Loss in Ticks', group: 'performance', visible: false },
+  { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'performance', visible: false },
+  { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'performance', visible: false },
 ];
 
 const STORAGE_KEY = 'trades-column-visibility';
