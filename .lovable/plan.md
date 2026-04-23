@@ -1,57 +1,60 @@
-## Rename: Advanced Data field variables (MFE/MAE alignment)
-
-Rename internal variable/property names to match the new MFE/MAE labels. Pure backend/code rename — no UI text changes.
-
-### Rename map
 
 
-| Old name                | New name        |
-| ----------------------- | --------------- |
-| `farthestPriceInProfit` | `preMFEprice`   |
-| `farthestPriceInLoss`   | `preMAEprice`   |
-| `mfeTickPip`            | `PREmfeTickPip` |
-| `maeTickPip`            | `PREmaeTickPip` |
+## Update MFE/MAE placeholders to suggest a rounded entry price
 
+In the Trade Modal → Advanced → Price Movement section, replace the static `"0.00"` placeholders on the MFE and MAE inputs with a dynamic hint derived from the currently entered Entry Price (even before the trade is saved).
 
-### Files to update (8)
+### Rounding rule
 
-1. `**src/types/trade.ts**` — rename the 4 fields on `Trade` interface; update the `mfeTickPip`/`maeTickPip` references in `calculateTradeMetrics`-adjacent comments.
-2. `**src/components/trades/TradeModal.tsx**` — rename local state setters (`setFarthestPriceInProfit` → `setPreMFEprice`, etc.), all reads/writes from `editingTrade`, and the tick computation block writing `tradeData.PREmfeTickPip` / `PREmaeTickPip`.
-3. `**src/components/trades/TradesTableCard.tsx**` — update any column/sort references.
-4. `**src/hooks/useTrades.ts**` — update the migration block that normalizes `mfeTickPip`/`maeTickPip` undefined → null. Add a **localStorage migration** that copies old field names → new field names on load (so existing user data isn't lost).
-5. `**src/lib/exitAnalyzerCalc.ts**` — rename `trade.mfeTickPip` / `trade.maeTickPip` reads.
-6. `**src/lib/mt5Import.ts**` — rename properties set during import.
-7. `**src/pages/chartroom/TradeManagement.tsx**` — rename `trade.farthestPriceInProfit` reads in the potential-R calc.
-8. `**src/pages/edgelab/ExitAnalysis.tsx**` — rename references.
+Mirror the examples the user gave:
 
-### Data migration (critical)
+| Entry price | Suggested round number |
+|---|---|
+| `5664` | `5660` (nearest 10) |
+| `64.6` | `65` (nearest 1) |
+| `1.2345` | `1.23` (nearest 0.01) |
+| `0.0842` | `0.08` (nearest 0.01) |
 
-Existing users have trades in `localStorage` under `trading-journal-trades` using old field names. In `useTrades.ts` migration loop, add:
+Logic — pick the rounding step from the magnitude of the entry price:
 
 ```ts
-// Rename: farthestPriceInProfit → preMFEprice, etc.
-if ('farthestPriceInProfit' in updated) {
-  updated = { ...updated, preMFEprice: updated.farthestPriceInProfit };
-  delete updated.farthestPriceInProfit;
+function roundForPlaceholder(price: number): number {
+  const abs = Math.abs(price);
+  let step: number;
+  if (abs >= 1000) step = 10;       // 5664 → 5660
+  else if (abs >= 100) step = 1;    // 234.7 → 235
+  else if (abs >= 10) step = 1;     // 64.6 → 65
+  else if (abs >= 1) step = 0.1;    // 5.43 → 5.4
+  else step = 0.01;                 // 0.084 → 0.08
+  return Math.round(price / step) * step;
 }
-// same for farthestPriceInLoss, mfeTickPip, maeTickPip
 ```
 
-This runs once on next load and overwrites localStorage with the new shape.
+### Placeholder behavior
+
+- When `entryPrice` is empty or invalid → keep current placeholder `"0.00"`.
+- When `entryPrice` parses to a number → placeholder becomes `e.g. {rounded}` (e.g. `e.g. 5660`, `e.g. 65`, `e.g. 1.23`).
+- Same placeholder is shown on **both** MFE and MAE inputs (both are price levels around the entry).
+
+### File to edit (1)
+
+**`src/components/trades/TradeModal.tsx`**
+
+1. Add a `useMemo` near the other derived values (around line ~404) that computes the placeholder string from `entryPrice`:
+   ```ts
+   const mfeMaePlaceholder = useMemo(() => {
+     const ep = parseFloat(entryPrice);
+     if (!isFinite(ep) || ep <= 0) return '0.00';
+     const rounded = roundForPlaceholder(ep);
+     // Trim trailing zeros for clean display (e.g. 5.40 → 5.4, 65.00 → 65)
+     return `e.g. ${parseFloat(rounded.toFixed(2)).toString()}`;
+   }, [entryPrice]);
+   ```
+2. Define `roundForPlaceholder` as a small helper (top of file, outside component).
+3. Replace `placeholder="0.00"` on the MFE input (line 1180) and the MAE input (line 1200) with `placeholder={mfeMaePlaceholder}`.
 
 ### Out of scope
 
-- No UI label changes (already done in prior turn).
-- No database/edge function changes (project is client-side localStorage only).
-- Variable names in unrelated calc functions (`mfe`/`mae` local vars in `exitAnalyzerCalc.ts`) stay — only the `trade.*` property accesses are renamed.
+- No change to validation, parsing, persisted values, or tick/pip auto-calc — placeholder is purely visual.
+- No change to UI labels, tooltip, or any other field's placeholder.
 
-KEEP THIS IN MIND: 
-
-## NAMING CONSISTENCY
-
-- Use consistent camelCase across all fields:
-  - preMfePrice
-  - preMaePrice
-  - preMfeTickPip
-  - preMaeTickPip
-- Avoid mixed casing (e.g. PREmfeTickPip)
