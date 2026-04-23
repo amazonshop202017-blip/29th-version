@@ -50,7 +50,23 @@ function cellTextColor(expectancy: number): string {
 }
 
 // ─── Manual Exit Tab ───
-const ManualExitTab = () => {
+interface ManualExitTabProps {
+  analysisMode: AnalysisMode;
+  treatMissingAsZero: boolean;
+  setTreatMissingAsZero: (v: boolean) => void;
+  minTradeCount: number;
+  setMinTradeCount: (v: number) => void;
+  labels: ModeLabels;
+}
+
+const ManualExitTab = ({
+  analysisMode,
+  treatMissingAsZero,
+  setTreatMissingAsZero,
+  minTradeCount,
+  setMinTradeCount,
+  labels,
+}: ManualExitTabProps) => {
   const { filteredTrades } = useFilteredTrades();
 
   // Inputs
@@ -63,8 +79,6 @@ const ManualExitTab = () => {
   const [tpRangeMax, setTpRangeMax] = useState(80);
   const [tpStep, setTpStep] = useState(1);
   const [optimiseMetric, setOptimiseMetric] = useState<'winrate' | 'expectancy'>('expectancy');
-  const [treatMissingAsZero, setTreatMissingAsZero] = useState(true);
-  const [minTradeCount, setMinTradeCount] = useState(1);
 
   // Quick calculator
   const [quickSL, setQuickSL] = useState(10);
@@ -75,8 +89,8 @@ const ManualExitTab = () => {
   const [selectedTP, setSelectedTP] = useState<number | null>(null);
 
   const exitTrades = useMemo(
-    () => prepareExitTrades(filteredTrades, treatMissingAsZero),
-    [filteredTrades, treatMissingAsZero]
+    () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
+    [filteredTrades, treatMissingAsZero, analysisMode]
   );
 
   const slSweep = useMemo(
