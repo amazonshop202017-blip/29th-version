@@ -86,7 +86,7 @@ export const DisplayModeSelector = () => {
                 "flex items-start gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
                 displayMode === option.value 
                   ? "bg-accent" 
-                  : "hover:bg-accent/50"
+                  : "hover:bg-accent/50 hover:text-accent-foreground"
               )}
             >
               {/* Icon Circle */}

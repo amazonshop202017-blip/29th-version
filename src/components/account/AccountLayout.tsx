@@ -66,7 +66,7 @@ export const AccountLayout = ({ children }: AccountLayoutProps) => {
                         "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground"
-                          : "text-foreground hover:bg-accent"
+                          : "text-foreground hover:bg-accent hover:text-accent-foreground"
                       )}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
