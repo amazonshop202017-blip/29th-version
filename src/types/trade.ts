@@ -58,13 +58,13 @@ export interface Trade {
   entryComment?: string;
   tradeManagement?: string;
   exitComment?: string;
-  farthestPriceInProfit?: number | null;
-  farthestPriceInLoss?: number | null;
+  preMfePrice?: number | null;
+  preMaePrice?: number | null;
   priceReachedFirst?: 'takeProfit' | 'stopLoss';
   breakEven?: boolean;
   // Maximum Favorable/Adverse Excursion in ticks/pips (storage only, no auto-calculation)
-  mfeTickPip: number | null;
-  maeTickPip: number | null;
+  preMfeTickPip: number | null;
+  preMaeTickPip: number | null;
   // Saved Return (%) - calculated at trade creation based on account balance
   savedReturnPercent?: number;
   // Saved R-Multiple - calculated at trade creation based on trade risk
