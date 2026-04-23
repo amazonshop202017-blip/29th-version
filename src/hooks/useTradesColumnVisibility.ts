@@ -33,7 +33,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'performance',
     label: 'Performance',
-    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR', 'farthestProfitTicks', 'farthestLossTicks', 'postMaxPrice', 'postMinPrice'],
+    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR', 'farthestProfitTicks', 'farthestLossTicks', 'postMaxTickPip', 'postMinTickPip'],
   },
 ];
 
