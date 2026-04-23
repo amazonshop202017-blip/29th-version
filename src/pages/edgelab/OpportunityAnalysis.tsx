@@ -202,8 +202,8 @@ const ManualExitTab = ({
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px]"
       >
-        <p className="text-muted-foreground text-lg">No trades with MFE/MAE data available.</p>
-        <p className="text-muted-foreground text-sm mt-1">Add Farthest Price in Profit/Loss values to your trades to use the Exit Analyzer.</p>
+        <p className="text-muted-foreground text-lg">{labels.emptyState}</p>
+        <p className="text-muted-foreground text-sm mt-1">{labels.emptyStateHint}</p>
       </motion.div>
     );
   }
