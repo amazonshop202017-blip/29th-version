@@ -44,6 +44,26 @@ const ExitAnalysis = () => {
   const [displayType, setDisplayType] = useState('percentage');
   const [treatMissingAsZero, setTreatMissingAsZero] = useState(false);
 
+  // Count of trades with exactly one of MFE/MAE present (only added when toggle is on).
+  const partialDataCount = useMemo(() => {
+    let count = 0;
+    for (const trade of filteredTrades) {
+      const metrics = calculateTradeMetrics(trade);
+      if (
+        metrics.positionStatus !== 'CLOSED' ||
+        !metrics.closeDate ||
+        trade.stopLoss === undefined ||
+        trade.takeProfit === undefined ||
+        metrics.avgEntryPrice <= 0 ||
+        metrics.avgExitPrice <= 0
+      ) continue;
+      const hasMfe = trade.preMfePrice !== undefined && trade.preMfePrice !== null;
+      const hasMae = trade.preMaePrice !== undefined && trade.preMaePrice !== null;
+      if (hasMfe !== hasMae) count++;
+    }
+    return count;
+  }, [filteredTrades]);
+
   // Calculate exit analysis data for each trade
   const exitAnalysisData = useMemo(() => {
     // Sort trades by close date and filter closed trades with required data
