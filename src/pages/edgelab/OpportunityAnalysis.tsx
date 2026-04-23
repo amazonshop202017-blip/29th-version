@@ -691,8 +691,8 @@ const OpportunityAnalysis = () => {
       {/* Empty state */}
       {exitTrades.length === 0 && (
         <div className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-muted-foreground text-lg">No trades with MFE/MAE data available.</p>
-          <p className="text-muted-foreground text-sm mt-1">Add MFE/MAE tick values to your trades to use the Exit Analyzer.</p>
+          <p className="text-muted-foreground text-lg">{labels.emptyState}</p>
+          <p className="text-muted-foreground text-sm mt-1">{labels.emptyStateHint}</p>
         </div>
       )}
 
