@@ -146,6 +146,10 @@ export const TradeModal = () => {
   const [farthestPriceInLoss, setFarthestPriceInLoss] = useState<string>('');
   const [priceReachedFirst, setPriceReachedFirst] = useState<'takeProfit' | 'stopLoss' | ''>('');
   const [breakEven, setBreakEven] = useState<boolean | null>(null);
+  // After-exit (visual only — not persisted yet)
+  const [afterExitOpen, setAfterExitOpen] = useState(false);
+  const [afterExitHighest, setAfterExitHighest] = useState<string>('');
+  const [afterExitLowest, setAfterExitLowest] = useState<string>('');
   
   // Screenshots state
   const [screenshots, setScreenshots] = useState<TradeScreenshot[]>([]);
@@ -1231,6 +1235,80 @@ export const TradeModal = () => {
                       <p className="text-[10px] text-muted-foreground italic">Available after trade is fully closed</p>
                     )}
                   </div>
+                </div>
+
+                {/* After exit (Optional) — visual only, values not persisted */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAfterExitOpen((v) => !v)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "w-3.5 h-3.5 transition-transform",
+                        afterExitOpen ? "rotate-0" : "-rotate-90"
+                      )}
+                    />
+                    <span>After exit (Optional)</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info
+                          className="w-3.5 h-3.5 text-muted-foreground cursor-help"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <p className="font-semibold">Highest Price</p>
+                            <p className="text-muted-foreground">Highest price reached after exit</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Lowest Price</p>
+                            <p className="text-muted-foreground">Lowest price reached after exit</p>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </button>
+
+                  {afterExitOpen && (
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Highest Price</Label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={mfeMaePlaceholder}
+                          value={afterExitHighest}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                              setAfterExitHighest(val);
+                            }
+                          }}
+                          className="h-10 bg-input border-border"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Lowest Price</Label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={mfeMaePlaceholder}
+                          value={afterExitLowest}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                              setAfterExitLowest(val);
+                            }
+                          }}
+                          className="h-10 bg-input border-border"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
