@@ -597,6 +597,8 @@ export const TradeModal = () => {
         : (getContractSizeForAccountSymbol(selectedAccountId, symbol.trim())),
       preMfeTickPip: editingTrade ? editingTrade.preMfeTickPip ?? null : null,
       preMaeTickPip: editingTrade ? editingTrade.preMaeTickPip ?? null : null,
+      postMaxTickPip: editingTrade ? editingTrade.postMaxTickPip ?? null : null,
+      postMinTickPip: editingTrade ? editingTrade.postMinTickPip ?? null : null,
       screenshots: screenshots.length > 0 ? screenshots : undefined,
     };
 
