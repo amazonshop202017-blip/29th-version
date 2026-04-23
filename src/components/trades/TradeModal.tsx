@@ -1148,10 +1148,10 @@ export const TradeModal = () => {
 
               {/* Advanced Price Data */}
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Advanced Price Data</h4>
+                <h4 className="text-sm font-medium text-foreground">Price Movement</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className={`space-y-1.5 ${openQuantity > 0 ? 'opacity-60' : ''}`}>
-                    <Label className="text-xs text-muted-foreground">Farthest Price in Profit</Label>
+                    <Label className="text-xs text-muted-foreground">MFE</Label>
                     <Input
                       type="text"
                       inputMode="decimal"
@@ -1171,7 +1171,7 @@ export const TradeModal = () => {
                     )}
                   </div>
                   <div className={`space-y-1.5 ${openQuantity > 0 ? 'opacity-60' : ''}`}>
-                    <Label className="text-xs text-muted-foreground">Farthest Price in Loss</Label>
+                    <Label className="text-xs text-muted-foreground">MAE</Label>
                     <Input
                       type="text"
                       inputMode="decimal"
