@@ -1316,6 +1316,9 @@ export const TradeModal = () => {
                 </div>
               </div>
 
+              {/* Divider */}
+              <Separator className="bg-sidebar-border/50" />
+
               {/* Price Level & Break Even Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Price Reached First */}
