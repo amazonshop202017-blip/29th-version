@@ -50,16 +50,23 @@ const ExitAnalysis = () => {
     const sortedTrades = [...filteredTrades]
       .filter((trade: Trade) => {
         const metrics = calculateTradeMetrics(trade);
-        return (
-          metrics.positionStatus === 'CLOSED' &&
-          metrics.closeDate &&
-          trade.stopLoss !== undefined &&
-          trade.takeProfit !== undefined &&
-          trade.preMfePrice !== undefined && trade.preMfePrice !== null &&
-          trade.preMaePrice !== undefined && trade.preMaePrice !== null &&
-          metrics.avgEntryPrice > 0 &&
-          metrics.avgExitPrice > 0
-        );
+        if (
+          metrics.positionStatus !== 'CLOSED' ||
+          !metrics.closeDate ||
+          trade.stopLoss === undefined ||
+          trade.takeProfit === undefined ||
+          metrics.avgEntryPrice <= 0 ||
+          metrics.avgExitPrice <= 0
+        ) {
+          return false;
+        }
+        const hasMfe = trade.preMfePrice !== undefined && trade.preMfePrice !== null;
+        const hasMae = trade.preMaePrice !== undefined && trade.preMaePrice !== null;
+        // Both missing → always skip; both present → include;
+        // one missing → include only when "Fill missing as 0" is on.
+        if (!hasMfe && !hasMae) return false;
+        if (hasMfe && hasMae) return true;
+        return treatMissingAsZero;
       })
       .sort((a, b) => {
         const metricsA = calculateTradeMetrics(a);
