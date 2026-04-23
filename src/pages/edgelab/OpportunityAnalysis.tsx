@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
-import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint } from '@/lib/exitAnalyzerCalc';
+import { prepareExitTrades, computeHeatmap, computeSLSweep, computeTPSweep, HeatmapCell, SweepPoint, AnalysisMode } from '@/lib/exitAnalyzerCalc';
 import { Info, X, Zap, PenLine, Lightbulb } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
