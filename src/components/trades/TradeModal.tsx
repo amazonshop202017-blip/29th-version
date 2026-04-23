@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 import { useTradeModal } from '@/contexts/TradeModalContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
@@ -1169,6 +1170,9 @@ export const TradeModal = () => {
                 </div>
               </div>
 
+              {/* Divider */}
+              <Separator className="bg-sidebar-border/50" />
+
               {/* Advanced Price Data */}
               <div className="space-y-3">
                 <div className="flex items-start gap-1.5">
@@ -1311,6 +1315,9 @@ export const TradeModal = () => {
                   )}
                 </div>
               </div>
+
+              {/* Divider */}
+              <Separator className="bg-sidebar-border/50" />
 
               {/* Price Level & Break Even Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
