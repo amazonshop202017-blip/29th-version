@@ -412,6 +412,7 @@ const OpportunityAnalysis = () => {
   const [slStep, setSlStep] = useState(5);
   const [tpStep, setTpStep] = useState(5);
   const [activeTab, setActiveTab] = useState('auto');
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('execution');
   const [treatMissingAsZero, setTreatMissingAsZero] = useState(true);
   const [minTradeCount, setMinTradeCount] = useState(1);
   const [coloringMode, setColoringMode] = useState<'expectancy' | 'winrate'>('expectancy');
@@ -425,10 +426,13 @@ const OpportunityAnalysis = () => {
   const [scatterTP, setScatterTP] = useState<number>(0);
   const [scatterSL, setScatterSL] = useState<number>(0);
 
+  // Mode-aware labels (single source for the active mode)
+  const labels = useMemo(() => getModeLabels(analysisMode), [analysisMode]);
+
   // Prepare trades
   const exitTrades = useMemo(
-    () => prepareExitTrades(filteredTrades, treatMissingAsZero),
-    [filteredTrades, treatMissingAsZero]
+    () => prepareExitTrades(filteredTrades, treatMissingAsZero, analysisMode),
+    [filteredTrades, treatMissingAsZero, analysisMode]
   );
 
   // Compute heatmap
