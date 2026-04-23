@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -115,16 +115,46 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const [edgeLabOpen, setEdgeLabOpen] = useState(
     location.pathname.startsWith('/edge-lab')
   );
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimerRef = useRef<number | null>(null);
 
   const isChartRoomActive = location.pathname.startsWith('/chart-room');
   const isToolsActive = location.pathname.startsWith('/tools');
   const isEdgeLabActive = location.pathname.startsWith('/edge-lab');
 
+  // Visually expanded when not collapsed OR when hovered while collapsed (overlay mode)
+  const isOverlayExpanded = isCollapsed && isHovered;
+  const isVisuallyExpanded = !isCollapsed || isOverlayExpanded;
+
+  const handleMouseEnter = () => {
+    if (!isCollapsed) return;
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    hoverTimerRef.current = window.setTimeout(() => setIsHovered(true), 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setIsHovered(false);
+  };
+
   return (
     <aside
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        "fixed left-0 top-0 bg-sidebar flex flex-col z-40 transition-all duration-300",
-        isCollapsed ? "w-[70px]" : "w-[229px]",
+        "fixed left-0 top-0 bg-sidebar flex flex-col transition-all duration-300 ease-out",
+        // Width: hover-overlay expands visually without pushing layout
+        isVisuallyExpanded ? "w-[229px]" : "w-[70px]",
+        // Elevation: lift above content when in hover-overlay mode
+        isOverlayExpanded
+          ? "z-50 shadow-2xl border-r border-sidebar-border"
+          : "z-40",
         // Mobile: hidden by default, shown when isMobileOpen
         "max-md:-translate-x-full max-md:w-[229px]",
         isMobileOpen && "max-md:translate-x-0"
