@@ -1253,7 +1253,7 @@ export const GlobalHeader = () => {
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                    datePreset === 'all' && "bg-accent font-medium"
+                    datePreset === 'all' && "bg-accent text-accent-foreground font-medium"
                   )}
                 >
                   All time
@@ -1267,7 +1267,7 @@ export const GlobalHeader = () => {
                     }}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                      datePreset === preset.value && "bg-accent font-medium"
+                      datePreset === preset.value && "bg-accent text-accent-foreground font-medium"
                     )}
                   >
                     {preset.label}
