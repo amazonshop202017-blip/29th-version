@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -103,7 +103,7 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onMobileClose }: SidebarProps) => {
+export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobileOpen = false, onMobileClose }: SidebarProps) => {
   const location = useLocation();
   const { openModal } = useTradeModal();
   const [chartRoomOpen, setChartRoomOpen] = useState(
@@ -115,16 +115,48 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen = false, onM
   const [edgeLabOpen, setEdgeLabOpen] = useState(
     location.pathname.startsWith('/edge-lab')
   );
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimerRef = useRef<number | null>(null);
 
   const isChartRoomActive = location.pathname.startsWith('/chart-room');
   const isToolsActive = location.pathname.startsWith('/tools');
   const isEdgeLabActive = location.pathname.startsWith('/edge-lab');
 
+  // When the sidebar is collapsed but hovered, expand visually as an overlay.
+  // The layout's left margin still reflects the original collapsed width,
+  // so the page does NOT shift — the sidebar simply floats above content.
+  const isOverlayExpanded = isCollapsedProp && isHovered;
+  const isCollapsed = isCollapsedProp && !isHovered;
+
+  const handleMouseEnter = () => {
+    if (!isCollapsedProp) return;
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    hoverTimerRef.current = window.setTimeout(() => setIsHovered(true), 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setIsHovered(false);
+  };
+
   return (
     <aside
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        "fixed left-0 top-0 bg-sidebar flex flex-col z-40 transition-all duration-300",
+        "fixed left-0 top-0 bg-sidebar flex flex-col transition-all duration-300 ease-out",
+        // Width: hover-overlay expands visually without pushing layout
         isCollapsed ? "w-[70px]" : "w-[229px]",
+        // Elevation: lift above content when in hover-overlay mode
+        isOverlayExpanded
+          ? "z-50 shadow-2xl border-r border-sidebar-border"
+          : "z-40",
         // Mobile: hidden by default, shown when isMobileOpen
         "max-md:-translate-x-full max-md:w-[229px]",
         isMobileOpen && "max-md:translate-x-0"
