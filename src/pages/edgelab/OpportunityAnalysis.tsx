@@ -674,23 +674,37 @@ const OpportunityAnalysis = () => {
           <div className="w-px h-9 bg-border" />
           <InputField label="Min Trades" value={minTradeCount} onChange={setMinTradeCount} min={1} />
           <div className="w-px h-9 bg-border" />
-          <label className="flex items-center gap-2 cursor-pointer select-none pb-0.5">
-            <input
-              type="checkbox"
-              checked={treatMissingAsZero}
-              onChange={e => setTreatMissingAsZero(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-primary"
-            />
-            <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+          <div className="flex flex-col items-center gap-1 pb-0.5">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={treatMissingAsZero}
+                onChange={e => setTreatMissingAsZero(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              <span className="text-sm text-muted-foreground">Fill missing as 0</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-[240px] text-xs">If a trade has one value (e.g. MFE) but the other is empty (e.g. MAE), the missing one is treated as 0 — meaning the trade never moved in that direction. When disabled, such trades are excluded entirely.</p>
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-mono text-muted-foreground cursor-help">
+                  {partialDataCount}
+                </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="max-w-[240px] text-xs">If a trade has one value (e.g. MFE) but the other is empty (e.g. MAE), the missing one is treated as 0 — meaning the trade never moved in that direction. When disabled, such trades are excluded entirely.</p>
+                <p className="max-w-[240px] text-xs">
+                  Trades with one value missing — added to the analysis only when this toggle is on.
+                </p>
               </TooltipContent>
             </Tooltip>
-          </label>
+          </div>
         </div>
         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="font-mono">{exitTrades.length} trades</span>
