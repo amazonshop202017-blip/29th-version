@@ -33,6 +33,39 @@ const InputField = ({ label, value, onChange, min }: {
   </div>
 );
 
+// ─── Mode-aware labels (single source of truth) ───
+interface ModeLabels {
+  scatterTitle: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
+  emptyState: string;
+  emptyStateHint: string;
+  methodologyHeadline: string;
+}
+
+function getModeLabels(mode: AnalysisMode): ModeLabels {
+  if (mode === 'opportunity') {
+    return {
+      scatterTitle: 'Post-Exit Max / Min Scatter',
+      xAxisLabel: 'Post Min (ticks)',
+      yAxisLabel: 'Post Max (ticks)',
+      emptyState: 'No trades with post-exit Max/Min data available.',
+      emptyStateHint: 'Add post-exit highest/lowest price values to your trades to use Opportunity mode.',
+      methodologyHeadline:
+        'Based on full price movement after exit (Post Max/Min). Results may appear more optimistic — this is expected.',
+    };
+  }
+  return {
+    scatterTitle: 'MFE / MAE Scatter',
+    xAxisLabel: 'MAE (ticks)',
+    yAxisLabel: 'MFE (ticks)',
+    emptyState: 'No trades with MFE/MAE data available.',
+    emptyStateHint: 'Add MFE/MAE tick values to your trades to use the Exit Analyzer.',
+    methodologyHeadline:
+      'Based on price movement before exit (MFE/MAE).',
+  };
+}
+
 // ─── Color helper ───
 function cellColor(expectancy: number): string {
   if (expectancy > 0.5) return 'hsl(142 76% 35%)';
