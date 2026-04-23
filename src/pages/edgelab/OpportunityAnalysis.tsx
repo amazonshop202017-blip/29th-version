@@ -1023,6 +1023,7 @@ const OpportunityAnalysis = () => {
         minTradeCount={minTradeCount}
         setMinTradeCount={setMinTradeCount}
         labels={labels}
+        partialDataCount={partialDataCount}
       />
 
       )}
