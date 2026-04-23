@@ -905,7 +905,7 @@ const OpportunityAnalysis = () => {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="glass-card rounded-2xl p-5"
         >
-          <h2 className="text-lg font-semibold mb-3">MFE / MAE Scatter</h2>
+          <h2 className="text-lg font-semibold mb-3">{labels.scatterTitle}</h2>
           <div className="flex items-end gap-4 mb-4">
             <InputField label="Profit (TP) Ticks" value={scatterTP} onChange={setScatterTP} min={0} />
             <InputField label="Loss (SL) Ticks" value={scatterSL} onChange={setScatterSL} min={0} />
@@ -920,14 +920,14 @@ const OpportunityAnalysis = () => {
             <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 47% 18%)" />
               <XAxis
-                type="number" dataKey="x" name="MAE (ticks)"
-                label={{ value: 'MAE (ticks)', position: 'bottom', offset: 0, style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
+                type="number" dataKey="x" name={labels.xAxisLabel}
+                label={{ value: labels.xAxisLabel, position: 'bottom', offset: 0, style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
                 tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }}
                 stroke="hsl(222 47% 18%)"
               />
               <YAxis
-                type="number" dataKey="y" name="MFE (ticks)"
-                label={{ value: 'MFE (ticks)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
+                type="number" dataKey="y" name={labels.yAxisLabel}
+                label={{ value: labels.yAxisLabel, angle: -90, position: 'insideLeft', style: { fill: 'hsl(215 20% 55%)', fontSize: 12 } }}
                 tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }}
                 stroke="hsl(222 47% 18%)"
               />
@@ -972,7 +972,14 @@ const OpportunityAnalysis = () => {
       )}
       </>
       ) : (
-      <ManualExitTab />
+      <ManualExitTab
+        analysisMode={analysisMode}
+        treatMissingAsZero={treatMissingAsZero}
+        setTreatMissingAsZero={setTreatMissingAsZero}
+        minTradeCount={minTradeCount}
+        setMinTradeCount={setMinTradeCount}
+        labels={labels}
+      />
 
       )}
     </div>
