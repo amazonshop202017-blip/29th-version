@@ -121,7 +121,12 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       toast.error('MatchTrader import is not yet implemented');
       return;
     }
-    
+
+    if (importSource === 'Tradovate') {
+      toast.error('Tradovate import is not yet implemented');
+      return;
+    }
+
     if (importSource !== 'MT5') {
       toast.error('Invalid import source');
       return;
