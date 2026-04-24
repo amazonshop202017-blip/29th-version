@@ -298,7 +298,7 @@ export function parseTradovateCSVToTrades(
         },
       ];
 
-      // STAGE 9 — derived contract size from raw prices
+      // STAGE 9 — derived contract size from raw prices (per-row candidate)
       const denom = (avgSell - avgBuy) * quantity;
       let derivedContractSize: number | null = null;
       if (denom !== 0) {
@@ -306,16 +306,18 @@ export function parseTradovateCSVToTrades(
         if (Number.isFinite(cs) && cs > 0) derivedContractSize = cs;
       }
 
-      // STAGE 9b — capture per-symbol meta (first valid row wins)
-      if (!symbolMeta.has(symbol)) {
+      // STAGE 9b — accumulate per-symbol meta candidates across ALL rows
+      if (!symbolTickSize.has(symbol)) {
         const tickSizeRaw =
           indexes.tickSize !== -1 ? parseNumber(values[indexes.tickSize]) : NaN;
         const tickSize =
           Number.isFinite(tickSizeRaw) && tickSizeRaw > 0 ? tickSizeRaw : DEFAULT_TICK_SIZE;
-        symbolMeta.set(symbol, {
-          tickSize,
-          contractSize: derivedContractSize ?? 1,
-        });
+        symbolTickSize.set(symbol, tickSize);
+      }
+      if (derivedContractSize !== null) {
+        const arr = symbolContractCandidates.get(symbol);
+        if (arr) arr.push(derivedContractSize);
+        else symbolContractCandidates.set(symbol, [derivedContractSize]);
       }
 
       // Return % using account balance snapshot (parity with MT5)
