@@ -367,7 +367,7 @@ export function reconstructTradesFromFills(
         contractSize,
         // Aggregated commission across all fills → trade-level Fees field.
         // Net PnL = Gross (computed) − manualFees.
-        manualFees: totalCommission > 0 ? totalCommission : undefined,
+        manualFees: resolvedFees > 0 ? resolvedFees : undefined,
         preMfeTickPip: null,
         preMaeTickPip: null,
         source: 'imported',
