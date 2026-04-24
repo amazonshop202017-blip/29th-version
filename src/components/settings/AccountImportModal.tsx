@@ -128,17 +128,26 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     try {
       // Get account balance BEFORE trades for Return % calculation
       const accountBalanceSnapshot = getAccountBalanceBeforeTrades(selectedAccountId);
-      
+
+      // Build set of existing imported-trade fingerprints for this account.
+      // Comparison uses STORED fingerprints only — never recomputed.
+      const existingFingerprints = new Set<string>(
+        trades
+          .filter(t => t.accountId === selectedAccountId && t.source === 'imported' && t.fingerprint)
+          .map(t => t.fingerprint)
+      );
+
       toast.info(`Importing trades from ${selectedFile.name}...`);
-      
+
       const result = await importMT5Trades(
         selectedFile,
         selectedAccountId,
         accountBalanceSnapshot,
         bulkAddTrades,
-        contractSizes
+        contractSizes,
+        existingFingerprints
       );
-      
+
       if (result.success) {
         // Auto-register imported symbols with default contract size = 1
         result.importedSymbols.forEach(sym => {
@@ -146,9 +155,14 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             setContractSize(sym, 1);
           }
         });
-        toast.success(
-          `Successfully imported ${result.tradesImported} trades${result.rowsSkipped > 0 ? ` (${result.rowsSkipped} rows skipped)` : ''}`
-        );
+        const parts: string[] = [`Imported ${result.tradesImported} trade${result.tradesImported !== 1 ? 's' : ''}`];
+        if (result.duplicatesSkipped > 0) {
+          parts.push(`${result.duplicatesSkipped} duplicate${result.duplicatesSkipped !== 1 ? 's' : ''} skipped`);
+        }
+        if (result.rowsSkipped > 0) {
+          parts.push(`${result.rowsSkipped} row${result.rowsSkipped !== 1 ? 's' : ''} skipped`);
+        }
+        toast.success(parts.join(' · '));
         resetForm();
         onOpenChange(false);
       } else {
