@@ -42,6 +42,7 @@ const IMPORT_SOURCES = [
   { value: 'MT5', label: 'MT5' },
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
+  { value: 'TradovateFills', label: 'Tradovate (Fills)' },
 ];
 
 interface AccountImportModalProps {
@@ -73,7 +74,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     if (importSource === 'MT5') {
       return '.csv,.htm,.html';
     }
-    if (importSource === 'Tradovate') {
+    if (importSource === 'Tradovate' || importSource === 'TradovateFills') {
       return '.csv';
     }
     // Default accept for MatchTrader (will be expanded later)
@@ -119,6 +120,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     
     if (importSource === 'MatchTrader') {
       toast.error('MatchTrader import is not yet implemented');
+      return;
+    }
+
+    if (importSource === 'TradovateFills') {
+      toast.error('Tradovate (Fills) import is not yet implemented');
       return;
     }
 
@@ -317,6 +323,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             {importSource === 'Tradovate' && (
               <p className="text-xs text-muted-foreground mt-1">
                 Upload a Tradovate Positions CSV export.
+              </p>
+            )}
+            {importSource === 'TradovateFills' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Tradovate (Fills) import will be available in a future update.
               </p>
             )}
           </div>
