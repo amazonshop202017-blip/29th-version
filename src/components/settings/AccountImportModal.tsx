@@ -40,6 +40,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 const IMPORT_SOURCES = [
   { value: 'MT5', label: 'MT5' },
   { value: 'MatchTrader', label: 'MatchTrader' },
+  { value: 'Tradovate', label: 'Tradovate' },
 ];
 
 interface AccountImportModalProps {
@@ -70,6 +71,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const acceptedFileTypes = useMemo(() => {
     if (importSource === 'MT5') {
       return '.csv,.htm,.html';
+    }
+    if (importSource === 'Tradovate') {
+      return '.csv';
     }
     // Default accept for MatchTrader (will be expanded later)
     return '.csv,.htm,.html';
