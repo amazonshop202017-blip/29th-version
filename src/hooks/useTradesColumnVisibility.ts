@@ -38,7 +38,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'priceMovement',
     label: 'Price Movement',
-    columns: ['farthestProfitTicks', 'farthestProfitPrice', 'farthestLossTicks', 'farthestLossPrice', 'postMaxTickPip', 'postMaxPrice', 'postMinTickPip', 'postMinPrice'],
+    columns: ['farthestProfitPrice', 'farthestProfitTicks', 'farthestLossPrice', 'farthestLossTicks', 'postMaxPrice', 'postMaxTickPip', 'postMinPrice', 'postMinTickPip'],
   },
 ];
 
@@ -68,14 +68,14 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'plannedRRR', label: 'Planned RR / R-Multiple', group: 'performance', visible: false },
 
   // Price Movement
-  { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'priceMovement', visible: false },
   { id: 'farthestProfitPrice', label: 'MFE (pre-exit, price)', group: 'priceMovement', visible: false },
-  { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'priceMovement', visible: false },
+  { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'priceMovement', visible: false },
   { id: 'farthestLossPrice', label: 'MAE (pre-exit, price)', group: 'priceMovement', visible: false },
-  { id: 'postMaxTickPip', label: 'Highest Price (Ticks)', group: 'priceMovement', visible: false },
+  { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'priceMovement', visible: false },
   { id: 'postMaxPrice', label: 'Highest Price (Price)', group: 'priceMovement', visible: false },
-  { id: 'postMinTickPip', label: 'Lowest Price (Ticks)', group: 'priceMovement', visible: false },
+  { id: 'postMaxTickPip', label: 'Highest Price (Ticks)', group: 'priceMovement', visible: false },
   { id: 'postMinPrice', label: 'Lowest Price (Price)', group: 'priceMovement', visible: false },
+  { id: 'postMinTickPip', label: 'Lowest Price (Ticks)', group: 'priceMovement', visible: false },
 ];
 
 const STORAGE_KEY = 'trades-column-visibility';

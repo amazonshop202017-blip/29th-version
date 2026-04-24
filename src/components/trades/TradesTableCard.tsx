@@ -148,14 +148,14 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('netPnl') && <TableHead className="px-2">Net P&L</TableHead>}
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
               {isColumnVisible('plannedRRR') && <TableHead className="px-2">Planned RR</TableHead>}
-              {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
               {isColumnVisible('farthestProfitPrice') && <TableHead className="px-2 text-right">MFE (pre-exit, price)</TableHead>}
-              {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">MAE (pre-exit, ticks)</TableHead>}
+              {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
               {isColumnVisible('farthestLossPrice') && <TableHead className="px-2 text-right">MAE (pre-exit, price)</TableHead>}
-              {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
+              {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">MAE (pre-exit, ticks)</TableHead>}
               {isColumnVisible('postMaxPrice') && <TableHead className="px-2 text-right">Highest Price (Price)</TableHead>}
-              {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
+              {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
               {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price (Price)</TableHead>}
+              {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
