@@ -1,9 +1,11 @@
 import { TradeFormData, TradeEntry } from '@/types/trade';
 import { toISO } from '@/lib/datetime';
+import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
 export interface MT5ImportResult {
   success: boolean;
   tradesImported: number;
+  duplicatesSkipped: number;
   rowsSkipped: number;
   errors: string[];
   importedSymbols: string[];
