@@ -200,6 +200,10 @@ export function parseTradovateCSVToTrades(
 
   const trades: TradeFormData[] = [];
   const symbolMeta = new Map<string, SymbolMeta>();
+  // Collect per-symbol contract size candidates across ALL rows for stable aggregation.
+  const symbolContractCandidates = new Map<string, number[]>();
+  // Track first-seen tick size per symbol (tick size is fixed per instrument).
+  const symbolTickSize = new Map<string, number>();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
@@ -294,7 +298,7 @@ export function parseTradovateCSVToTrades(
         },
       ];
 
-      // STAGE 9 — derived contract size from raw prices
+      // STAGE 9 — derived contract size from raw prices (per-row candidate)
       const denom = (avgSell - avgBuy) * quantity;
       let derivedContractSize: number | null = null;
       if (denom !== 0) {
@@ -302,16 +306,18 @@ export function parseTradovateCSVToTrades(
         if (Number.isFinite(cs) && cs > 0) derivedContractSize = cs;
       }
 
-      // STAGE 9b — capture per-symbol meta (first valid row wins)
-      if (!symbolMeta.has(symbol)) {
+      // STAGE 9b — accumulate per-symbol meta candidates across ALL rows
+      if (!symbolTickSize.has(symbol)) {
         const tickSizeRaw =
           indexes.tickSize !== -1 ? parseNumber(values[indexes.tickSize]) : NaN;
         const tickSize =
           Number.isFinite(tickSizeRaw) && tickSizeRaw > 0 ? tickSizeRaw : DEFAULT_TICK_SIZE;
-        symbolMeta.set(symbol, {
-          tickSize,
-          contractSize: derivedContractSize ?? 1,
-        });
+        symbolTickSize.set(symbol, tickSize);
+      }
+      if (derivedContractSize !== null) {
+        const arr = symbolContractCandidates.get(symbol);
+        if (arr) arr.push(derivedContractSize);
+        else symbolContractCandidates.set(symbol, [derivedContractSize]);
       }
 
       // Return % using account balance snapshot (parity with MT5)
@@ -349,12 +355,43 @@ export function parseTradovateCSVToTrades(
     }
   }
 
+  // STAGE 9c — finalize per-symbol contract size using median of candidates
+  // (stable against rounding, partial fills, and noise), then snap to a clean
+  // value when extremely close to an integer or simple decimal.
+  for (const [symbol, tickSize] of symbolTickSize.entries()) {
+    const candidates = symbolContractCandidates.get(symbol) ?? [];
+    let contractSize = 1;
+    if (candidates.length > 0) {
+      const sorted = [...candidates].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median =
+        sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      contractSize = stabilizeContractSize(median);
+    }
+    symbolMeta.set(symbol, { tickSize, contractSize });
+  }
+
   return { trades, skipped, symbolMeta };
 }
 
-// ----------------------------------------------------------------------------
-// Main entry point
-// ----------------------------------------------------------------------------
+/**
+ * Snap a derived contract size to a clean value when it's within tight
+ * tolerance of an integer or a 0.5 step. Removes floating-point noise like
+ * 500.0000000000107 or 99.99999999999982 → 500 / 100.
+ */
+function stabilizeContractSize(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  const rounded = Math.round(value);
+  if (rounded > 0 && Math.abs(value - rounded) / rounded < 1e-6) {
+    return rounded;
+  }
+  const halfStep = Math.round(value * 2) / 2;
+  if (halfStep > 0 && Math.abs(value - halfStep) / halfStep < 1e-6) {
+    return halfStep;
+  }
+  // Fallback: keep up to 6 significant digits to suppress fp noise without distortion.
+  return Number(value.toPrecision(6));
+}
 
 export async function importTradovateTrades(
   file: File,
