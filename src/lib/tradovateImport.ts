@@ -1,4 +1,5 @@
 import { TradeFormData, TradeEntry } from '@/types/trade';
+import { loadFeeRules, findMatchingFeeRule, calculateFeeFromRule } from '@/lib/feeCalculation';
 import { toISO } from '@/lib/datetime';
 import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
@@ -204,6 +205,8 @@ export function parseTradovateCSVToTrades(
   const symbolContractCandidates = new Map<string, number[]>();
   // Track first-seen tick size per symbol (tick size is fixed per instrument).
   const symbolTickSize = new Map<string, number>();
+  // Load fee rules once — applied per trade if a matching (account, symbol) rule exists.
+  const feeRules = loadFeeRules();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
@@ -325,6 +328,14 @@ export function parseTradovateCSVToTrades(
         accountBalanceSnapshot > 0 ? (pnl / accountBalanceSnapshot) * 100 : 0;
 
       // STAGE 10 — final trade object
+      // If a fee rule exists for this (account, symbol), surface it as
+      // manualFees so Net PnL = Gross − Fees. Otherwise leave undefined
+      // (preserves prior behaviour: Tradovate Positions had no fee data).
+      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      const ruleFee = matchedFeeRule
+        ? calculateFeeFromRule(matchedFeeRule, entries, side)
+        : 0;
+
       const trade: TradeFormData = {
         symbol,
         side,
@@ -336,6 +347,7 @@ export function parseTradovateCSVToTrades(
         notes: '',
         // Tradovate P/L is treated as both gross and net (no per-row fee data).
         manualGrossPnl: pnl,
+        manualFees: matchedFeeRule && ruleFee > 0 ? ruleFee : undefined,
         savedReturnPercent: calculatedReturnPercent,
         savedRMultiple: 0,
         accountBalanceSnapshot,
