@@ -123,6 +123,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
+    if (importSource === 'TradovateFills') {
+      toast.error('Tradovate (Fills) import is not yet implemented');
+      return;
+    }
+
     if (importSource !== 'MT5' && importSource !== 'Tradovate') {
       toast.error('Invalid import source');
       return;
