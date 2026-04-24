@@ -134,7 +134,9 @@ export const SymbolTickSizeProvider = ({ children }: { children: ReactNode }) =>
     return contractSizes[symbol];
   };
 
-  // Rule CRUD
+  // Rule CRUD — use functional updaters so multiple synchronous calls
+  // (e.g. during a CSV import) all see the latest state and don't clobber
+  // each other's writes.
   const addTickPipRule = (rule: Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>) => {
     const now = nowISO();
     const newRule: TickPipRule = {
@@ -143,23 +145,29 @@ export const SymbolTickSizeProvider = ({ children }: { children: ReactNode }) =>
       createdAt: now,
       updatedAt: now,
     };
-    const updated = [...tickPipRules, newRule];
-    setTickPipRules(updated);
-    saveRules(updated);
+    setTickPipRules(prev => {
+      const updated = [...prev, newRule];
+      saveRules(updated);
+      return updated;
+    });
   };
 
   const updateTickPipRule = (id: string, patch: Partial<Omit<TickPipRule, 'id' | 'createdAt' | 'updatedAt'>>) => {
-    const updated = tickPipRules.map(r =>
-      r.id === id ? { ...r, ...patch, updatedAt: nowISO() } : r
-    );
-    setTickPipRules(updated);
-    saveRules(updated);
+    setTickPipRules(prev => {
+      const updated = prev.map(r =>
+        r.id === id ? { ...r, ...patch, updatedAt: nowISO() } : r
+      );
+      saveRules(updated);
+      return updated;
+    });
   };
 
   const deleteTickPipRule = (id: string) => {
-    const updated = tickPipRules.filter(r => r.id !== id);
-    setTickPipRules(updated);
-    saveRules(updated);
+    setTickPipRules(prev => {
+      const updated = prev.filter(r => r.id !== id);
+      saveRules(updated);
+      return updated;
+    });
   };
 
   // Account+Symbol lookup — uses accountIds (UUIDs)
