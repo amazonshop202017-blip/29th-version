@@ -1,5 +1,6 @@
 import { TradeFormData, TradeEntry, ScaleEntry } from '@/types/trade';
 import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
+import { loadFeeRules, findMatchingFeeRule, calculateFeeFromRule } from '@/lib/feeCalculation';
 
 // ---------------------------------------------------------------------------
 // Types
