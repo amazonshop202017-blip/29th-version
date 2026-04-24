@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
 import { toISO, nowISO, auditISOValues } from '@/lib/datetime';
+import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
 const getCurrentUserId = (): string | undefined => {
   try {
@@ -189,7 +190,20 @@ export const useTrades = () => {
               };
             }
           }
-          
+
+          // Migration 4: Backfill source + fingerprint for legacy trades.
+          // Legacy trades default to 'manual'. Fingerprint is computed once
+          // and persisted; never recomputed during deduplication comparison.
+          if (!updated.source) {
+            updated = { ...updated, source: 'manual' };
+          }
+          if (!updated.fingerprint) {
+            updated = {
+              ...updated,
+              fingerprint: buildFingerprintForTrade(updated, updated.source),
+            };
+          }
+
           return updated;
           } catch (err) {
             console.error('[useTrades] Migration error for trade:', trade?.id, err);
@@ -225,8 +239,18 @@ export const useTrades = () => {
   }, []);
 
   const addTrade = useCallback((data: TradeFormData) => {
-    const newTrade: Trade = {
+    const source = data.source ?? 'manual';
+    const tradeBase = {
       ...data,
+      source,
+      accountId: data.accountId,
+    };
+    const fingerprint =
+      data.fingerprint ?? buildFingerprintForTrade(tradeBase as Trade, source);
+    const newTrade: Trade = {
+      ...tradeBase,
+      source,
+      fingerprint,
       id: crypto.randomUUID(),
       userId: getCurrentUserId(),
       createdAt: nowISO(),
@@ -239,23 +263,43 @@ export const useTrades = () => {
   const bulkAddTrades = useCallback((tradesData: TradeFormData[]): Trade[] => {
     const now = nowISO();
     const userId = getCurrentUserId();
-    const newTrades: Trade[] = tradesData.map(data => ({
-      ...data,
-      id: crypto.randomUUID(),
-      userId,
-      createdAt: now,
-      updatedAt: now,
-    }));
+    const newTrades: Trade[] = tradesData.map(data => {
+      const source = data.source ?? 'manual';
+      const fingerprint =
+        data.fingerprint ?? buildFingerprintForTrade({ ...data, source } as Trade, source);
+      return {
+        ...data,
+        source,
+        fingerprint,
+        id: crypto.randomUUID(),
+        userId,
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
     saveTrades([...trades, ...newTrades]);
     return newTrades;
   }, [trades, saveTrades]);
 
   const updateTrade = useCallback((id: string, data: TradeFormData) => {
-    const updated = trades.map(trade =>
-      trade.id === id
-        ? { ...trade, ...data, updatedAt: nowISO() }
-        : trade
-    );
+    const updated = trades.map(trade => {
+      if (trade.id !== id) return trade;
+      // Preserve original source — never flip imported→manual on edit
+      const source = trade.source ?? data.source ?? 'manual';
+      const next: Trade = {
+        ...trade,
+        ...data,
+        source,
+        // Imported trades keep their stored fingerprint (immutable identity).
+        // Manual trades recompute fingerprint from edited values.
+        fingerprint:
+          source === 'imported'
+            ? trade.fingerprint
+            : buildFingerprintForTrade({ ...trade, ...data, source } as Trade, 'manual'),
+        updatedAt: nowISO(),
+      };
+      return next;
+    });
     saveTrades(updated);
   }, [trades, saveTrades]);
 
@@ -264,10 +308,15 @@ export const useTrades = () => {
     const now = nowISO();
     const updated = trades.map(trade => {
       const patch = updates.get(trade.id);
-      if (patch) {
-        return { ...trade, ...patch, updatedAt: now };
-      }
-      return trade;
+      if (!patch) return trade;
+      const source = trade.source ?? 'manual';
+      const merged = { ...trade, ...patch, source, updatedAt: now } as Trade;
+      // Recompute fingerprint only for manual trades; imported keep stored identity
+      merged.fingerprint =
+        source === 'imported'
+          ? trade.fingerprint
+          : buildFingerprintForTrade(merged, 'manual');
+      return merged;
     });
     saveTrades(updated);
   }, [trades, saveTrades]);

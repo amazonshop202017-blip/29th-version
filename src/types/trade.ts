@@ -83,6 +83,10 @@ export interface Trade {
   contractSize?: number;
   // Screenshots attached to trade
   screenshots?: TradeScreenshot[];
+  // Origin of trade — 'imported' (from broker file) or 'manual' (created in UI)
+  source: 'imported' | 'manual';
+  // Deterministic identity for deduplication. Always present, never recomputed during comparison.
+  fingerprint: string;
 }
 
 // Calculated values (not stored, computed on-the-fly)
@@ -106,7 +110,12 @@ export interface TradeCalculations {
   openQuantity: number;
 }
 
-export type TradeFormData = Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>;
+// Form/input data — source & fingerprint are filled in by the storage layer (useTrades)
+// when not provided by the caller.
+export type TradeFormData = Omit<Trade, 'id' | 'createdAt' | 'updatedAt' | 'source' | 'fingerprint'> & {
+  source?: 'imported' | 'manual';
+  fingerprint?: string;
+};
 
 // Helper function to calculate trade metrics
 export function calculateTradeMetrics(trade: Trade | TradeFormData): TradeCalculations {

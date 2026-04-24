@@ -478,8 +478,10 @@ export const TradesTableCard = ({
     if (selectedTrades.size === 0) return;
     const tradesToDuplicate = sortedTrades.filter((t) => selectedTrades.has(t.id));
     const duplicatedTradesData = tradesToDuplicate.map((trade) => {
-      const { id, createdAt, updatedAt, ...tradeData } = trade;
-      return tradeData;
+      // Strip identity fields so the storage layer assigns a fresh fingerprint
+      // and treats duplicated trades as new manual trades.
+      const { id, createdAt, updatedAt, fingerprint, source, ...tradeData } = trade;
+      return { ...tradeData, source: 'manual' as const };
     });
     bulkAddTrades(duplicatedTradesData);
     setSelectedTrades(new Set());

@@ -1,9 +1,11 @@
 import { TradeFormData, TradeEntry } from '@/types/trade';
 import { toISO } from '@/lib/datetime';
+import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
 export interface MT5ImportResult {
   success: boolean;
   tradesImported: number;
+  duplicatesSkipped: number;
   rowsSkipped: number;
   errors: string[];
   importedSymbols: string[];
@@ -354,8 +356,12 @@ export function parseCSVToTrades(
         contractSize: contractSizes?.[symbol] ?? 1,
         preMfeTickPip: null,
         preMaeTickPip: null,
+        source: 'imported',
       };
-      
+
+      // Compute deterministic fingerprint NOW so it is stored, never recomputed later.
+      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported');
+
       trades.push(trade);
     } catch (err) {
       skipped++;
@@ -372,38 +378,67 @@ export async function importMT5Trades(
   accountId: string,
   accountBalanceSnapshot: number,
   bulkAddTrades: (tradesData: TradeFormData[]) => void,
-  contractSizes?: Record<string, number>
+  contractSizes?: Record<string, number>,
+  /**
+   * Set of fingerprints already stored for this account (source = 'imported').
+   * Required for deterministic deduplication. Comparison uses STORED fingerprints
+   * only — never recomputed during comparison.
+   */
+  existingFingerprints: Set<string> = new Set()
 ): Promise<MT5ImportResult> {
   const errors: string[] = [];
-  
+
   try {
     const htmlContent = await file.text();
-    
+
     // Step 1: HTML → CSV
     const csvContent = parseMT5HtmlToCSV(htmlContent);
-    
+
     // Step 2: CSV → Trades (pass account balance for Return % calculation)
     const { trades, skipped } = parseCSVToTrades(csvContent, accountId, accountBalanceSnapshot, contractSizes);
-    
+
     if (trades.length === 0) {
       return {
         success: false,
         tradesImported: 0,
+        duplicatesSkipped: 0,
         rowsSkipped: skipped,
         errors: ['No valid trades found in the file'],
         importedSymbols: [],
       };
     }
-    
-    // Add all trades at once (single state update)
-    bulkAddTrades(trades);
 
-    // Collect unique symbols from imported trades
-    const importedSymbols = Array.from(new Set(trades.map(t => t.symbol).filter(Boolean)));
-    
+    // Deduplicate against stored fingerprints AND against earlier rows in the same file.
+    const seen = new Set<string>(existingFingerprints);
+    const toInsert: TradeFormData[] = [];
+    let duplicatesSkipped = 0;
+
+    for (const trade of trades) {
+      const fp = trade.fingerprint;
+      if (!fp) {
+        // Storage guarantee: never insert without fingerprint
+        duplicatesSkipped++;
+        continue;
+      }
+      if (seen.has(fp)) {
+        duplicatesSkipped++;
+        continue;
+      }
+      seen.add(fp);
+      toInsert.push(trade);
+    }
+
+    if (toInsert.length > 0) {
+      bulkAddTrades(toInsert);
+    }
+
+    // Collect unique symbols from inserted trades
+    const importedSymbols = Array.from(new Set(toInsert.map(t => t.symbol).filter(Boolean)));
+
     return {
       success: true,
-      tradesImported: trades.length,
+      tradesImported: toInsert.length,
+      duplicatesSkipped,
       rowsSkipped: skipped,
       errors: [],
       importedSymbols,
@@ -411,10 +446,11 @@ export async function importMT5Trades(
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
     errors.push(errorMessage);
-    
+
     return {
       success: false,
       tradesImported: 0,
+      duplicatesSkipped: 0,
       rowsSkipped: 0,
       errors,
       importedSymbols: [],
