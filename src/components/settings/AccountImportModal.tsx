@@ -268,6 +268,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
