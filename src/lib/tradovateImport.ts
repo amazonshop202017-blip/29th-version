@@ -355,12 +355,43 @@ export function parseTradovateCSVToTrades(
     }
   }
 
+  // STAGE 9c — finalize per-symbol contract size using median of candidates
+  // (stable against rounding, partial fills, and noise), then snap to a clean
+  // value when extremely close to an integer or simple decimal.
+  for (const [symbol, tickSize] of symbolTickSize.entries()) {
+    const candidates = symbolContractCandidates.get(symbol) ?? [];
+    let contractSize = 1;
+    if (candidates.length > 0) {
+      const sorted = [...candidates].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median =
+        sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      contractSize = stabilizeContractSize(median);
+    }
+    symbolMeta.set(symbol, { tickSize, contractSize });
+  }
+
   return { trades, skipped, symbolMeta };
 }
 
-// ----------------------------------------------------------------------------
-// Main entry point
-// ----------------------------------------------------------------------------
+/**
+ * Snap a derived contract size to a clean value when it's within tight
+ * tolerance of an integer or a 0.5 step. Removes floating-point noise like
+ * 500.0000000000107 or 99.99999999999982 → 500 / 100.
+ */
+function stabilizeContractSize(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  const rounded = Math.round(value);
+  if (rounded > 0 && Math.abs(value - rounded) / rounded < 1e-6) {
+    return rounded;
+  }
+  const halfStep = Math.round(value * 2) / 2;
+  if (halfStep > 0 && Math.abs(value - halfStep) / halfStep < 1e-6) {
+    return halfStep;
+  }
+  // Fallback: keep up to 6 significant digits to suppress fp noise without distortion.
+  return Number(value.toPrecision(6));
+}
 
 export async function importTradovateTrades(
   file: File,
