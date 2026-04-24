@@ -398,7 +398,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             )}
             {importSource === 'TradovateFills' && (
               <p className="text-xs text-muted-foreground mt-1">
-                Tradovate (Fills) import will be available in a future update.
+                Upload a Tradovate Fills CSV export. Symbol Tick/Pip rules must
+                already exist for each traded symbol.
               </p>
             )}
           </div>
@@ -417,6 +418,14 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           </Button>
         </div>
       </DialogContent>
+
+      <MissingSymbolRulesModal
+        open={missingSymbolsModal.open}
+        onOpenChange={(open) =>
+          setMissingSymbolsModal((prev) => ({ ...prev, open }))
+        }
+        missing={missingSymbolsModal.items}
+      />
     </Dialog>
   );
 }
