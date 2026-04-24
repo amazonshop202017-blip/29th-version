@@ -116,6 +116,7 @@ interface ColumnIndexes {
   pnl: number;
   boughtTs: number;
   soldTs: number;
+  tickSize: number;
 }
 
 function normalizeHeader(s: string): string {
@@ -138,6 +139,14 @@ function findColumnIndexes(headers: string[]): ColumnIndexes {
   const norm = headers.map(h => normalizeHeader(h));
   const idxOf = (name: string) => norm.indexOf(name);
 
+  // Tick size column may appear as "_tickSize" / "_tick size" / "_ticksize"
+  const tickSizeIdx =
+    norm.indexOf('_ticksize') !== -1
+      ? norm.indexOf('_ticksize')
+      : norm.indexOf('_tick size') !== -1
+      ? norm.indexOf('_tick size')
+      : norm.indexOf('_tick_size');
+
   const indexes: ColumnIndexes = {
     product: idxOf('product'),
     bought: idxOf('bought'),
@@ -147,6 +156,7 @@ function findColumnIndexes(headers: string[]): ColumnIndexes {
     pnl: idxOf('p/l'),
     boughtTs: idxOf('bought timestamp'),
     soldTs: idxOf('sold timestamp'),
+    tickSize: tickSizeIdx,
   };
 
   const missing: string[] = [];
@@ -174,7 +184,7 @@ export function parseTradovateCSVToTrades(
   accountId: string,
   accountBalanceSnapshot: number,
   contractSizes?: Record<string, number>
-): { trades: TradeFormData[]; skipped: number } {
+): { trades: TradeFormData[]; skipped: number; symbolMeta: Map<string, SymbolMeta> } {
   const lines = csvContent.split(/\r?\n/).filter(line => line.trim().length > 0);
   if (lines.length < 2) {
     throw new Error('CSV must have at least a header row and one data row');
