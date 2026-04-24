@@ -349,7 +349,7 @@ export function parseTradovateCSVToTrades(
     }
   }
 
-  return { trades, skipped };
+  return { trades, skipped, symbolMeta };
 }
 
 // ----------------------------------------------------------------------------
@@ -366,14 +366,19 @@ export async function importTradovateTrades(
    * Set of fingerprints already stored for this account (source = 'imported').
    * Comparison uses STORED fingerprints only — never recomputed during comparison.
    */
-  existingFingerprints: Set<string> = new Set()
+  existingFingerprints: Set<string> = new Set(),
+  /**
+   * Registers Symbol Tick/Pip rules for any symbols not already configured
+   * for the importing account. Called BEFORE trades are inserted.
+   */
+  ensureSymbolRules?: EnsureSymbolRules
 ): Promise<TradovateImportResult> {
   const errors: string[] = [];
 
   try {
     const csvContent = await file.text();
 
-    const { trades, skipped } = parseTradovateCSVToTrades(
+    const { trades, skipped, symbolMeta } = parseTradovateCSVToTrades(
       csvContent,
       accountId,
       accountBalanceSnapshot,
@@ -388,6 +393,7 @@ export async function importTradovateTrades(
         rowsSkipped: skipped,
         errors: ['No valid trades found in the file'],
         importedSymbols: [],
+        symbolRulesAdded: 0,
       };
     }
 
@@ -410,14 +416,36 @@ export async function importTradovateTrades(
       toInsert.push(trade);
     }
 
-    // STAGE 13 — insert
-    if (toInsert.length > 0) {
-      bulkAddTrades(toInsert);
-    }
-
+    // STAGE 13a — register Symbol Tick/Pip rules BEFORE inserting trades.
+    // Only for symbols whose trades will actually be inserted.
+    let symbolRulesAdded = 0;
     const importedSymbols = Array.from(
       new Set(toInsert.map(t => t.symbol).filter(Boolean))
     );
+
+    if (ensureSymbolRules && importedSymbols.length > 0) {
+      const ruleInputs: SymbolRuleInput[] = importedSymbols
+        .map(sym => {
+          const meta = symbolMeta.get(sym);
+          if (!meta) return null;
+          return {
+            symbol: sym,
+            tickSize: meta.tickSize,
+            contractSize: meta.contractSize,
+          };
+        })
+        .filter((r): r is SymbolRuleInput => r !== null);
+
+      if (ruleInputs.length > 0) {
+        const res = ensureSymbolRules(ruleInputs);
+        symbolRulesAdded = res.added;
+      }
+    }
+
+    // STAGE 13b — insert trades AFTER rules are guaranteed to exist
+    if (toInsert.length > 0) {
+      bulkAddTrades(toInsert);
+    }
 
     // STAGE 14 — result
     return {
@@ -427,6 +455,7 @@ export async function importTradovateTrades(
       rowsSkipped: skipped,
       errors: [],
       importedSymbols,
+      symbolRulesAdded,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -438,6 +467,7 @@ export async function importTradovateTrades(
       rowsSkipped: 0,
       errors,
       importedSymbols: [],
+      symbolRulesAdded: 0,
     };
   }
 }
