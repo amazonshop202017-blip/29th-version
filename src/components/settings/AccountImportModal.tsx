@@ -62,6 +62,10 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [missingSymbolsModal, setMissingSymbolsModal] = useState<{
+    open: boolean;
+    items: MissingSymbolInfo[];
+  }>({ open: false, items: [] });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
