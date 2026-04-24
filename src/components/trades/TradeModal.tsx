@@ -165,12 +165,54 @@ export const TradeModal = () => {
 
   // Sync simplified fields to entries format
   useEffect(() => {
-    const newEntries: TradeEntry[] = [];
     const entryPriceNum = parseFloat(entryPrice) || 0;
     const quantityNum = parseFloat(quantity) || 0;
     const exitPriceNum = parseFloat(exitPrice) || 0;
     const feesNum = parseFloat(fees) || 0;
-    
+
+    // Scale trade: rebuild entries[] from scaleEntries / scaleExits so
+    // calculateTradeMetrics sees consistent data and PnL recomputes live
+    // when the user edits prices/direction.
+    if (scaleEntries.length > 0 || scaleExits.length > 0) {
+      const newEntries: TradeEntry[] = [];
+      const openType: 'BUY' | 'SELL' = direction === 'LONG' ? 'BUY' : 'SELL';
+      const closeType: 'BUY' | 'SELL' = direction === 'LONG' ? 'SELL' : 'BUY';
+      const entryIso = toISO(entryDate) || nowISO();
+      const exitIso = toISO(exitDate) || entryIso;
+
+      for (const se of scaleEntries) {
+        if (se.quantity > 0) {
+          newEntries.push({
+            id: se.id,
+            type: openType,
+            datetime: entryIso,
+            quantity: se.quantity,
+            price: se.price,
+            charges: 0,
+          });
+        }
+      }
+      for (const sx of scaleExits) {
+        if (sx.quantity > 0) {
+          newEntries.push({
+            id: sx.id,
+            type: closeType,
+            datetime: exitIso,
+            quantity: sx.quantity,
+            price: sx.price,
+            charges: 0,
+          });
+        }
+      }
+      if (newEntries.length > 0) {
+        setEntries(newEntries);
+      }
+      return;
+    }
+
+    // Non-scale trade: classic 2-row entries from simple fields.
+    const newEntries: TradeEntry[] = [];
+
     // Entry transaction
     if (entryDate && entryPriceNum >= 0 && quantityNum > 0) {
       newEntries.push({
@@ -182,7 +224,7 @@ export const TradeModal = () => {
         charges: 0,
       });
     }
-    
+
     // Exit transaction
     if (exitDate && exitPriceNum >= 0 && quantityNum > 0) {
       newEntries.push({
@@ -194,11 +236,34 @@ export const TradeModal = () => {
         charges: feesNum,
       });
     }
-    
+
     if (newEntries.length > 0) {
       setEntries(newEntries);
     }
-  }, [entryDate, entryPrice, quantity, exitDate, exitPrice, fees, direction]);
+  }, [entryDate, entryPrice, quantity, exitDate, exitPrice, fees, direction, scaleEntries, scaleExits]);
+
+  // When the user edits the simple Entry / Exit Price fields on a scale trade,
+  // mirror the typed value into ALL scale rows so the trade collapses to that
+  // single price (matches what handleScaleSave does in reverse: averaging
+  // many rows into the simple field).
+  useEffect(() => {
+    if (scaleEntries.length === 0) return;
+    const v = parseFloat(entryPrice);
+    if (!Number.isFinite(v) || v <= 0) return;
+    // Only update if any row's price differs from typed value
+    const allMatch = scaleEntries.every(se => Math.abs(se.price - v) < 1e-9);
+    if (allMatch) return;
+    setScaleEntries(scaleEntries.map(se => ({ ...se, price: v })));
+  }, [entryPrice]);
+
+  useEffect(() => {
+    if (scaleExits.length === 0) return;
+    const v = parseFloat(exitPrice);
+    if (!Number.isFinite(v) || v <= 0) return;
+    const allMatch = scaleExits.every(sx => Math.abs(sx.price - v) < 1e-9);
+    if (allMatch) return;
+    setScaleExits(scaleExits.map(sx => ({ ...sx, price: v })));
+  }, [exitPrice]);
 
   // Reset checklist items when strategy changes
   useEffect(() => {
@@ -246,14 +311,40 @@ export const TradeModal = () => {
         const lastEntry = sortedEntries.length > 1 ? sortedEntries[sortedEntries.length - 1] : null;
         
         // Determine direction from first entry
-        setDirection(firstEntry.type === 'BUY' ? 'LONG' : 'SHORT');
+        const dir: 'LONG' | 'SHORT' = firstEntry.type === 'BUY' ? 'LONG' : 'SHORT';
+        setDirection(dir);
         setEntryDate(isoToDateTimeLocalInputValue(firstEntry.datetime));
-        setEntryPrice(firstEntry.price.toString());
-        setQuantity(firstEntry.quantity.toString());
-        
-        if (lastEntry && lastEntry.id !== firstEntry.id) {
-          setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
-          setExitPrice(lastEntry.price.toString());
+
+        // For scale trades (multiple fills), populate the simple Entry/Exit/
+        // Quantity fields with avg prices and total closed qty so editing
+        // works the same as a manual scale trade.
+        const hasScale = (editingTrade.scaleEntries?.length ?? 0) > 0
+                       || (editingTrade.scaleExits?.length ?? 0) > 0;
+
+        if (hasScale) {
+          const sEntries = editingTrade.scaleEntries ?? [];
+          const sExits = editingTrade.scaleExits ?? [];
+          const totalEntryQty = sEntries.reduce((s, r) => s + r.quantity, 0);
+          const totalEntryCost = sEntries.reduce((s, r) => s + r.price * r.quantity, 0);
+          const totalExitQty = sExits.reduce((s, r) => s + r.quantity, 0);
+          const totalExitValue = sExits.reduce((s, r) => s + r.price * r.quantity, 0);
+          const avgEntry = totalEntryQty > 0 ? totalEntryCost / totalEntryQty : 0;
+          const avgExit = totalExitQty > 0 ? totalExitValue / totalExitQty : 0;
+          if (avgEntry > 0) setEntryPrice(avgEntry.toString());
+          if (avgExit > 0) setExitPrice(avgExit.toString());
+          // Closed qty drives the simple Quantity field (matches manual scale).
+          const closedQty = Math.min(totalEntryQty, totalExitQty);
+          setQuantity((closedQty > 0 ? closedQty : totalEntryQty).toString());
+          if (lastEntry && lastEntry.id !== firstEntry.id) {
+            setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
+          }
+        } else {
+          setEntryPrice(firstEntry.price.toString());
+          setQuantity(firstEntry.quantity.toString());
+          if (lastEntry && lastEntry.id !== firstEntry.id) {
+            setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
+            setExitPrice(lastEntry.price.toString());
+          }
         }
         
         setEntries(editingTrade.entries);

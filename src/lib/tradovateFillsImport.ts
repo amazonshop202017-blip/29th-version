@@ -304,13 +304,18 @@ export function reconstructTradesFromFills(
         direction = null;
         return;
       }
+      // Sum per-fill commissions into a single trade-level fee, then zero out
+      // entry-level charges to avoid double-counting (calculateTradeMetrics
+      // prefers manualFees when defined, but zeroing keeps data consistent).
+      const totalCommission = currentFills.reduce((s, f) => s + (f.charges || 0), 0);
+
       const entries: TradeEntry[] = currentFills.map(f => ({
         id: crypto.randomUUID(),
         type: f.type,
         datetime: f.iso,
         quantity: f.qty,
         price: f.price,
-        charges: f.charges,
+        charges: 0,
       }));
 
       // Build scaleEntries / scaleExits so the Trade modal renders the full
@@ -347,6 +352,9 @@ export function reconstructTradesFromFills(
         notes: '',
         accountBalanceSnapshot,
         contractSize,
+        // Aggregated commission across all fills → trade-level Fees field.
+        // Net PnL = Gross (computed) − manualFees.
+        manualFees: totalCommission > 0 ? totalCommission : undefined,
         preMfeTickPip: null,
         preMaeTickPip: null,
         source: 'imported',
