@@ -66,10 +66,12 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'netPnl', label: 'Net P&L', group: 'performance', visible: true },
   { id: 'realizedRMultiple', label: 'Realized R Multiple', group: 'performance', visible: true },
   { id: 'plannedRRR', label: 'Planned RR / R-Multiple', group: 'performance', visible: false },
-  { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'performance', visible: false },
-  { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'performance', visible: false },
-  { id: 'postMaxTickPip', label: 'Highest Price (Ticks)', group: 'performance', visible: false },
-  { id: 'postMinTickPip', label: 'Lowest Price (Ticks)', group: 'performance', visible: false },
+
+  // Price Movement
+  { id: 'farthestProfitTicks', label: 'MFE (pre-exit, ticks)', group: 'priceMovement', visible: false },
+  { id: 'farthestLossTicks', label: 'MAE (pre-exit, ticks)', group: 'priceMovement', visible: false },
+  { id: 'postMaxTickPip', label: 'Highest Price (Ticks)', group: 'priceMovement', visible: false },
+  { id: 'postMinTickPip', label: 'Lowest Price (Ticks)', group: 'priceMovement', visible: false },
 ];
 
 const STORAGE_KEY = 'trades-column-visibility';
