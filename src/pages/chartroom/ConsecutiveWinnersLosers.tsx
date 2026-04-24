@@ -62,7 +62,7 @@ interface ChartDataPoint {
 
 const ConsecutiveWinnersLosers = () => {
   const { filteredTrades } = useFilteredTrades();
-  const { formatCurrency } = useGlobalFilters();
+  const { formatCurrency, classifyTradeOutcome } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { displayType, setDisplayType } = useChartDisplayMode('dollar', true);
   const { profitFill, lossFill } = useGradientFill('consec');
@@ -94,8 +94,18 @@ const ConsecutiveWinnersLosers = () => {
     let currentStreak: Streak | null = null;
 
     sortedTrades.forEach(({ trade, metrics }) => {
-      const isWin = metrics.netPnl > 0;
-      const type = isWin ? 'win' : 'loss';
+      const outcome = classifyTradeOutcome(
+        metrics.netPnl,
+        trade.savedReturnPercent ?? metrics.returnPercent,
+        trade.breakEven
+      );
+
+      // Skip breakeven trades — they don't break or extend streaks
+      if (outcome === 'breakeven') {
+        return;
+      }
+
+      const type: 'win' | 'loss' = outcome === 'win' ? 'win' : 'loss';
       const returnPercent = metrics.returnPercent || 0;
 
       if (!currentStreak || currentStreak.type !== type) {
@@ -234,7 +244,7 @@ const ConsecutiveWinnersLosers = () => {
     }
 
     return { streaks: allStreaks, stats, chartData };
-  }, [filteredTrades]);
+  }, [filteredTrades, classifyTradeOutcome]);
 
   // Get top streaks for table
   const topWinStreaks = useMemo(() => {
