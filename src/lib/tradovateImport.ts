@@ -199,6 +199,7 @@ export function parseTradovateCSVToTrades(
   const indexes = findColumnIndexes(headers);
 
   const trades: TradeFormData[] = [];
+  const symbolMeta = new Map<string, SymbolMeta>();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
