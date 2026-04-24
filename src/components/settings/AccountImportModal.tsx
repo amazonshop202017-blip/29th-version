@@ -129,12 +129,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
-    if (importSource === 'TradovateFills') {
-      toast.error('Tradovate (Fills) import is not yet implemented');
-      return;
-    }
-
-    if (importSource !== 'MT5' && importSource !== 'Tradovate') {
+    if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills') {
       toast.error('Invalid import source');
       return;
     }
@@ -155,51 +150,77 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
 
       toast.info(`Importing trades from ${selectedFile.name}...`);
 
-      const result =
-        importSource === 'Tradovate'
-          ? await importTradovateTrades(
-              selectedFile,
-              selectedAccountId,
-              accountBalanceSnapshot,
-              bulkAddTrades,
-              contractSizes,
-              existingFingerprints,
-              // ensureSymbolRules: create per-account Symbol Tick/Pip rules
-              // for any symbol that doesn't already have one. Runs BEFORE
-              // trades are inserted.
-              (rules) => {
-                let added = 0;
-                for (const r of rules) {
-                  const exists = tickPipRules.some(
-                    rule =>
-                      rule.accountIds.includes(selectedAccountId) &&
-                      rule.symbol === r.symbol
-                  );
-                  if (exists) continue;
-                  addTickPipRule({
-                    accountIds: [selectedAccountId],
-                    symbol: r.symbol,
-                    tickSize: r.tickSize,
-                    contractSize: r.contractSize,
-                  });
-                  added++;
-                }
-                return { added };
-              }
+      let result:
+        | Awaited<ReturnType<typeof importTradovateTrades>>
+        | Awaited<ReturnType<typeof importMT5Trades>>
+        | Awaited<ReturnType<typeof importTradovateFills>>;
+
+      if (importSource === 'Tradovate') {
+        result = await importTradovateTrades(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          contractSizes,
+          existingFingerprints,
+          // ensureSymbolRules: create per-account Symbol Tick/Pip rules
+          // for any symbol that doesn't already have one. Runs BEFORE
+          // trades are inserted.
+          (rules) => {
+            let added = 0;
+            for (const r of rules) {
+              const exists = tickPipRules.some(
+                rule =>
+                  rule.accountIds.includes(selectedAccountId) &&
+                  rule.symbol === r.symbol
+              );
+              if (exists) continue;
+              addTickPipRule({
+                accountIds: [selectedAccountId],
+                symbol: r.symbol,
+                tickSize: r.tickSize,
+                contractSize: r.contractSize,
+              });
+              added++;
+            }
+            return { added };
+          }
+        );
+      } else if (importSource === 'TradovateFills') {
+        result = await importTradovateFills(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          existingFingerprints,
+          // hasSymbolRule: STRICT — Fills import never auto-creates rules.
+          (accId, sym) =>
+            tickPipRules.some(
+              r => r.accountIds.includes(accId) && r.symbol === sym
             )
-          : await importMT5Trades(
-              selectedFile,
-              selectedAccountId,
-              accountBalanceSnapshot,
-              bulkAddTrades,
-              contractSizes,
-              existingFingerprints
-            );
+        );
+      } else {
+        result = await importMT5Trades(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          contractSizes,
+          existingFingerprints
+        );
+      }
+
+      // Show missing-symbols popup for Fills import (regardless of success).
+      const missing =
+        (result as { missingSymbols?: MissingSymbolInfo[] }).missingSymbols ?? [];
+      if (importSource === 'TradovateFills' && missing.length > 0) {
+        setMissingSymbolsModal({ open: true, items: missing });
+      }
 
       if (result.success) {
         // Auto-register imported symbols with default contract size = 1
-        // (skip for Tradovate — handled via tickPipRules above)
-        if (importSource !== 'Tradovate') {
+        // (skip for Tradovate / Fills — they use tickPipRules)
+        if (importSource === 'MT5') {
           result.importedSymbols.forEach(sym => {
             if (!(sym in contractSizes)) {
               setContractSize(sym, 1);
@@ -217,11 +238,26 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         if (importSource === 'Tradovate' && symbolRulesAdded > 0) {
           parts.push(`${symbolRulesAdded} symbol rule${symbolRulesAdded !== 1 ? 's' : ''} added`);
         }
+        if (importSource === 'TradovateFills' && missing.length > 0) {
+          parts.push(`${missing.length} symbol${missing.length !== 1 ? 's' : ''} need configuration`);
+        }
         toast.success(parts.join(' · '));
         resetForm();
-        onOpenChange(false);
+        // Keep parent dialog open if missing-symbols modal is showing
+        if (!(importSource === 'TradovateFills' && missing.length > 0)) {
+          onOpenChange(false);
+        } else {
+          onOpenChange(false);
+        }
       } else {
-        toast.error(result.errors[0] || 'Failed to import trades');
+        // Fills with all symbols missing → success=false but we still want to surface the popup.
+        if (importSource === 'TradovateFills' && missing.length > 0) {
+          toast.warning(`No trades imported · ${missing.length} symbol${missing.length !== 1 ? 's' : ''} need configuration`);
+          resetForm();
+          onOpenChange(false);
+        } else {
+          toast.error(result.errors[0] || 'Failed to import trades');
+        }
       }
     } catch (error) {
       toast.error('An unexpected error occurred during import');
@@ -230,7 +266,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       setIsImporting(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
