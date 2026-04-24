@@ -9,7 +9,23 @@ export interface TradovateImportResult {
   rowsSkipped: number;
   errors: string[];
   importedSymbols: string[];
+  symbolRulesAdded: number;
 }
+
+export interface SymbolRuleInput {
+  symbol: string;
+  tickSize: number;
+  contractSize: number;
+}
+
+export type EnsureSymbolRules = (rules: SymbolRuleInput[]) => { added: number };
+
+export interface SymbolMeta {
+  tickSize: number;
+  contractSize: number;
+}
+
+const DEFAULT_TICK_SIZE = 0.01;
 
 // ----------------------------------------------------------------------------
 // CSV parsing helpers (kept module-local — same approach as mt5Import)
@@ -100,6 +116,7 @@ interface ColumnIndexes {
   pnl: number;
   boughtTs: number;
   soldTs: number;
+  tickSize: number;
 }
 
 function normalizeHeader(s: string): string {
@@ -122,6 +139,14 @@ function findColumnIndexes(headers: string[]): ColumnIndexes {
   const norm = headers.map(h => normalizeHeader(h));
   const idxOf = (name: string) => norm.indexOf(name);
 
+  // Tick size column may appear as "_tickSize" / "_tick size" / "_ticksize"
+  const tickSizeIdx =
+    norm.indexOf('_ticksize') !== -1
+      ? norm.indexOf('_ticksize')
+      : norm.indexOf('_tick size') !== -1
+      ? norm.indexOf('_tick size')
+      : norm.indexOf('_tick_size');
+
   const indexes: ColumnIndexes = {
     product: idxOf('product'),
     bought: idxOf('bought'),
@@ -131,6 +156,7 @@ function findColumnIndexes(headers: string[]): ColumnIndexes {
     pnl: idxOf('p/l'),
     boughtTs: idxOf('bought timestamp'),
     soldTs: idxOf('sold timestamp'),
+    tickSize: tickSizeIdx,
   };
 
   const missing: string[] = [];
@@ -158,7 +184,7 @@ export function parseTradovateCSVToTrades(
   accountId: string,
   accountBalanceSnapshot: number,
   contractSizes?: Record<string, number>
-): { trades: TradeFormData[]; skipped: number } {
+): { trades: TradeFormData[]; skipped: number; symbolMeta: Map<string, SymbolMeta> } {
   const lines = csvContent.split(/\r?\n/).filter(line => line.trim().length > 0);
   if (lines.length < 2) {
     throw new Error('CSV must have at least a header row and one data row');
@@ -173,6 +199,7 @@ export function parseTradovateCSVToTrades(
   const indexes = findColumnIndexes(headers);
 
   const trades: TradeFormData[] = [];
+  const symbolMeta = new Map<string, SymbolMeta>();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
@@ -275,6 +302,18 @@ export function parseTradovateCSVToTrades(
         if (Number.isFinite(cs) && cs > 0) derivedContractSize = cs;
       }
 
+      // STAGE 9b — capture per-symbol meta (first valid row wins)
+      if (!symbolMeta.has(symbol)) {
+        const tickSizeRaw =
+          indexes.tickSize !== -1 ? parseNumber(values[indexes.tickSize]) : NaN;
+        const tickSize =
+          Number.isFinite(tickSizeRaw) && tickSizeRaw > 0 ? tickSizeRaw : DEFAULT_TICK_SIZE;
+        symbolMeta.set(symbol, {
+          tickSize,
+          contractSize: derivedContractSize ?? 1,
+        });
+      }
+
       // Return % using account balance snapshot (parity with MT5)
       const calculatedReturnPercent =
         accountBalanceSnapshot > 0 ? (pnl / accountBalanceSnapshot) * 100 : 0;
@@ -310,7 +349,7 @@ export function parseTradovateCSVToTrades(
     }
   }
 
-  return { trades, skipped };
+  return { trades, skipped, symbolMeta };
 }
 
 // ----------------------------------------------------------------------------
@@ -327,14 +366,19 @@ export async function importTradovateTrades(
    * Set of fingerprints already stored for this account (source = 'imported').
    * Comparison uses STORED fingerprints only — never recomputed during comparison.
    */
-  existingFingerprints: Set<string> = new Set()
+  existingFingerprints: Set<string> = new Set(),
+  /**
+   * Registers Symbol Tick/Pip rules for any symbols not already configured
+   * for the importing account. Called BEFORE trades are inserted.
+   */
+  ensureSymbolRules?: EnsureSymbolRules
 ): Promise<TradovateImportResult> {
   const errors: string[] = [];
 
   try {
     const csvContent = await file.text();
 
-    const { trades, skipped } = parseTradovateCSVToTrades(
+    const { trades, skipped, symbolMeta } = parseTradovateCSVToTrades(
       csvContent,
       accountId,
       accountBalanceSnapshot,
@@ -349,6 +393,7 @@ export async function importTradovateTrades(
         rowsSkipped: skipped,
         errors: ['No valid trades found in the file'],
         importedSymbols: [],
+        symbolRulesAdded: 0,
       };
     }
 
@@ -371,14 +416,36 @@ export async function importTradovateTrades(
       toInsert.push(trade);
     }
 
-    // STAGE 13 — insert
-    if (toInsert.length > 0) {
-      bulkAddTrades(toInsert);
-    }
-
+    // STAGE 13a — register Symbol Tick/Pip rules BEFORE inserting trades.
+    // Only for symbols whose trades will actually be inserted.
+    let symbolRulesAdded = 0;
     const importedSymbols = Array.from(
       new Set(toInsert.map(t => t.symbol).filter(Boolean))
     );
+
+    if (ensureSymbolRules && importedSymbols.length > 0) {
+      const ruleInputs: SymbolRuleInput[] = importedSymbols
+        .map(sym => {
+          const meta = symbolMeta.get(sym);
+          if (!meta) return null;
+          return {
+            symbol: sym,
+            tickSize: meta.tickSize,
+            contractSize: meta.contractSize,
+          };
+        })
+        .filter((r): r is SymbolRuleInput => r !== null);
+
+      if (ruleInputs.length > 0) {
+        const res = ensureSymbolRules(ruleInputs);
+        symbolRulesAdded = res.added;
+      }
+    }
+
+    // STAGE 13b — insert trades AFTER rules are guaranteed to exist
+    if (toInsert.length > 0) {
+      bulkAddTrades(toInsert);
+    }
 
     // STAGE 14 — result
     return {
@@ -388,6 +455,7 @@ export async function importTradovateTrades(
       rowsSkipped: skipped,
       errors: [],
       importedSymbols,
+      symbolRulesAdded,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -399,6 +467,7 @@ export async function importTradovateTrades(
       rowsSkipped: 0,
       errors,
       importedSymbols: [],
+      symbolRulesAdded: 0,
     };
   }
 }
