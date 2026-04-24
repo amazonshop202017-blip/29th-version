@@ -149,9 +149,13 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
               {isColumnVisible('plannedRRR') && <TableHead className="px-2">Planned RR</TableHead>}
               {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
+              {isColumnVisible('farthestProfitPrice') && <TableHead className="px-2 text-right">MFE (pre-exit, price)</TableHead>}
               {isColumnVisible('farthestLossTicks') && <TableHead className="px-2 text-right">MAE (pre-exit, ticks)</TableHead>}
+              {isColumnVisible('farthestLossPrice') && <TableHead className="px-2 text-right">MAE (pre-exit, price)</TableHead>}
               {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
+              {isColumnVisible('postMaxPrice') && <TableHead className="px-2 text-right">Highest Price (Price)</TableHead>}
               {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
+              {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price (Price)</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -333,9 +337,19 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.preMfeTickPip === 'number' ? trade.preMfeTickPip : ''}
                     </TableCell>
                   )}
+                  {isColumnVisible('farthestProfitPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.preMfePrice === 'number' ? trade.preMfePrice : ''}
+                    </TableCell>
+                  )}
                   {isColumnVisible('farthestLossTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('farthestLossPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.preMaePrice === 'number' ? trade.preMaePrice : ''}
                     </TableCell>
                   )}
                   {isColumnVisible('postMaxTickPip') && (
@@ -343,9 +357,19 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.postMaxTickPip === 'number' ? trade.postMaxTickPip : ''}
                     </TableCell>
                   )}
+                  {isColumnVisible('postMaxPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.postMaxPrice === 'number' ? trade.postMaxPrice : ''}
+                    </TableCell>
+                  )}
                   {isColumnVisible('postMinTickPip') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('postMinPrice') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.postMinPrice === 'number' ? trade.postMinPrice : ''}
                     </TableCell>
                   )}
                 </TableRow>
