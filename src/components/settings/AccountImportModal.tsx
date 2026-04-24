@@ -419,14 +419,15 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           </Button>
         </div>
       </DialogContent>
-
-      <MissingSymbolRulesModal
-        open={missingSymbolsModal.open}
-        onOpenChange={(open) =>
-          setMissingSymbolsModal((prev) => ({ ...prev, open }))
-        }
-        missing={missingSymbolsModal.items}
-      />
     </Dialog>
+
+    <MissingSymbolRulesModal
+      open={missingSymbolsModal.open}
+      onOpenChange={(open) =>
+        setMissingSymbolsModal((prev) => ({ ...prev, open }))
+      }
+      missing={missingSymbolsModal.items}
+    />
+    </>
   );
 }
