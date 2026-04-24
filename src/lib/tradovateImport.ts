@@ -302,6 +302,18 @@ export function parseTradovateCSVToTrades(
         if (Number.isFinite(cs) && cs > 0) derivedContractSize = cs;
       }
 
+      // STAGE 9b — capture per-symbol meta (first valid row wins)
+      if (!symbolMeta.has(symbol)) {
+        const tickSizeRaw =
+          indexes.tickSize !== -1 ? parseNumber(values[indexes.tickSize]) : NaN;
+        const tickSize =
+          Number.isFinite(tickSizeRaw) && tickSizeRaw > 0 ? tickSizeRaw : DEFAULT_TICK_SIZE;
+        symbolMeta.set(symbol, {
+          tickSize,
+          contractSize: derivedContractSize ?? 1,
+        });
+      }
+
       // Return % using account balance snapshot (parity with MT5)
       const calculatedReturnPercent =
         accountBalanceSnapshot > 0 ? (pnl / accountBalanceSnapshot) * 100 : 0;
