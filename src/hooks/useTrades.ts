@@ -190,7 +190,20 @@ export const useTrades = () => {
               };
             }
           }
-          
+
+          // Migration 4: Backfill source + fingerprint for legacy trades.
+          // Legacy trades default to 'manual'. Fingerprint is computed once
+          // and persisted; never recomputed during deduplication comparison.
+          if (!updated.source) {
+            updated = { ...updated, source: 'manual' };
+          }
+          if (!updated.fingerprint) {
+            updated = {
+              ...updated,
+              fingerprint: buildFingerprintForTrade(updated, updated.source),
+            };
+          }
+
           return updated;
           } catch (err) {
             console.error('[useTrades] Migration error for trade:', trade?.id, err);
