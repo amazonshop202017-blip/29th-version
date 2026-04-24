@@ -286,6 +286,10 @@ export function reconstructTradesFromFills(
   const trades: TradeFormData[] = [];
   const missingMap = new Map<string, number>(); // symbol → tickSize for display
 
+  // Load fee rules once. If a matching rule exists for (account, symbol), it
+  // wins over the CSV commission column — mirrors manual-trade behaviour.
+  const feeRules = loadFeeRules();
+
   // Process symbols in deterministic order
   const symbols = [...bySymbol.keys()].sort();
 
