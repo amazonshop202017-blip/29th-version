@@ -328,6 +328,14 @@ export function parseTradovateCSVToTrades(
         accountBalanceSnapshot > 0 ? (pnl / accountBalanceSnapshot) * 100 : 0;
 
       // STAGE 10 — final trade object
+      // If a fee rule exists for this (account, symbol), surface it as
+      // manualFees so Net PnL = Gross − Fees. Otherwise leave undefined
+      // (preserves prior behaviour: Tradovate Positions had no fee data).
+      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      const ruleFee = matchedFeeRule
+        ? calculateFeeFromRule(matchedFeeRule, entries, side)
+        : 0;
+
       const trade: TradeFormData = {
         symbol,
         side,
@@ -339,6 +347,7 @@ export function parseTradovateCSVToTrades(
         notes: '',
         // Tradovate P/L is treated as both gross and net (no per-row fee data).
         manualGrossPnl: pnl,
+        manualFees: matchedFeeRule && ruleFee > 0 ? ruleFee : undefined,
         savedReturnPercent: calculatedReturnPercent,
         savedRMultiple: 0,
         accountBalanceSnapshot,
