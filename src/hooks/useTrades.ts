@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
 import { toISO, nowISO, auditISOValues } from '@/lib/datetime';
+import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
 const getCurrentUserId = (): string | undefined => {
   try {
