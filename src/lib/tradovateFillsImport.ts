@@ -1,5 +1,6 @@
 import { TradeFormData, TradeEntry, ScaleEntry } from '@/types/trade';
 import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
+import { loadFeeRules, findMatchingFeeRule, calculateFeeFromRule } from '@/lib/feeCalculation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -285,6 +286,10 @@ export function reconstructTradesFromFills(
   const trades: TradeFormData[] = [];
   const missingMap = new Map<string, number>(); // symbol → tickSize for display
 
+  // Load fee rules once. If a matching rule exists for (account, symbol), it
+  // wins over the CSV commission column — mirrors manual-trade behaviour.
+  const feeRules = loadFeeRules();
+
   // Process symbols in deterministic order
   const symbols = [...bySymbol.keys()].sort();
 
@@ -307,6 +312,8 @@ export function reconstructTradesFromFills(
       // Sum per-fill commissions into a single trade-level fee, then zero out
       // entry-level charges to avoid double-counting (calculateTradeMetrics
       // prefers manualFees when defined, but zeroing keeps data consistent).
+      // Determine fees: prefer the per-account fee rule for this symbol; if
+      // none exists, fall back to the summed CSV commissions.
       const totalCommission = currentFills.reduce((s, f) => s + (f.charges || 0), 0);
 
       const entries: TradeEntry[] = currentFills.map(f => ({
@@ -339,6 +346,12 @@ export function reconstructTradesFromFills(
       // calculateTradeMetrics computes PnL with the correct multiplier.
       const contractSize = getContractSize(accountId, symbol);
 
+      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      const ruleFee = matchedFeeRule
+        ? calculateFeeFromRule(matchedFeeRule, entries, direction)
+        : 0;
+      const resolvedFees = matchedFeeRule ? ruleFee : totalCommission;
+
       const trade: TradeFormData = {
         symbol,
         side: direction,
@@ -354,7 +367,7 @@ export function reconstructTradesFromFills(
         contractSize,
         // Aggregated commission across all fills → trade-level Fees field.
         // Net PnL = Gross (computed) − manualFees.
-        manualFees: totalCommission > 0 ? totalCommission : undefined,
+        manualFees: resolvedFees > 0 ? resolvedFees : undefined,
         preMfeTickPip: null,
         preMaeTickPip: null,
         source: 'imported',
