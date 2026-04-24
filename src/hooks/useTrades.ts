@@ -226,8 +226,18 @@ export const useTrades = () => {
   }, []);
 
   const addTrade = useCallback((data: TradeFormData) => {
-    const newTrade: Trade = {
+    const source = data.source ?? 'manual';
+    const tradeBase = {
       ...data,
+      source,
+      accountId: data.accountId,
+    };
+    const fingerprint =
+      data.fingerprint ?? buildFingerprintForTrade(tradeBase as Trade, source);
+    const newTrade: Trade = {
+      ...tradeBase,
+      source,
+      fingerprint,
       id: crypto.randomUUID(),
       userId: getCurrentUserId(),
       createdAt: nowISO(),
@@ -240,13 +250,20 @@ export const useTrades = () => {
   const bulkAddTrades = useCallback((tradesData: TradeFormData[]): Trade[] => {
     const now = nowISO();
     const userId = getCurrentUserId();
-    const newTrades: Trade[] = tradesData.map(data => ({
-      ...data,
-      id: crypto.randomUUID(),
-      userId,
-      createdAt: now,
-      updatedAt: now,
-    }));
+    const newTrades: Trade[] = tradesData.map(data => {
+      const source = data.source ?? 'manual';
+      const fingerprint =
+        data.fingerprint ?? buildFingerprintForTrade({ ...data, source } as Trade, source);
+      return {
+        ...data,
+        source,
+        fingerprint,
+        id: crypto.randomUUID(),
+        userId,
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
     saveTrades([...trades, ...newTrades]);
     return newTrades;
   }, [trades, saveTrades]);
