@@ -110,7 +110,12 @@ export interface TradeCalculations {
   openQuantity: number;
 }
 
-export type TradeFormData = Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>;
+// Form/input data — source & fingerprint are filled in by the storage layer (useTrades)
+// when not provided by the caller.
+export type TradeFormData = Omit<Trade, 'id' | 'createdAt' | 'updatedAt' | 'source' | 'fingerprint'> & {
+  source?: 'imported' | 'manual';
+  fingerprint?: string;
+};
 
 // Helper function to calculate trade metrics
 export function calculateTradeMetrics(trade: Trade | TradeFormData): TradeCalculations {
