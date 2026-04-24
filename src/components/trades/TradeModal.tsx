@@ -311,14 +311,40 @@ export const TradeModal = () => {
         const lastEntry = sortedEntries.length > 1 ? sortedEntries[sortedEntries.length - 1] : null;
         
         // Determine direction from first entry
-        setDirection(firstEntry.type === 'BUY' ? 'LONG' : 'SHORT');
+        const dir: 'LONG' | 'SHORT' = firstEntry.type === 'BUY' ? 'LONG' : 'SHORT';
+        setDirection(dir);
         setEntryDate(isoToDateTimeLocalInputValue(firstEntry.datetime));
-        setEntryPrice(firstEntry.price.toString());
-        setQuantity(firstEntry.quantity.toString());
-        
-        if (lastEntry && lastEntry.id !== firstEntry.id) {
-          setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
-          setExitPrice(lastEntry.price.toString());
+
+        // For scale trades (multiple fills), populate the simple Entry/Exit/
+        // Quantity fields with avg prices and total closed qty so editing
+        // works the same as a manual scale trade.
+        const hasScale = (editingTrade.scaleEntries?.length ?? 0) > 0
+                       || (editingTrade.scaleExits?.length ?? 0) > 0;
+
+        if (hasScale) {
+          const sEntries = editingTrade.scaleEntries ?? [];
+          const sExits = editingTrade.scaleExits ?? [];
+          const totalEntryQty = sEntries.reduce((s, r) => s + r.quantity, 0);
+          const totalEntryCost = sEntries.reduce((s, r) => s + r.price * r.quantity, 0);
+          const totalExitQty = sExits.reduce((s, r) => s + r.quantity, 0);
+          const totalExitValue = sExits.reduce((s, r) => s + r.price * r.quantity, 0);
+          const avgEntry = totalEntryQty > 0 ? totalEntryCost / totalEntryQty : 0;
+          const avgExit = totalExitQty > 0 ? totalExitValue / totalExitQty : 0;
+          if (avgEntry > 0) setEntryPrice(avgEntry.toString());
+          if (avgExit > 0) setExitPrice(avgExit.toString());
+          // Closed qty drives the simple Quantity field (matches manual scale).
+          const closedQty = Math.min(totalEntryQty, totalExitQty);
+          setQuantity((closedQty > 0 ? closedQty : totalEntryQty).toString());
+          if (lastEntry && lastEntry.id !== firstEntry.id) {
+            setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
+          }
+        } else {
+          setEntryPrice(firstEntry.price.toString());
+          setQuantity(firstEntry.quantity.toString());
+          if (lastEntry && lastEntry.id !== firstEntry.id) {
+            setExitDate(isoToDateTimeLocalInputValue(lastEntry.datetime));
+            setExitPrice(lastEntry.price.toString());
+          }
         }
         
         setEntries(editingTrade.entries);
