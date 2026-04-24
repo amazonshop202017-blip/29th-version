@@ -62,7 +62,7 @@ interface ChartDataPoint {
 
 const ConsecutiveWinnersLosers = () => {
   const { filteredTrades } = useFilteredTrades();
-  const { formatCurrency } = useGlobalFilters();
+  const { formatCurrency, classifyTradeOutcome } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { displayType, setDisplayType } = useChartDisplayMode('dollar', true);
   const { profitFill, lossFill } = useGradientFill('consec');
