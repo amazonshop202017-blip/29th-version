@@ -207,8 +207,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         if (result.rowsSkipped > 0) {
           parts.push(`${result.rowsSkipped} row${result.rowsSkipped !== 1 ? 's' : ''} skipped`);
         }
-        if (importSource === 'Tradovate' && 'symbolRulesAdded' in result && result.symbolRulesAdded > 0) {
-          parts.push(`${result.symbolRulesAdded} symbol rule${result.symbolRulesAdded !== 1 ? 's' : ''} added`);
+        const symbolRulesAdded = (result as { symbolRulesAdded?: number }).symbolRulesAdded ?? 0;
+        if (importSource === 'Tradovate' && symbolRulesAdded > 0) {
+          parts.push(`${symbolRulesAdded} symbol rule${symbolRulesAdded !== 1 ? 's' : ''} added`);
         }
         toast.success(parts.join(' · '));
         resetForm();
