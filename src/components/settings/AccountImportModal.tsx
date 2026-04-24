@@ -325,6 +325,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
                 Upload a Tradovate Positions CSV export.
               </p>
             )}
+            {importSource === 'TradovateFills' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Tradovate (Fills) import will be available in a future update.
+              </p>
+            )}
           </div>
         </div>
         
