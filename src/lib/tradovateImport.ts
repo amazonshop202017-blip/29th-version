@@ -205,6 +205,8 @@ export function parseTradovateCSVToTrades(
   const symbolContractCandidates = new Map<string, number[]>();
   // Track first-seen tick size per symbol (tick size is fixed per instrument).
   const symbolTickSize = new Map<string, number>();
+  // Load fee rules once — applied per trade if a matching (account, symbol) rule exists.
+  const feeRules = loadFeeRules();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
