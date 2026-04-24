@@ -346,6 +346,12 @@ export function reconstructTradesFromFills(
       // calculateTradeMetrics computes PnL with the correct multiplier.
       const contractSize = getContractSize(accountId, symbol);
 
+      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      const ruleFee = matchedFeeRule
+        ? calculateFeeFromRule(matchedFeeRule, entries, direction)
+        : 0;
+      const resolvedFees = matchedFeeRule ? ruleFee : totalCommission;
+
       const trade: TradeFormData = {
         symbol,
         side: direction,
