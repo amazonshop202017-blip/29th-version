@@ -74,7 +74,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     if (importSource === 'MT5') {
       return '.csv,.htm,.html';
     }
-    if (importSource === 'Tradovate') {
+    if (importSource === 'Tradovate' || importSource === 'TradovateFills') {
       return '.csv';
     }
     // Default accept for MatchTrader (will be expanded later)
