@@ -9,7 +9,23 @@ export interface TradovateImportResult {
   rowsSkipped: number;
   errors: string[];
   importedSymbols: string[];
+  symbolRulesAdded: number;
 }
+
+export interface SymbolRuleInput {
+  symbol: string;
+  tickSize: number;
+  contractSize: number;
+}
+
+export type EnsureSymbolRules = (rules: SymbolRuleInput[]) => { added: number };
+
+export interface SymbolMeta {
+  tickSize: number;
+  contractSize: number;
+}
+
+const DEFAULT_TICK_SIZE = 0.01;
 
 // ----------------------------------------------------------------------------
 // CSV parsing helpers (kept module-local — same approach as mt5Import)
