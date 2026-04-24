@@ -332,19 +332,14 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.savedRRR === 'number' ? trade.savedRRR.toFixed(2) : '—'}
                     </TableCell>
                   )}
-                  {isColumnVisible('farthestProfitTicks') && (
-                    <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.preMfeTickPip === 'number' ? trade.preMfeTickPip : ''}
-                    </TableCell>
-                  )}
                   {isColumnVisible('farthestProfitPrice') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.preMfePrice === 'number' ? trade.preMfePrice : ''}
                     </TableCell>
                   )}
-                  {isColumnVisible('farthestLossTicks') && (
+                  {isColumnVisible('farthestProfitTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
+                      {typeof trade.preMfeTickPip === 'number' ? trade.preMfeTickPip : ''}
                     </TableCell>
                   )}
                   {isColumnVisible('farthestLossPrice') && (
@@ -352,9 +347,9 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.preMaePrice === 'number' ? trade.preMaePrice : ''}
                     </TableCell>
                   )}
-                  {isColumnVisible('postMaxTickPip') && (
+                  {isColumnVisible('farthestLossTicks') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.postMaxTickPip === 'number' ? trade.postMaxTickPip : ''}
+                      {typeof trade.preMaeTickPip === 'number' ? trade.preMaeTickPip : ''}
                     </TableCell>
                   )}
                   {isColumnVisible('postMaxPrice') && (
@@ -362,14 +357,19 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.postMaxPrice === 'number' ? trade.postMaxPrice : ''}
                     </TableCell>
                   )}
-                  {isColumnVisible('postMinTickPip') && (
+                  {isColumnVisible('postMaxTickPip') && (
                     <TableCell className="font-mono text-right px-2 py-1">
-                      {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
+                      {typeof trade.postMaxTickPip === 'number' ? trade.postMaxTickPip : ''}
                     </TableCell>
                   )}
                   {isColumnVisible('postMinPrice') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.postMinPrice === 'number' ? trade.postMinPrice : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('postMinTickPip') && (
+                    <TableCell className="font-mono text-right px-2 py-1">
+                      {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
                     </TableCell>
                   )}
                 </TableRow>
