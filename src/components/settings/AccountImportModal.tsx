@@ -309,6 +309,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
                 MatchTrader import will be available in a future update.
               </p>
             )}
+            {importSource === 'Tradovate' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Tradovate import will be available in a future update.
+              </p>
+            )}
           </div>
         </div>
         
