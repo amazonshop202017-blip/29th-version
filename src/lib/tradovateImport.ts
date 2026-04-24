@@ -200,6 +200,10 @@ export function parseTradovateCSVToTrades(
 
   const trades: TradeFormData[] = [];
   const symbolMeta = new Map<string, SymbolMeta>();
+  // Collect per-symbol contract size candidates across ALL rows for stable aggregation.
+  const symbolContractCandidates = new Map<string, number[]>();
+  // Track first-seen tick size per symbol (tick size is fixed per instrument).
+  const symbolTickSize = new Map<string, number>();
   let skipped = 0;
 
   for (let i = headerRowIndex + 1; i < lines.length; i++) {
