@@ -83,6 +83,10 @@ export interface Trade {
   contractSize?: number;
   // Screenshots attached to trade
   screenshots?: TradeScreenshot[];
+  // Origin of trade — 'imported' (from broker file) or 'manual' (created in UI)
+  source: 'imported' | 'manual';
+  // Deterministic identity for deduplication. Always present, never recomputed during comparison.
+  fingerprint: string;
 }
 
 // Calculated values (not stored, computed on-the-fly)
