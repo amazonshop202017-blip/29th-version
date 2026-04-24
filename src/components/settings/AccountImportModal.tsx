@@ -53,7 +53,7 @@ interface AccountImportModalProps {
 export function AccountImportModal({ open, onOpenChange }: AccountImportModalProps) {
   const { accounts, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { trades, bulkAddTrades } = useTradesContext();
-  const { contractSizes, setContractSize } = useSymbolTickSize();
+  const { contractSizes, setContractSize, tickPipRules, addTickPipRule } = useSymbolTickSize();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [importSource, setImportSource] = useState<string>('');
