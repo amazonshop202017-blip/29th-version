@@ -269,11 +269,24 @@ export const useTrades = () => {
   }, [trades, saveTrades]);
 
   const updateTrade = useCallback((id: string, data: TradeFormData) => {
-    const updated = trades.map(trade =>
-      trade.id === id
-        ? { ...trade, ...data, updatedAt: nowISO() }
-        : trade
-    );
+    const updated = trades.map(trade => {
+      if (trade.id !== id) return trade;
+      // Preserve original source — never flip imported→manual on edit
+      const source = trade.source ?? data.source ?? 'manual';
+      const next: Trade = {
+        ...trade,
+        ...data,
+        source,
+        // Imported trades keep their stored fingerprint (immutable identity).
+        // Manual trades recompute fingerprint from edited values.
+        fingerprint:
+          source === 'imported'
+            ? trade.fingerprint
+            : buildFingerprintForTrade({ ...trade, ...data, source } as Trade, 'manual'),
+        updatedAt: nowISO(),
+      };
+      return next;
+    });
     saveTrades(updated);
   }, [trades, saveTrades]);
 
@@ -282,10 +295,15 @@ export const useTrades = () => {
     const now = nowISO();
     const updated = trades.map(trade => {
       const patch = updates.get(trade.id);
-      if (patch) {
-        return { ...trade, ...patch, updatedAt: now };
-      }
-      return trade;
+      if (!patch) return trade;
+      const source = trade.source ?? 'manual';
+      const merged = { ...trade, ...patch, source, updatedAt: now } as Trade;
+      // Recompute fingerprint only for manual trades; imported keep stored identity
+      merged.fingerprint =
+        source === 'imported'
+          ? trade.fingerprint
+          : buildFingerprintForTrade(merged, 'manual');
+      return merged;
     });
     saveTrades(updated);
   }, [trades, saveTrades]);
