@@ -312,6 +312,8 @@ export function reconstructTradesFromFills(
       // Sum per-fill commissions into a single trade-level fee, then zero out
       // entry-level charges to avoid double-counting (calculateTradeMetrics
       // prefers manualFees when defined, but zeroing keeps data consistent).
+      // Determine fees: prefer the per-account fee rule for this symbol; if
+      // none exists, fall back to the summed CSV commissions.
       const totalCommission = currentFills.reduce((s, f) => s + (f.charges || 0), 0);
 
       const entries: TradeEntry[] = currentFills.map(f => ({
