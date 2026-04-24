@@ -33,6 +33,7 @@ import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useSymbolTickSize } from '@/contexts/SymbolTickSizeContext';
 import { importMT5Trades } from '@/lib/mt5Import';
+import { importTradovateTrades } from '@/lib/tradovateImport';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -116,24 +117,18 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
     
-    // Only MT5 import is implemented
     if (importSource === 'MatchTrader') {
       toast.error('MatchTrader import is not yet implemented');
       return;
     }
 
-    if (importSource === 'Tradovate') {
-      toast.error('Tradovate import is not yet implemented');
-      return;
-    }
-
-    if (importSource !== 'MT5') {
+    if (importSource !== 'MT5' && importSource !== 'Tradovate') {
       toast.error('Invalid import source');
       return;
     }
-    
+
     setIsImporting(true);
-    
+
     try {
       // Get account balance BEFORE trades for Return % calculation
       const accountBalanceSnapshot = getAccountBalanceBeforeTrades(selectedAccountId);
@@ -148,14 +143,24 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
 
       toast.info(`Importing trades from ${selectedFile.name}...`);
 
-      const result = await importMT5Trades(
-        selectedFile,
-        selectedAccountId,
-        accountBalanceSnapshot,
-        bulkAddTrades,
-        contractSizes,
-        existingFingerprints
-      );
+      const result =
+        importSource === 'Tradovate'
+          ? await importTradovateTrades(
+              selectedFile,
+              selectedAccountId,
+              accountBalanceSnapshot,
+              bulkAddTrades,
+              contractSizes,
+              existingFingerprints
+            )
+          : await importMT5Trades(
+              selectedFile,
+              selectedAccountId,
+              accountBalanceSnapshot,
+              bulkAddTrades,
+              contractSizes,
+              existingFingerprints
+            );
 
       if (result.success) {
         // Auto-register imported symbols with default contract size = 1
@@ -311,7 +316,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             )}
             {importSource === 'Tradovate' && (
               <p className="text-xs text-muted-foreground mt-1">
-                Tradovate import will be available in a future update.
+                Upload a Tradovate Positions CSV export.
               </p>
             )}
           </div>
