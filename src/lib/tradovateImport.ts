@@ -1,4 +1,5 @@
 import { TradeFormData, TradeEntry } from '@/types/trade';
+import { loadFeeRules, findMatchingFeeRule, calculateFeeFromRule } from '@/lib/feeCalculation';
 import { toISO } from '@/lib/datetime';
 import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
