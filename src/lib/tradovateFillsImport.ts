@@ -1,4 +1,4 @@
-import { TradeFormData, TradeEntry } from '@/types/trade';
+import { TradeFormData, TradeEntry, ScaleEntry } from '@/types/trade';
 import { buildFingerprintForTrade } from '@/lib/tradeFingerprint';
 
 // ---------------------------------------------------------------------------
@@ -265,7 +265,8 @@ export function reconstructTradesFromFills(
   rows: FillRow[],
   accountId: string,
   accountBalanceSnapshot: number,
-  hasSymbolRule: (accountId: string, symbol: string) => boolean
+  hasSymbolRule: (accountId: string, symbol: string) => boolean,
+  getContractSize: (accountId: string, symbol: string) => number
 ): {
   trades: TradeFormData[];
   missingSymbols: MissingSymbolInfo[];
@@ -312,19 +313,40 @@ export function reconstructTradesFromFills(
         charges: f.charges,
       }));
 
+      // Build scaleEntries / scaleExits so the Trade modal renders the full
+      // scale-in/out view (mirrors what the modal save button stores for
+      // manual scale trades).
+      const openType: 'BUY' | 'SELL' = direction === 'LONG' ? 'BUY' : 'SELL';
+      const scaleEntries: ScaleEntry[] = [];
+      const scaleExits: ScaleEntry[] = [];
+      for (const f of currentFills) {
+        const row: ScaleEntry = {
+          id: crypto.randomUUID(),
+          price: f.price,
+          quantity: f.qty,
+        };
+        if (f.type === openType) scaleEntries.push(row);
+        else scaleExits.push(row);
+      }
+
+      // Snapshot contract size from the per-account Symbol Tick/Pip rule
+      // (same approach as MT5 / Tradovate Positions imports). Required so
+      // calculateTradeMetrics computes PnL with the correct multiplier.
+      const contractSize = getContractSize(accountId, symbol);
+
       const trade: TradeFormData = {
         symbol,
         side: direction,
         entries,
+        scaleEntries: scaleEntries.length > 0 ? scaleEntries : undefined,
+        scaleExits: scaleExits.length > 0 ? scaleExits : undefined,
         tradeRisk: 0,
         tradeTarget: 0,
         accountId,
         tags: [],
         notes: '',
         accountBalanceSnapshot,
-        // No manualGrossPnl; PnL is computed by calculateTradeMetrics
-        // using the rule-based contractSize at render time.
-        // Leave contractSize undefined so existing rule lookups govern PnL.
+        contractSize,
         preMfeTickPip: null,
         preMaeTickPip: null,
         source: 'imported',
@@ -427,7 +449,8 @@ export async function importTradovateFills(
   accountBalanceSnapshot: number,
   bulkAddTrades: (tradesData: TradeFormData[]) => void,
   existingFingerprints: Set<string> = new Set(),
-  hasSymbolRule: (accountId: string, symbol: string) => boolean
+  hasSymbolRule: (accountId: string, symbol: string) => boolean,
+  getContractSize: (accountId: string, symbol: string) => number
 ): Promise<TradovateFillsImportResult> {
   try {
     const csvContent = await file.text();
@@ -449,7 +472,8 @@ export async function importTradovateFills(
       rows,
       accountId,
       accountBalanceSnapshot,
-      hasSymbolRule
+      hasSymbolRule,
+      getContractSize
     );
 
     // Dedup against stored fingerprints + intra-file
