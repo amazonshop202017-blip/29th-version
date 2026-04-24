@@ -244,7 +244,7 @@ const ConsecutiveWinnersLosers = () => {
     }
 
     return { streaks: allStreaks, stats, chartData };
-  }, [filteredTrades]);
+  }, [filteredTrades, classifyTradeOutcome]);
 
   // Get top streaks for table
   const topWinStreaks = useMemo(() => {
