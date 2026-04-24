@@ -356,8 +356,12 @@ export function parseCSVToTrades(
         contractSize: contractSizes?.[symbol] ?? 1,
         preMfeTickPip: null,
         preMaeTickPip: null,
+        source: 'imported',
       };
-      
+
+      // Compute deterministic fingerprint NOW so it is stored, never recomputed later.
+      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported');
+
       trades.push(trade);
     } catch (err) {
       skipped++;
