@@ -42,6 +42,7 @@ const IMPORT_SOURCES = [
   { value: 'MT5', label: 'MT5' },
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
+  { value: 'TradovateFills', label: 'Tradovate (Fills)' },
 ];
 
 interface AccountImportModalProps {
