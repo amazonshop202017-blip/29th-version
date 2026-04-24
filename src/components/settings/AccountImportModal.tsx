@@ -55,7 +55,7 @@ interface AccountImportModalProps {
 export function AccountImportModal({ open, onOpenChange }: AccountImportModalProps) {
   const { accounts, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { trades, bulkAddTrades } = useTradesContext();
-  const { contractSizes, setContractSize, tickPipRules, addTickPipRule } = useSymbolTickSize();
+  const { contractSizes, setContractSize, tickPipRules, addTickPipRule, getContractSizeForAccountSymbol } = useSymbolTickSize();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [importSource, setImportSource] = useState<string>('');
@@ -197,7 +197,10 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           (accId, sym) =>
             tickPipRules.some(
               r => r.accountIds.includes(accId) && r.symbol === sym
-            )
+            ),
+          // getContractSize: snapshot from rule onto each trade so PnL
+          // matches what calculateTradeMetrics produces for manual trades.
+          (accId, sym) => getContractSizeForAccountSymbol(accId, sym)
         );
       } else {
         result = await importMT5Trades(
