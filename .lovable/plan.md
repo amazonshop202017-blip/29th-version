@@ -1,125 +1,173 @@
-## Add Stored Trade Fingerprints and Pre-Insert MT5 Deduplication
+# Tradovate Positions Import Pipeline
 
-### What’s broken now
+Build a Tradovate CSV import that mirrors the MT5 architecture exactly: name-based header detection, timestamp-driven direction, deterministic fingerprints, and idempotent dedup before insert.
 
-The current MT5 import path has no deduplication at all:
+## New file: `src/lib/tradovateImport.ts`
 
-- `src/lib/mt5Import.ts` parses rows and sends every parsed trade straight to `bulkAddTrades(...)`
-- `src/hooks/useTrades.ts` assigns only `id/createdAt/updatedAt` on insert
-- `Trade` currently has no `source` or `fingerprint` fields
+Exports:
 
-That is why overlapping files still insert duplicates.
+- `TradovateImportResult` — same shape as `MT5ImportResult` (`success`, `tradesImported`, `duplicatesSkipped`, `rowsSkipped`, `errors`, `importedSymbols`).
+- `parseTradovateCSVToTrades(csv, accountId, accountBalanceSnapshot, contractSizes?)` — pure parser returning `{ trades, skipped }`.
+- `importTradovateTrades(file, accountId, accountBalanceSnapshot, bulkAddTrades, contractSizes?, existingFingerprints?)` — orchestrator (matches `importMT5Trades` signature).
 
-### Implementation plan
+### Pipeline stages
 
-1. **Add persistent trade identity fields**
-  - Update `src/types/trade.ts` so every trade has:
-    - `source: 'imported' | 'manual'`
-    - `fingerprint: string`
-  - Keep these fields persisted in local storage so they map directly to a future DB unique column.
-2. **Create a single fingerprint helper**
-  - Add `src/lib/tradeFingerprint.ts` with:
-    - numeric normalization via `Number(n ?? 0).toFixed(5)`
-    - `buildTradeFingerprint(...)`
-    - helpers to extract `entryTime`, `exitTime`, `entryPrice`, `exitPrice`, and total volume from a trade’s entries
-  - Final format:
-    - `${source}_${accountId}_${symbol}_${entryTime}_${exitTime}_${normalize(entryPrice)}_${normalize(exitPrice)}_${normalize(volume)}`
-3. **Guarantee storage safety before insert**
-  - Update `src/hooks/useTrades.ts` so no trade is ever saved without both `source` and `fingerprint`.
-  - Centralize creation logic for:
-    - `addTrade(...)` → always stores `source: 'manual'` + fingerprint
-    - `bulkAddTrades(...)` → validates incoming trades already contain source/fingerprint, or explicitly assigns them when the caller is a manual-creation flow
-  - Add a one-time migration for existing local trades:
-    - default legacy trades to `source: 'manual'`
-    - backfill `fingerprint`
-    - immediately resave migrated trades
-4. **Preserve edit rules correctly**
-  - In `updateTrade(...)`:
-    - imported trades keep their original `source` and `fingerprint`
-    - manual trades keep `source: 'manual'` and recompute fingerprint from edited values
-  - In `bulkUpdateTrades(...)`:
-    - keep stored `source/fingerprint` untouched unless the updated trade is manual and the changed fields affect fingerprint identity
-  - Partial patch flows like tags, fees, TP/SL should not accidentally erase either field.
-5. **Make MT5 import idempotent before insertion**
-  - Update `src/lib/mt5Import.ts` so each parsed import trade is created with:
-    - `source: 'imported'`
-    - stored `fingerprint`
-  - Pass in the selected account’s existing stored imported fingerprints.
-  - Before calling `bulkAddTrades(...)`:
-    - build a `Set` from stored fingerprints
-    - skip any incoming trade whose stored fingerprint already exists
-    - also add accepted incoming fingerprints to the same set so duplicates inside the same file are skipped too
-  - Return:
-    - `tradesImported`
-    - `duplicatesSkipped`
-    - `rowsSkipped`
-6. **Wire the modal to the new import result**
-  - Update `src/components/settings/AccountImportModal.tsx` to:
-    - read existing trades from context
-    - derive the selected account’s stored imported fingerprints
-    - pass them into `importMT5Trades(...)`
-    - show success messaging like:
-      - `Imported 10 trades (50 duplicates skipped)`
-      - append skipped-row info when relevant
-7. **Cover existing creation paths**
-  - Verify manual trade creation in `src/components/trades/TradeModal.tsx` still works with mandatory `source/fingerprint`.
-  - Verify other write paths do not create trades without these fields.
-  - Update duplicate-trade behavior in `src/components/trades/TradesTableCard.tsx` so duplicated trades are treated as new manual trades with fresh stored fingerprints, not copied identities.
+**1. Header detection (by NAME, order-agnostic)**
+Required headers (case-insensitive, whitespace-trimmed):
+`Product`, `Bought`, `Sold`, `Avg. Buy`, `Avg. Sell`, `P/L`, `Bought Timestamp`, `Sold Timestamp`.
+Scan rows top-down using a `findHeaderRowIndex` style matcher (must contain `product` and both timestamp headers). Throw `Missing required columns: ...` if any are absent.
 
-### Files to update
+**2. Row extraction**
+Pull each field by header index (never by position). Strip surrounding quotes. Use existing `parseCSVLine` style parser (copied locally to keep modules independent, like mt5Import does).
 
-- `src/types/trade.ts`
-- `src/lib/tradeFingerprint.ts` (new)
-- `src/hooks/useTrades.ts`
-- `src/contexts/TradesContext.tsx` if typing/contracts need to expand
-- `src/lib/mt5Import.ts`
-- `src/components/settings/AccountImportModal.tsx`
-- `src/components/trades/TradesTableCard.tsx`
+**3. Basic validation — skip row if any of:**
+`buyQty == 0`, `sellQty == 0`, missing/invalid `buyTimeRaw`, `sellTimeRaw`, `avgBuy`, `avgSell`, `pnl`. Increment `skipped`.
 
-### Technical details
+**4. Quantity normalization**
+`quantity = Math.min(buyQty, sellQty)` (closed portion only).
 
-- Deduplication will rely only on persisted `trade.fingerprint` values already stored on trades.
-- Fingerprints will be created before insertion, never lazily during comparison.
-- Imported trades keep stable fingerprints forever so re-importing the same trade stays idempotent.
-- Manual trades remain editable by recomputing fingerprint on identity-changing edits.
-- This prepares a direct future database migration:
-  - `fingerprint` → `UNIQUE`
-  - same fingerprint builder reused server-side
-  - no logic rewrite needed later.
+**5. Timestamp parsing** — `MM/DD/YYYY HH:mm:ss`
+Custom parser (do not rely on `new Date()` of US-format string due to ambiguity): split on space → split date on `/` → build `YYYY-MM-DDTHH:mm:ss` and pass through `toISO()` from `@/lib/datetime`. Skip row on any parse failure.
+
+**6. Direction (timestamp-only, source of truth)**
+
+- `buyTime < sellTime` → `LONG` (entry=BUY@avgBuy, exit=SELL@avgSell)
+- `sellTime < buyTime` → `SHORT` (entry=SELL@avgSell, exit=BUY@avgBuy)
+- `buyTime === sellTime` → skip row
+No other heuristic.
+
+**7. Build entries** (two legs, `charges = 0`)
+
+- LONG: `BUY` at entryTime, then `SELL` at exitTime
+- SHORT: `SELL` at entryTime, then `BUY` at exitTime
+Each: `id: crypto.randomUUID()`, `quantity`, `price`, `charges: 0`.
+
+**8. Contract size derivation**
+
+```
+const denom = (avgSell - avgBuy) * quantity;
+const cs = denom !== 0 ? Math.abs(pnl / denom) : null;
+```
+
+Used only for the per-trade `contractSize` field (fallback `contractSizes?.[symbol] ?? 1` at usage layer if `null`/non-finite).
+
+**9. Build `TradeFormData**`
+
+```
+{ symbol, side, entries, tradeRisk: 0, tradeTarget: 0, accountId,
+  tags: [], notes: '',
+  manualGrossPnl: pnl,        // Tradovate P/L is already net of fees we don't have → use as gross too
+  savedReturnPercent: accountBalanceSnapshot > 0 ? (pnl / accountBalanceSnapshot) * 100 : 0,
+  savedRMultiple: 0,
+  accountBalanceSnapshot,
+  contractSize: derivedCs ?? contractSizes?.[symbol] ?? 1,
+  preMfeTickPip: null, preMaeTickPip: null,
+  source: 'imported' }
+```
+
+**10. Fingerprint** — generate immediately and store on the trade:
+
+```
+trade.fingerprint = buildFingerprintForTrade(trade, 'imported');
+```
+
+Uses existing `src/lib/tradeFingerprint.ts` (same fields as MT5: source, accountId, symbol, entryTime, exitTime, entryPrice, exitPrice, volume).
+
+**11. Deduplication** (identical to MT5 path)
+
+```
+const seen = new Set(existingFingerprints);
+for (const t of trades) {
+  if (!t.fingerprint) { duplicatesSkipped++; continue; }
+  if (seen.has(t.fingerprint)) { duplicatesSkipped++; continue; }
+  seen.add(t.fingerprint); toInsert.push(t);
+}
+```
+
+Handles re-imports, overlapping files, and intra-file duplicates.
+
+**12. Insert** — `bulkAddTrades(toInsert)`. Every trade carries `source: 'imported'` and a stored `fingerprint`.
+
+**13. Result** — `{ success, tradesImported, duplicatesSkipped, rowsSkipped, errors, importedSymbols }`.
+
+## Wire into `AccountImportModal.tsx`
+
+Replace the Tradovate `toast.error('not yet implemented')` branch with a real handler. Reuse the exact pattern already used for MT5:
+
+1. Compute `accountBalanceSnapshot = getAccountBalanceBeforeTrades(selectedAccountId)`.
+2. Build `existingFingerprints` from `trades` filtered by `accountId === selectedAccountId && source === 'imported' && fingerprint`.
+3. Call `importTradovateTrades(selectedFile, selectedAccountId, accountBalanceSnapshot, bulkAddTrades, contractSizes, existingFingerprints)`.
+4. On success: register new symbols with default contract size 1 (same loop as MT5), show toast `Imported X trades · Y duplicates skipped · Z rows skipped`, reset form, close modal.
+5. Remove the "Tradovate import will be available in a future update" helper text.
+
+Keep `acceptedFileTypes` for Tradovate as `.csv` (already in place).
+
+## Out of scope
+
+- No backend / DB changes.
+- No MT5 logic touched.
+- No new UI beyond removing the placeholder hint and enabling Save.
+
+## Files touched
+
+- `src/lib/tradovateImport.ts` (new)
+- `src/components/settings/AccountImportModal.tsx` (Tradovate branch + remove helper text)
 
 &nbsp;
 
 ---
 
-## DEDUPLICATION SCOPE (CRITICAL)
+## TIMESTAMP FORMAT HANDLING (CRITICAL)
 
-- Deduplication must ONLY compare against trades where:  
-source === 'imported'
-- Manual trades must NOT affect import deduplication
-- Build fingerprint Set as:
-  existingTrades  
-  .filter(t => t.source === 'imported')  
-  .map(t => t.fingerprint)
+Tradovate timestamps may appear in multiple formats:
 
----
+- MM/DD/YYYY HH:mm:ss
+- MM-DD-YYYY HH:mm
 
-## INSERT SAFETY GUARANTEE
-
-- bulkAddTrades MUST ensure every trade has:
-  - source
-  - fingerprint
-- Trades missing these fields must be:
-  - rejected OR
-  - explicitly assigned before insert
+The parser MUST support BOTH formats reliably.
 
 ---
 
-## STRICT ORDER OF OPERATIONS
+## PARSING RULE
 
-1. Parse file
-2. Build fingerprint for each trade
-3. Compare with stored fingerprints
-4. Filter duplicates
-5. THEN call bulkAddTrades
+Implement a robust parser that:
 
-Never insert first and dedupe later
+1. Detects separator (`/` or `-`)
+2. Splits date and time parts safely
+3. Supports:
+  - HH:mm:ss
+  - HH:mm (default seconds = 00)
+4. Constructs ISO string manually:
+
+```ts
+YYYY-MM-DDTHH:mm:ss
+
+```
+
+5. Converts using existing `toISO()` utility
+
+---
+
+## VALIDATION
+
+- If parsing fails → skip row
+- Parsed timestamps MUST be valid ISO UTC strings
+
+---
+
+## STRICT GUARANTEE
+
+- Same real-world timestamp must always produce identical ISO output
+- No reliance on `new Date(rawString)` for parsing US-format timestamps
+- All timestamps used in fingerprint MUST be normalized via this parser
+
+---
+
+## GOAL
+
+Ensure consistent timestamp normalization across all Tradovate imports,  
+preventing fingerprint mismatches and deduplication failures.
+
+&nbsp;
+
+conver to IST date/time in utc as we were doing elsewhere. 
