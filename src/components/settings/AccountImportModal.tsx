@@ -157,7 +157,29 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               accountBalanceSnapshot,
               bulkAddTrades,
               contractSizes,
-              existingFingerprints
+              existingFingerprints,
+              // ensureSymbolRules: create per-account Symbol Tick/Pip rules
+              // for any symbol that doesn't already have one. Runs BEFORE
+              // trades are inserted.
+              (rules) => {
+                let added = 0;
+                for (const r of rules) {
+                  const exists = tickPipRules.some(
+                    rule =>
+                      rule.accountIds.includes(selectedAccountId) &&
+                      rule.symbol === r.symbol
+                  );
+                  if (exists) continue;
+                  addTickPipRule({
+                    accountIds: [selectedAccountId],
+                    symbol: r.symbol,
+                    tickSize: r.tickSize,
+                    contractSize: r.contractSize,
+                  });
+                  added++;
+                }
+                return { added };
+              }
             )
           : await importMT5Trades(
               selectedFile,
@@ -170,17 +192,23 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
 
       if (result.success) {
         // Auto-register imported symbols with default contract size = 1
-        result.importedSymbols.forEach(sym => {
-          if (!(sym in contractSizes)) {
-            setContractSize(sym, 1);
-          }
-        });
+        // (skip for Tradovate — handled via tickPipRules above)
+        if (importSource !== 'Tradovate') {
+          result.importedSymbols.forEach(sym => {
+            if (!(sym in contractSizes)) {
+              setContractSize(sym, 1);
+            }
+          });
+        }
         const parts: string[] = [`Imported ${result.tradesImported} trade${result.tradesImported !== 1 ? 's' : ''}`];
         if (result.duplicatesSkipped > 0) {
           parts.push(`${result.duplicatesSkipped} duplicate${result.duplicatesSkipped !== 1 ? 's' : ''} skipped`);
         }
         if (result.rowsSkipped > 0) {
           parts.push(`${result.rowsSkipped} row${result.rowsSkipped !== 1 ? 's' : ''} skipped`);
+        }
+        if (importSource === 'Tradovate' && 'symbolRulesAdded' in result && result.symbolRulesAdded > 0) {
+          parts.push(`${result.symbolRulesAdded} symbol rule${result.symbolRulesAdded !== 1 ? 's' : ''} added`);
         }
         toast.success(parts.join(' · '));
         resetForm();
