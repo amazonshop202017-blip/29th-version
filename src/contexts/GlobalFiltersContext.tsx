@@ -514,7 +514,9 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   }), [
     currency, 
     setCurrency,
-    currencyConfig, 
+    currencyConfig,
+    setAccountCurrencyResolver,
+    accountCurrencyResolver, 
     breakevenTolerance,
     setBreakevenTolerance,
     classifyTradeOutcome,
