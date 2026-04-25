@@ -1,42 +1,48 @@
-## Remove Open-Trade Logic from Zerodha Tradebook Import
+## Add Per-Account Currency
 
-Strip open-trade support from the Zerodha import path. Closed-trade reconstruction stays exactly as it is (already mirrors the Tradovate Fills position engine). Behavior becomes identical to Tradovate Fills: any symbol whose net position never returns to zero is silently discarded.
+### 1. Account model — `src/contexts/AccountsContext.tsx`
+- Add optional `currency: CurrencyCode` field to `Account` interface (USD/EUR/INR).
+- Update `addAccount` signature to accept `currency` (default `'USD'`) and persist it.
+- Update `updateAccount` signature to accept and persist `currency`.
+- Add a small migration step in the load effect: any existing account without `currency` gets `'USD'` (or current global currency) so legacy data keeps working.
 
-### What the user will see
+### 2. New Account modal — `src/components/settings/NewAccountModal.tsx`
+- Add `currency` state (default `'USD'`, prefilled from `editingAccount.currency` when editing).
+- Restructure the "Starting Account Balance" row into a 2-column flex layout:
+  - **Left (≈40%)**: a Currency `Select` showing each option as `<symbol> <code>` — e.g. `$ USD`, `€ EUR`, `₹ INR`.
+  - **Right (≈60%)**: existing Starting Balance input. The `currencySymbol` prefix inside the input now reflects the selected currency (not the global one).
+- Pass `currency` through `onCreateAccount` / `onUpdateAccount` payloads.
+- Reset `currency` to `'USD'` in `resetForm`.
 
-- The **"Import Open Trades"** checkbox is removed from the Import Trades modal.
-- The Zerodha hint text changes to: *"Upload a Zerodha tradebook CSV export. Open positions (not fully closed) are skipped."*
-- Selecting Zerodha (Tradebook) and uploading a CSV imports only fully-closed trades. Open positions are dropped without warning, matching Tradovate Fills behavior.
+### 3. Settings page — `src/pages/Settings.tsx`
+- Update `handleCreateAccount` and `handleUpdateAccount` to forward `currency` to `addAccount` / `updateAccount`.
+- Update the Currency Settings section copy: add a small inline note under the description:
+  > "This currency is used only when multiple accounts are selected in filters. When a single account is selected, that account's own currency is used."
 
-### Technical changes
+### 4. Dynamic currency in GlobalFilters — `src/contexts/GlobalFiltersContext.tsx`
+- Import `useAccountsContext` is not allowed here (circular). Instead, expose a setter pattern: add an optional `accountCurrencyResolver` consumed via a new lightweight bridge:
+  - Add a function `setAccountCurrencyResolver(fn: (accountId: string) => CurrencyCode | undefined)` plus internal state holding the resolver.
+  - Compute `effectiveCurrency`:
+    - if `selectedAccounts.length === 1` and resolver returns a currency → use that account's currency,
+    - otherwise → use the global `currency` from settings.
+  - Derive `currencyConfig` and `formatCurrency` from `effectiveCurrency` (rename internal var; the exposed API names stay the same so no consumer changes are required).
 
-**`src/lib/zerodhaTradebookImport.ts`**
-- Remove `importOpenTrades` from `ZerodhaImportOptions` (interface now contains only `applyFeeRules`).
-- Remove the `isOpen` parameter from the inner `finalize(...)` function — it always finalizes a closed trade.
-- Replace the end-of-symbol open-position branch with the silent-discard form used by Tradovate Fills:
-  ```ts
-  if (position !== 0) {
-    currentFills = [];
-    direction = null;
-  }
-  ```
-- Drop the `isOpen` argument when calling `buildFingerprintForTrade` (closed-trade fingerprint only).
-- All other logic (CSV parsing, header detection, position engine, scale-in/out, reversal splitting, fee-rule resolution, dedup) is unchanged.
+### 5. Bridge component — new `src/components/CurrencyAccountBridge.tsx`
+- Tiny component mounted inside `AppLayout` (or wherever both providers are available) that:
+  - Reads `accounts` from `AccountsContext`.
+  - Calls `setAccountCurrencyResolver(id => accounts.find(a => a.id === id)?.currency)` in a `useEffect`.
+- Mount it once after both providers exist. This avoids context coupling.
 
-**`src/lib/tradeFingerprint.ts`**
-- Leave the `isOpen` field in `FingerprintInput` and the `_OPEN` suffix logic in place. It is harmless when unused and keeps the door open if open-trade support is ever re-introduced. No call site in the codebase will pass `isOpen: true` after this change.
-- (Optional cleanup, only if you prefer a strict revert: remove the `isOpen` field and the `if (input.isOpen) parts.push('OPEN');` line, plus the `options` parameter on `buildFingerprintForTrade`. Default plan keeps the field for forward-compatibility — confirm if you want the strict revert instead.)
+### Technical notes
+- All existing consumers of `currencyConfig` / `formatCurrency` continue to work unchanged — they automatically receive the active account's currency when a single account is filtered.
+- Storage stays in `localStorage` (`trading-journal-accounts`) — migration is non-destructive.
+- Currency codes restricted to `'USD' | 'EUR' | 'INR'` (matches existing `CurrencyCode`).
+- No DB or schema changes required.
 
-**`src/components/settings/AccountImportModal.tsx`**
-- Remove the `importOpenTrades` state and its reset in `resetForm`.
-- Remove the entire **"Import Open Trades"** checkbox block (the conditional `{importSource === 'ZerodhaTradebook' && (...)}` section).
-- Update the `importZerodhaTradebook(...)` call to pass `{ applyFeeRules }` only.
-- Update the Zerodha hint text to reflect open-position skipping.
-
-### Acceptance criteria
-
-- The Import Trades modal shows no "Import Open Trades" checkbox for any source.
-- Importing a Zerodha CSV with 5 closed + 2 open positions imports exactly **5 trades**; the 2 open positions are silently skipped (no toast, no count).
-- Re-importing the same file imports 0 trades and reports the correct duplicates count.
-- Fee Rules toggle continues to work for Zerodha exactly as before (ON + matching rule → rule fee applied; OFF or no rule → no fees).
-- No TypeScript errors; all references to `importOpenTrades` are gone from the modal and the import module's public API.
+### Files touched
+- `src/contexts/AccountsContext.tsx`
+- `src/contexts/GlobalFiltersContext.tsx`
+- `src/components/settings/NewAccountModal.tsx`
+- `src/pages/Settings.tsx`
+- `src/components/CurrencyAccountBridge.tsx` (new)
+- `src/components/layout/AppLayout.tsx` (mount bridge)
