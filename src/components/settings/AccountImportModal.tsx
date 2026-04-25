@@ -24,6 +24,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Popover,
   PopoverContent,
@@ -61,6 +62,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const [importSource, setImportSource] = useState<string>('');
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [applyFeeRules, setApplyFeeRules] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState(false);
   const [missingSymbolsModal, setMissingSymbolsModal] = useState<{
     open: boolean;
@@ -110,6 +112,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     setSelectedAccountId('');
     setImportSource('');
     setSelectedFile(null);
+    setApplyFeeRules(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -184,7 +187,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               added++;
             }
             return { added };
-          }
+          },
+          applyFeeRules
         );
       } else if (importSource === 'TradovateFills') {
         result = await importTradovateFills(
@@ -200,7 +204,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             ),
           // getContractSize: snapshot from rule onto each trade so PnL
           // matches what calculateTradeMetrics produces for manual trades.
-          (accId, sym) => getContractSizeForAccountSymbol(accId, sym)
+          (accId, sym) => getContractSizeForAccountSymbol(accId, sym),
+          applyFeeRules
         );
       } else {
         result = await importMT5Trades(
@@ -354,7 +359,25 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               </PopoverContent>
             </Popover>
           </div>
-          
+
+          {/* Apply Fee Rules toggle */}
+          <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+            <Checkbox
+              id="apply-fee-rules"
+              checked={applyFeeRules}
+              onCheckedChange={(checked) => setApplyFeeRules(checked === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1 leading-none">
+              <Label htmlFor="apply-fee-rules" className="cursor-pointer">
+                Use Fee Rules to apply fees on imported trades
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                When checked, matching Symbol Fee Rules override commission/fees from the file.
+              </p>
+            </div>
+          </div>
+
           {/* File Selection */}
           <div className="space-y-2">
             <Label>Select File</Label>

@@ -267,7 +267,8 @@ export function reconstructTradesFromFills(
   accountId: string,
   accountBalanceSnapshot: number,
   hasSymbolRule: (accountId: string, symbol: string) => boolean,
-  getContractSize: (accountId: string, symbol: string) => number
+  getContractSize: (accountId: string, symbol: string) => number,
+  applyFeeRules: boolean = false
 ): {
   trades: TradeFormData[];
   missingSymbols: MissingSymbolInfo[];
@@ -346,7 +347,12 @@ export function reconstructTradesFromFills(
       // calculateTradeMetrics computes PnL with the correct multiplier.
       const contractSize = getContractSize(accountId, symbol);
 
-      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      // Fee resolution:
+      //  - Fee Rules toggle OFF → always use the CSV commission column.
+      //  - Fee Rules toggle ON → matching rule wins; else fall back to CSV commission.
+      const matchedFeeRule = applyFeeRules
+        ? findMatchingFeeRule(feeRules, accountId, symbol)
+        : null;
       const ruleFee = matchedFeeRule
         ? calculateFeeFromRule(matchedFeeRule, entries, direction)
         : 0;
@@ -471,7 +477,8 @@ export async function importTradovateFills(
   bulkAddTrades: (tradesData: TradeFormData[]) => void,
   existingFingerprints: Set<string> = new Set(),
   hasSymbolRule: (accountId: string, symbol: string) => boolean,
-  getContractSize: (accountId: string, symbol: string) => number
+  getContractSize: (accountId: string, symbol: string) => number,
+  applyFeeRules: boolean = false
 ): Promise<TradovateFillsImportResult> {
   try {
     const csvContent = await file.text();
@@ -494,7 +501,8 @@ export async function importTradovateFills(
       accountId,
       accountBalanceSnapshot,
       hasSymbolRule,
-      getContractSize
+      getContractSize,
+      applyFeeRules
     );
 
     // Dedup against stored fingerprints + intra-file

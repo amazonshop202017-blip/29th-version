@@ -184,7 +184,8 @@ export function parseTradovateCSVToTrades(
   csvContent: string,
   accountId: string,
   accountBalanceSnapshot: number,
-  contractSizes?: Record<string, number>
+  contractSizes?: Record<string, number>,
+  applyFeeRules: boolean = false
 ): { trades: TradeFormData[]; skipped: number; symbolMeta: Map<string, SymbolMeta> } {
   const lines = csvContent.split(/\r?\n/).filter(line => line.trim().length > 0);
   if (lines.length < 2) {
@@ -331,7 +332,11 @@ export function parseTradovateCSVToTrades(
       // If a fee rule exists for this (account, symbol), surface it as
       // manualFees so Net PnL = Gross − Fees. Otherwise leave undefined
       // (preserves prior behaviour: Tradovate Positions had no fee data).
-      const matchedFeeRule = findMatchingFeeRule(feeRules, accountId, symbol);
+      // Fee Rules toggle OFF → leave manualFees undefined (Positions reports
+      // have no per-row fee data, matching historic behaviour).
+      const matchedFeeRule = applyFeeRules
+        ? findMatchingFeeRule(feeRules, accountId, symbol)
+        : null;
       const ruleFee = matchedFeeRule
         ? calculateFeeFromRule(matchedFeeRule, entries, side)
         : 0;
@@ -420,7 +425,8 @@ export async function importTradovateTrades(
    * Registers Symbol Tick/Pip rules for any symbols not already configured
    * for the importing account. Called BEFORE trades are inserted.
    */
-  ensureSymbolRules?: EnsureSymbolRules
+  ensureSymbolRules?: EnsureSymbolRules,
+  applyFeeRules: boolean = false
 ): Promise<TradovateImportResult> {
   const errors: string[] = [];
 
@@ -431,7 +437,8 @@ export async function importTradovateTrades(
       csvContent,
       accountId,
       accountBalanceSnapshot,
-      contractSizes
+      contractSizes,
+      applyFeeRules
     );
 
     if (trades.length === 0) {
