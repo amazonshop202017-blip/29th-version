@@ -46,6 +46,7 @@ const IMPORT_SOURCES = [
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
   { value: 'TradovateFills', label: 'Tradovate (Fills)' },
+  { value: 'ZerodhaTradebook', label: 'Zerodha (Tradebook)' },
 ];
 
 interface AccountImportModalProps {
