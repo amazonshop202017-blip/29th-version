@@ -24,6 +24,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Popover,
   PopoverContent,
@@ -61,6 +62,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const [importSource, setImportSource] = useState<string>('');
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [applyFeeRules, setApplyFeeRules] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState(false);
   const [missingSymbolsModal, setMissingSymbolsModal] = useState<{
     open: boolean;
@@ -110,6 +112,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     setSelectedAccountId('');
     setImportSource('');
     setSelectedFile(null);
+    setApplyFeeRules(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
