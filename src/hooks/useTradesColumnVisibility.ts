@@ -33,7 +33,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'performance',
     label: 'Performance',
-    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR'],
+    columns: ['grossPnl', 'netPnl', 'realizedRMultiple', 'plannedRRR', 'fees'],
   },
   {
     id: 'priceMovement',
@@ -78,6 +78,7 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'netPnl', label: 'Net P&L', group: 'performance', visible: true },
   { id: 'realizedRMultiple', label: 'Realized R Multiple', group: 'performance', visible: true },
   { id: 'plannedRRR', label: 'Planned RR / R-Multiple', group: 'performance', visible: false },
+  { id: 'fees', label: 'Fees', group: 'performance', visible: false },
 
   // Price Movement
   { id: 'farthestProfitPrice', label: 'MFE (pre-exit, price)', group: 'priceMovement', visible: false },

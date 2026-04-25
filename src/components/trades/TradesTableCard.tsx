@@ -172,6 +172,7 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('netPnl') && <TableHead className="px-2">Net P&L</TableHead>}
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
               {isColumnVisible('plannedRRR') && <TableHead className="px-2">Planned RR</TableHead>}
+              {isColumnVisible('fees') && <TableHead className="px-2">Fees</TableHead>}
               {isColumnVisible('farthestProfitPrice') && <TableHead className="px-2 text-right">MFE (pre-exit, price)</TableHead>}
               {isColumnVisible('farthestProfitTicks') && <TableHead className="px-2 text-right">MFE (pre-exit, ticks)</TableHead>}
               {isColumnVisible('farthestLossPrice') && <TableHead className="px-2 text-right">MAE (pre-exit, price)</TableHead>}
@@ -359,6 +360,14 @@ const TableWithStickyHorizontalScroll = ({
                   {isColumnVisible('plannedRRR') && (
                     <TableCell className="font-mono px-2 py-1 text-foreground">
                       {typeof trade.savedRRR === 'number' ? trade.savedRRR.toFixed(2) : '—'}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('fees') && (
+                    <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {maskCurrency(metrics.totalCharges, formatCurrency)}
                     </TableCell>
                   )}
                   {isColumnVisible('farthestProfitPrice') && (
