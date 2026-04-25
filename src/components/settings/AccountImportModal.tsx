@@ -392,6 +392,26 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             </div>
           </div>
 
+          {/* Import Open Trades toggle — Zerodha only */}
+          {importSource === 'ZerodhaTradebook' && (
+            <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+              <Checkbox
+                id="import-open-trades"
+                checked={importOpenTrades}
+                onCheckedChange={(checked) => setImportOpenTrades(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="import-open-trades" className="cursor-pointer">
+                  Import Open Trades
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  When checked, positions that aren't fully closed in the file are also imported as open trades. Otherwise they are skipped.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* File Selection */}
           <div className="space-y-2">
             <Label>Select File</Label>
