@@ -106,15 +106,27 @@ interface SidebarProps {
 export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobileOpen = false, onMobileClose }: SidebarProps) => {
   const location = useLocation();
   const { openModal } = useTradeModal();
-  const [chartRoomOpen, setChartRoomOpen] = useState(
-    location.pathname.startsWith('/chart-room')
-  );
-  const [toolsOpen, setToolsOpen] = useState(
-    location.pathname.startsWith('/tools')
-  );
-  const [edgeLabOpen, setEdgeLabOpen] = useState(
-    location.pathname.startsWith('/edge-lab')
-  );
+  type GroupKey = 'chartRoom' | 'edgeLab' | 'tools';
+  const initialOpenGroup: GroupKey | null = location.pathname.startsWith('/chart-room')
+    ? 'chartRoom'
+    : location.pathname.startsWith('/edge-lab')
+      ? 'edgeLab'
+      : location.pathname.startsWith('/tools')
+        ? 'tools'
+        : null;
+  const [openGroup, setOpenGroup] = useState<GroupKey | null>(initialOpenGroup);
+  const handleGroupOpenChange = (key: GroupKey) => (open: boolean) => {
+    setOpenGroup(open ? key : (curr) => (curr === key ? null : curr) as any);
+    // Use functional only when closing same group; setting to null directly is fine.
+    if (!open) setOpenGroup((curr) => (curr === key ? null : curr));
+    else setOpenGroup(key);
+  };
+  const chartRoomOpen = openGroup === 'chartRoom';
+  const toolsOpen = openGroup === 'tools';
+  const edgeLabOpen = openGroup === 'edgeLab';
+  const setChartRoomOpen = handleGroupOpenChange('chartRoom');
+  const setToolsOpen = handleGroupOpenChange('tools');
+  const setEdgeLabOpen = handleGroupOpenChange('edgeLab');
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
 
