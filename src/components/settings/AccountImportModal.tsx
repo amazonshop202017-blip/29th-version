@@ -465,7 +465,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             )}
             {importSource === 'ZerodhaTradebook' && (
               <p className="text-xs text-muted-foreground mt-1">
-                Zerodha (Tradebook) import will be available in a future update.
+                Upload a Zerodha tradebook CSV export. Optionally include open positions.
               </p>
             )}
           </div>
