@@ -413,25 +413,19 @@ const TableWithStickyHorizontalScroll = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center gap-1.5">
-                          {tagsInCategory.length === 0 ? (
-                            <span className="text-muted-foreground text-xs">–</span>
-                          ) : (
-                            <>
-                              {tagsInCategory.slice(0, 2).map((tag) => (
-                                <Badge
-                                  key={tag.id}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {tag.name}
-                                </Badge>
-                              ))}
-                              {tagsInCategory.length > 2 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{tagsInCategory.length - 2}
-                                </span>
-                              )}
-                            </>
+                          {tagsInCategory.slice(0, 2).map((tag) => (
+                            <Badge
+                              key={tag.id}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {tag.name}
+                            </Badge>
+                          ))}
+                          {tagsInCategory.length > 2 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{tagsInCategory.length - 2}
+                            </span>
                           )}
                           <button
                             onClick={(e) => {
