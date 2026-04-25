@@ -38,12 +38,14 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
   const [name, setName] = useState('');
   const [balance, setBalance] = useState('');
   const [mode, setMode] = useState<AccountMode>('normal');
+  const [currency, setCurrency] = useState<CurrencyCode>('USD');
 
   useEffect(() => {
     if (open && editingAccount) {
       setName(editingAccount.name);
       setBalance(editingAccount.startingBalance.toString());
       setMode(editingAccount.accountMode || 'normal');
+      setCurrency(editingAccount.currency || 'USD');
     }
   }, [open, editingAccount]);
 
@@ -51,6 +53,7 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
     setName('');
     setBalance('');
     setMode('normal');
+    setCurrency('USD');
   };
 
   const handleOpenChange = (val: boolean) => {
