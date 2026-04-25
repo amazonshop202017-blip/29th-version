@@ -12,6 +12,7 @@ import { ScreenshotTagsProvider } from "@/contexts/ScreenshotTagsContext";
 import { StrategiesProvider } from "@/contexts/StrategiesContext";
 import { AccountsProvider } from "@/contexts/AccountsContext";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
+import { CurrencyAccountBridge } from "@/components/CurrencyAccountBridge";
 import { CustomStatsProvider } from "@/contexts/CustomStatsContext";
 import { DiaryProvider } from "@/contexts/DiaryContext";
 import { SymbolTickSizeProvider } from "@/contexts/SymbolTickSizeContext";
