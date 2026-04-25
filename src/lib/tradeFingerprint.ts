@@ -11,13 +11,16 @@ export interface FingerprintInput {
   entryPrice: number;
   exitPrice: number;
   volume: number;
+  /** When true, the fingerprint is suffixed with `_OPEN` so an open trade
+   *  never collides with a future closed trade for the same entry. */
+  isOpen?: boolean;
 }
 
 const normalize = (n: number | undefined | null): string =>
   Number(n ?? 0).toFixed(5);
 
 export function buildTradeFingerprint(input: FingerprintInput): string {
-  return [
+  const parts = [
     input.source,
     input.accountId,
     (input.symbol || '').trim().toUpperCase(),
@@ -26,7 +29,9 @@ export function buildTradeFingerprint(input: FingerprintInput): string {
     normalize(input.entryPrice),
     normalize(input.exitPrice),
     normalize(input.volume),
-  ].join('_');
+  ];
+  if (input.isOpen) parts.push('OPEN');
+  return parts.join('_');
 }
 
 /**
