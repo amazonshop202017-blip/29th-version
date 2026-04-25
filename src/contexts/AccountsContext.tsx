@@ -3,6 +3,7 @@ import { useTradesContext } from './TradesContext';
 import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
 import { toISO, nowISO, auditISOValues, type ISODateString } from '@/lib/datetime';
+import type { CurrencyCode } from './GlobalFiltersContext';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
