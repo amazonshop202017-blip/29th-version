@@ -747,6 +747,9 @@ export const TradesTableCard = ({
           formatCurrency={formatCurrency}
           accounts={accounts}
           emptyState={emptyState}
+          categoryColumns={categoryColumns}
+          tags={tags}
+          onOpenTagModal={handleOpenTagModal}
         />
 
         {totalTrades > 0 && (
