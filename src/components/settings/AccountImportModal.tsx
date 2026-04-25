@@ -36,6 +36,7 @@ import { useSymbolTickSize } from '@/contexts/SymbolTickSizeContext';
 import { importMT5Trades } from '@/lib/mt5Import';
 import { importTradovateTrades } from '@/lib/tradovateImport';
 import { importTradovateFills, type MissingSymbolInfo } from '@/lib/tradovateFillsImport';
+import { importZerodhaTradebook } from '@/lib/zerodhaTradebookImport';
 import { MissingSymbolRulesModal } from '@/components/settings/MissingSymbolRulesModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -64,6 +65,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [applyFeeRules, setApplyFeeRules] = useState<boolean>(false);
+  const [importOpenTrades, setImportOpenTrades] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState(false);
   const [missingSymbolsModal, setMissingSymbolsModal] = useState<{
     open: boolean;
@@ -83,7 +85,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     if (importSource === 'MT5') {
       return '.csv,.htm,.html';
     }
-    if (importSource === 'Tradovate' || importSource === 'TradovateFills') {
+    if (importSource === 'Tradovate' || importSource === 'TradovateFills' || importSource === 'ZerodhaTradebook') {
       return '.csv';
     }
     // Default accept for MatchTrader (will be expanded later)
@@ -114,6 +116,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     setImportSource('');
     setSelectedFile(null);
     setApplyFeeRules(false);
+    setImportOpenTrades(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -133,12 +136,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
-    if (importSource === 'ZerodhaTradebook') {
-      toast.error('Zerodha (Tradebook) import is not yet implemented');
-      return;
-    }
-
-    if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills') {
+    if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills' && importSource !== 'ZerodhaTradebook') {
       toast.error('Invalid import source');
       return;
     }
@@ -162,7 +160,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       let result:
         | Awaited<ReturnType<typeof importTradovateTrades>>
         | Awaited<ReturnType<typeof importMT5Trades>>
-        | Awaited<ReturnType<typeof importTradovateFills>>;
+        | Awaited<ReturnType<typeof importTradovateFills>>
+        | Awaited<ReturnType<typeof importZerodhaTradebook>>;
 
       if (importSource === 'Tradovate') {
         result = await importTradovateTrades(
@@ -212,6 +211,15 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           // matches what calculateTradeMetrics produces for manual trades.
           (accId, sym) => getContractSizeForAccountSymbol(accId, sym),
           applyFeeRules
+        );
+      } else if (importSource === 'ZerodhaTradebook') {
+        result = await importZerodhaTradebook(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          existingFingerprints,
+          { importOpenTrades, applyFeeRules }
         );
       } else {
         result = await importMT5Trades(
@@ -384,6 +392,26 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             </div>
           </div>
 
+          {/* Import Open Trades toggle — Zerodha only */}
+          {importSource === 'ZerodhaTradebook' && (
+            <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+              <Checkbox
+                id="import-open-trades"
+                checked={importOpenTrades}
+                onCheckedChange={(checked) => setImportOpenTrades(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="import-open-trades" className="cursor-pointer">
+                  Import Open Trades
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  When checked, positions that aren't fully closed in the file are also imported as open trades. Otherwise they are skipped.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* File Selection */}
           <div className="space-y-2">
             <Label>Select File</Label>
@@ -437,7 +465,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             )}
             {importSource === 'ZerodhaTradebook' && (
               <p className="text-xs text-muted-foreground mt-1">
-                Zerodha (Tradebook) import will be available in a future update.
+                Upload a Zerodha tradebook CSV export. Optionally include open positions.
               </p>
             )}
           </div>
