@@ -70,6 +70,7 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
       name: name.trim(),
       startingBalance: parseFloat(balance) || 0,
       accountMode: mode,
+      currency,
     };
     if (isEditing && editingAccount && onUpdateAccount) {
       onUpdateAccount({ id: editingAccount.id, ...accountData });
