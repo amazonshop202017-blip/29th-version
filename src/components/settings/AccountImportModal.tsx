@@ -65,7 +65,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [applyFeeRules, setApplyFeeRules] = useState<boolean>(false);
-  const [importOpenTrades, setImportOpenTrades] = useState<boolean>(false);
+  
   const [isImporting, setIsImporting] = useState(false);
   const [missingSymbolsModal, setMissingSymbolsModal] = useState<{
     open: boolean;
