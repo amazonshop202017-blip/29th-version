@@ -362,6 +362,14 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.savedRRR === 'number' ? trade.savedRRR.toFixed(2) : '—'}
                     </TableCell>
                   )}
+                  {isColumnVisible('fees') && (
+                    <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {maskCurrency(metrics.totalCharges, formatCurrency)}
+                    </TableCell>
+                  )}
                   {isColumnVisible('farthestProfitPrice') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.preMfePrice === 'number' ? trade.preMfePrice : ''}
