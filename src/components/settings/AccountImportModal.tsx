@@ -219,7 +219,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           accountBalanceSnapshot,
           bulkAddTrades,
           existingFingerprints,
-          { importOpenTrades, applyFeeRules }
+          { applyFeeRules }
         );
       } else {
         result = await importMT5Trades(
