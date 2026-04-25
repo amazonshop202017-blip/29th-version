@@ -36,6 +36,7 @@ import { useSymbolTickSize } from '@/contexts/SymbolTickSizeContext';
 import { importMT5Trades } from '@/lib/mt5Import';
 import { importTradovateTrades } from '@/lib/tradovateImport';
 import { importTradovateFills, type MissingSymbolInfo } from '@/lib/tradovateFillsImport';
+import { importZerodhaTradebook } from '@/lib/zerodhaTradebookImport';
 import { MissingSymbolRulesModal } from '@/components/settings/MissingSymbolRulesModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
