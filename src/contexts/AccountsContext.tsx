@@ -186,10 +186,10 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode) => {
+  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode, currency?: CurrencyCode) => {
     setAccounts(prev => {
       const next = prev.map(a =>
-        a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }) } : a
+        a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }), ...(currency !== undefined && { currency }) } : a
       );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
