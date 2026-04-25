@@ -181,6 +181,7 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
               {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price (Price)</TableHead>}
               {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
+              {isColumnVisible('priceReachedFirst') && <TableHead className="px-2">Reached First</TableHead>}
               {categoryColumns.map((cc) => (
                 <TableHead key={cc.columnId} className="px-2 whitespace-nowrap">
                   {cc.name}
