@@ -359,7 +359,25 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               </PopoverContent>
             </Popover>
           </div>
-          
+
+          {/* Apply Fee Rules toggle */}
+          <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+            <Checkbox
+              id="apply-fee-rules"
+              checked={applyFeeRules}
+              onCheckedChange={(checked) => setApplyFeeRules(checked === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1 leading-none">
+              <Label htmlFor="apply-fee-rules" className="cursor-pointer">
+                Use Fee Rules to apply fees on imported trades
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                When checked, matching Symbol Fee Rules override commission/fees from the file.
+              </p>
+            </div>
+          </div>
+
           {/* File Selection */}
           <div className="space-y-2">
             <Label>Select File</Label>
