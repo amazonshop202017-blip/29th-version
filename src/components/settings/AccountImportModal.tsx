@@ -133,6 +133,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
+    if (importSource === 'ZerodhaTradebook') {
+      toast.error('Zerodha (Tradebook) import is not yet implemented');
+      return;
+    }
+
     if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills') {
       toast.error('Invalid import source');
       return;
