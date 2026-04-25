@@ -93,6 +93,7 @@ const AuthenticatedApp = () => {
                 <TransactionsProvider>
                 <TransactionsAutoSync />
                 <GlobalFiltersProvider>
+                  <CurrencyAccountBridge />
                   <CustomStatsProvider>
                     <SymbolTickSizeProvider>
                       <DiaryProvider>
