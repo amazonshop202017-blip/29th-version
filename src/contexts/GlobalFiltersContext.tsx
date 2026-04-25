@@ -59,6 +59,8 @@ interface GlobalFiltersContextType {
   setCurrency: (currency: CurrencyCode) => void;
   currencyConfig: CurrencyConfig;
   formatCurrency: (value: number, showSign?: boolean) => string;
+  // Resolver bridge: lets AccountsContext provide a function that maps accountId -> currency
+  setAccountCurrencyResolver: (fn: ((accountId: string) => CurrencyCode | undefined) | null) => void;
   
   // Breakeven Tolerance
   breakevenTolerance: BreakevenTolerance;
