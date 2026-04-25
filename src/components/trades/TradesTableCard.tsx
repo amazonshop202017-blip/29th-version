@@ -405,6 +405,52 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
                     </TableCell>
                   )}
+                  {categoryColumns.map((cc) => {
+                    const tradeTagIds = trade.tags ?? [];
+                    const tagsInCategory = tradeTagIds
+                      .map((id) => tags.find((t) => t.id === id))
+                      .filter((t): t is TagLike => !!t && t.categoryId === cc.categoryId);
+                    return (
+                      <TableCell
+                        key={cc.columnId}
+                        className="px-2 py-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {tagsInCategory.length === 0 ? (
+                            <span className="text-muted-foreground text-xs">–</span>
+                          ) : (
+                            <>
+                              {tagsInCategory.slice(0, 2).map((tag) => (
+                                <Badge
+                                  key={tag.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                              {tagsInCategory.length > 2 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{tagsInCategory.length - 2}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenTagModal(trade);
+                            }}
+                            className="p-1 rounded hover:bg-muted/50 transition-colors"
+                            aria-label="Manage tags"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               );
             })}
