@@ -345,14 +345,14 @@ export function reconstructZerodhaTrades(
         direction = row.side === 'B' ? 'LONG' : 'SHORT';
         pushFill(row.side === 'B' ? 'BUY' : 'SELL', row.iso, row.qty, row.price);
         position = next;
-        if (next === 0) finalize(false);
+        if (next === 0) finalize();
         continue;
       }
 
       if (sign(next) === sign(prev) || next === 0) {
         pushFill(row.side === 'B' ? 'BUY' : 'SELL', row.iso, row.qty, row.price);
         position = next;
-        if (next === 0) finalize(false);
+        if (next === 0) finalize();
       } else {
         // Reversal — close current direction, then open new one.
         const closingQty = Math.abs(prev);
@@ -365,7 +365,7 @@ export function reconstructZerodhaTrades(
           row.price
         );
         position = 0;
-        finalize(false);
+        finalize();
 
         direction = row.side === 'B' ? 'LONG' : 'SHORT';
         pushFill(
@@ -378,14 +378,10 @@ export function reconstructZerodhaTrades(
       }
     }
 
-    // Open position at end — emit only if user opted in.
+    // Open position at end → silently discard (matches Tradovate Fills behavior).
     if (position !== 0) {
-      if (importOpenTrades) {
-        finalize(true);
-      } else {
-        currentFills = [];
-        direction = null;
-      }
+      currentFills = [];
+      direction = null;
     }
   }
 
