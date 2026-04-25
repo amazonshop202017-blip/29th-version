@@ -82,6 +82,18 @@ const formatDurationMinutes = (duration: string): string => {
   return `${mins}m`;
 };
 
+interface CategoryColumnInfo {
+  columnId: string;
+  categoryId: string;
+  name: string;
+}
+
+interface TagLike {
+  id: string;
+  name: string;
+  categoryId: string;
+}
+
 interface TableWithStickyHorizontalScrollProps {
   paginatedTrades: Trade[];
   allSelected: boolean;
@@ -95,6 +107,9 @@ interface TableWithStickyHorizontalScrollProps {
   formatCurrency: (v: number) => string;
   accounts: { id: string; name: string }[];
   emptyState?: { title: string; subtitle: string };
+  categoryColumns: CategoryColumnInfo[];
+  tags: TagLike[];
+  onOpenTagModal: (trade: Trade) => void;
 }
 
 const TableWithStickyHorizontalScroll = ({
@@ -110,6 +125,9 @@ const TableWithStickyHorizontalScroll = ({
   formatCurrency,
   accounts,
   emptyState,
+  categoryColumns,
+  tags,
+  onOpenTagModal,
 }: TableWithStickyHorizontalScrollProps) => {
   const { classifyTradeOutcome } = useGlobalFilters();
   if (paginatedTrades.length === 0) {
