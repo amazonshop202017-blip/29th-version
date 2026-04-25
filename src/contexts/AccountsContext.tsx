@@ -89,8 +89,9 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
         const migrated = parsed.map(a => {
           const nextCreated = toISO(a.createdAt) || a.createdAt;
           const nextBreached = a.breachedAt ? (toISO(a.breachedAt) || a.breachedAt) : a.breachedAt;
-          if (nextCreated !== a.createdAt || nextBreached !== a.breachedAt) changed = true;
-          return { ...a, createdAt: nextCreated, breachedAt: nextBreached };
+          const nextCurrency: CurrencyCode = (a.currency as CurrencyCode) || 'USD';
+          if (nextCreated !== a.createdAt || nextBreached !== a.breachedAt || nextCurrency !== a.currency) changed = true;
+          return { ...a, createdAt: nextCreated, breachedAt: nextBreached, currency: nextCurrency };
         });
         setAccounts(migrated);
         if (changed) {
