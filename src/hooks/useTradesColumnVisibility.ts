@@ -38,7 +38,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'priceMovement',
     label: 'Price Movement',
-    columns: ['farthestProfitPrice', 'farthestProfitTicks', 'farthestLossPrice', 'farthestLossTicks', 'postMaxPrice', 'postMaxTickPip', 'postMinPrice', 'postMinTickPip'],
+    columns: ['farthestProfitPrice', 'farthestProfitTicks', 'farthestLossPrice', 'farthestLossTicks', 'postMaxPrice', 'postMaxTickPip', 'postMinPrice', 'postMinTickPip', 'priceReachedFirst'],
   },
 ];
 
