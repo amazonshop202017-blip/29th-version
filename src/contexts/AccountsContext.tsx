@@ -48,9 +48,9 @@ export interface AccountWithStats extends Account {
 interface AccountsContextType {
   accounts: Account[];
   transactions: Transaction[];
-  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => Account;
+  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }, currency?: CurrencyCode) => Account;
   removeAccount: (id: string) => void;
-  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode) => void;
+  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode, currency?: CurrencyCode) => void;
   patchAccount: (id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => void;
   getAccountById: (id: string) => Account | undefined;
   getAccountWithStats: (id: string) => AccountWithStats | undefined;
