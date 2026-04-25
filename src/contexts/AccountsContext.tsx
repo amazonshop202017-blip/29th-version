@@ -140,13 +140,14 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     return id;
   }, [accounts]);
 
-  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => {
+  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }, currency: CurrencyCode = 'USD') => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
       accountId: '', // filled below using latest state to avoid collisions
       userId: user?.userId || '',
       name: name.trim(),
       startingBalance,
+      currency,
       createdAt: nowISO(),
       isArchived: false,
       accountMode,
