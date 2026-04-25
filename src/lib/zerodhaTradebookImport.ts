@@ -320,9 +320,7 @@ export function reconstructZerodhaTrades(
         preMaeTickPip: null,
         source: 'imported',
       };
-      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported', {
-        isOpen,
-      });
+      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported');
       trades.push(trade);
 
       currentFills = [];
