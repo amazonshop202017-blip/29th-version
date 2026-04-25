@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 export interface ColumnConfig {
   id: string;
@@ -42,6 +42,18 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   },
 ];
 
+export const TAG_CATEGORIES_GROUP_ID = 'tagCategories';
+export const CATEGORY_COLUMN_PREFIX = 'category:';
+
+export const buildCategoryColumnId = (categoryId: string) =>
+  `${CATEGORY_COLUMN_PREFIX}${categoryId}`;
+
+export const isCategoryColumnId = (columnId: string) =>
+  columnId.startsWith(CATEGORY_COLUMN_PREFIX);
+
+export const getCategoryIdFromColumnId = (columnId: string): string | null =>
+  isCategoryColumnId(columnId) ? columnId.slice(CATEGORY_COLUMN_PREFIX.length) : null;
+
 export const ALL_COLUMNS: ColumnConfig[] = [
   // Trade Identification
   { id: 'symbol', label: 'Symbol', group: 'identification', visible: true },
@@ -80,55 +92,91 @@ export const ALL_COLUMNS: ColumnConfig[] = [
 
 const STORAGE_KEY = 'trades-column-visibility';
 
-export function useTradesColumnVisibility() {
-  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
+interface CategoryLike {
+  id: string;
+  name: string;
+}
+
+export function useTradesColumnVisibility(categories: CategoryLike[] = []) {
+  // Stored visibility map (id -> visible)
+  const [visibility, setVisibility] = useState<Record<string, boolean>>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, boolean>;
-        return ALL_COLUMNS.map(col => ({
-          ...col,
-          visible: parsed[col.id] !== undefined ? parsed[col.id] : col.visible,
-        }));
+        return JSON.parse(stored) as Record<string, boolean>;
       }
     } catch (e) {
       console.error('Failed to load column visibility settings:', e);
     }
-    return ALL_COLUMNS;
+    return {};
   });
 
-  // Save to localStorage whenever columns change
+  // Persist whenever visibility changes
   useEffect(() => {
-    const visibility: Record<string, boolean> = {};
-    columns.forEach(col => {
-      visibility[col.id] = col.visible;
-    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(visibility));
-  }, [columns]);
+  }, [visibility]);
+
+  // Build dynamic category columns from current categories
+  const categoryColumns = useMemo<ColumnConfig[]>(
+    () =>
+      categories.map((cat) => ({
+        id: buildCategoryColumnId(cat.id),
+        label: cat.name,
+        group: TAG_CATEGORIES_GROUP_ID,
+        visible: false, // default off
+      })),
+    [categories]
+  );
+
+  // Merge static + dynamic columns and apply persisted visibility
+  const columns = useMemo<ColumnConfig[]>(() => {
+    const merged = [...ALL_COLUMNS, ...categoryColumns];
+    return merged.map((col) => ({
+      ...col,
+      visible: visibility[col.id] !== undefined ? visibility[col.id] : col.visible,
+    }));
+  }, [categoryColumns, visibility]);
+
+  // Build column groups; only include the tag-categories group when there is at least one category
+  const columnGroups = useMemo<ColumnGroup[]>(() => {
+    if (categoryColumns.length === 0) return COLUMN_GROUPS;
+    return [
+      ...COLUMN_GROUPS,
+      {
+        id: TAG_CATEGORIES_GROUP_ID,
+        label: 'Custom Tag Categories',
+        columns: categoryColumns.map((c) => c.id),
+      },
+    ];
+  }, [categoryColumns]);
 
   const toggleColumn = useCallback((columnId: string) => {
-    setColumns(prev =>
-      prev.map(col =>
-        col.id === columnId ? { ...col, visible: !col.visible } : col
-      )
-    );
+    setVisibility((prev) => {
+      // Look up current effective visibility (fallback to column default)
+      const currentDefault =
+        ALL_COLUMNS.find((c) => c.id === columnId)?.visible ??
+        // category columns default to false
+        false;
+      const current = prev[columnId] !== undefined ? prev[columnId] : currentDefault;
+      return { ...prev, [columnId]: !current };
+    });
   }, []);
 
   const isColumnVisible = useCallback(
     (columnId: string) => {
-      const col = columns.find(c => c.id === columnId);
+      const col = columns.find((c) => c.id === columnId);
       return col?.visible ?? false;
     },
     [columns]
   );
 
-  const visibleColumns = columns.filter(col => col.visible);
+  const visibleColumns = useMemo(() => columns.filter((col) => col.visible), [columns]);
 
   return {
     columns,
     toggleColumn,
     isColumnVisible,
     visibleColumns,
-    columnGroups: COLUMN_GROUPS,
+    columnGroups,
   };
 }
