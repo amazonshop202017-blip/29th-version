@@ -194,6 +194,13 @@ const loadPersistedDisplayMode = (): DisplayMode => {
 export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => {
   // Currency state - load from localStorage
   const [currency, setCurrencyState] = useState<CurrencyCode>(loadPersistedCurrency);
+
+  // Account currency resolver bridge (set by AccountsContext via a small bridge component)
+  const [accountCurrencyResolver, setAccountCurrencyResolverState] = useState<((accountId: string) => CurrencyCode | undefined) | null>(null);
+  const setAccountCurrencyResolver = useCallback((fn: ((accountId: string) => CurrencyCode | undefined) | null) => {
+    // Wrap in a setter callback because functions in useState are interpreted as updaters.
+    setAccountCurrencyResolverState(() => fn);
+  }, []);
   
   // Breakeven tolerance state - load from localStorage
   const [breakevenTolerance, setBreakevenToleranceState] = useState<BreakevenTolerance>(loadPersistedBreakevenTolerance);
