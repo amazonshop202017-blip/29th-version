@@ -27,11 +27,7 @@ import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { calculateTradeMetrics } from '@/types/trade';
 import { cn } from '@/lib/utils';
 import { TradesColumnSettings } from '@/components/trades/TradesColumnSettings';
-import {
-  useTradesColumnVisibility,
-  isCategoryColumnId,
-  getCategoryIdFromColumnId,
-} from '@/hooks/useTradesColumnVisibility';
+import { useTradesColumnVisibility } from '@/hooks/useTradesColumnVisibility';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
