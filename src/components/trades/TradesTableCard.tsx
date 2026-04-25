@@ -819,6 +819,17 @@ export const TradesTableCard = ({
       {showImport && (
         <AccountImportModal open={importModalOpen} onOpenChange={setImportModalOpen} />
       )}
+
+      {tagModalTrade && (
+        <AssignTagsModal
+          isOpen={!!tagModalTrade}
+          onClose={() => setTagModalTrade(null)}
+          selectedTagIds={tagModalTrade.tags || []}
+          onTagsChange={handleTagsChange}
+          symbol={tagModalTrade.symbol}
+          entryDate={calculateTradeMetrics(tagModalTrade).openDate}
+        />
+      )}
     </>
   );
 };
