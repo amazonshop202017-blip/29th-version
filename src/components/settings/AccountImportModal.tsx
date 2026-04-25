@@ -160,7 +160,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       let result:
         | Awaited<ReturnType<typeof importTradovateTrades>>
         | Awaited<ReturnType<typeof importMT5Trades>>
-        | Awaited<ReturnType<typeof importTradovateFills>>;
+        | Awaited<ReturnType<typeof importTradovateFills>>
+        | Awaited<ReturnType<typeof importZerodhaTradebook>>;
 
       if (importSource === 'Tradovate') {
         result = await importTradovateTrades(
@@ -210,6 +211,15 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           // matches what calculateTradeMetrics produces for manual trades.
           (accId, sym) => getContractSizeForAccountSymbol(accId, sym),
           applyFeeRules
+        );
+      } else if (importSource === 'ZerodhaTradebook') {
+        result = await importZerodhaTradebook(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          existingFingerprints,
+          { importOpenTrades, applyFeeRules }
         );
       } else {
         result = await importMT5Trades(
