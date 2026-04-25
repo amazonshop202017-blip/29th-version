@@ -116,10 +116,7 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
         : null;
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(initialOpenGroup);
   const handleGroupOpenChange = (key: GroupKey) => (open: boolean) => {
-    setOpenGroup(open ? key : (curr) => (curr === key ? null : curr) as any);
-    // Use functional only when closing same group; setting to null directly is fine.
-    if (!open) setOpenGroup((curr) => (curr === key ? null : curr));
-    else setOpenGroup(key);
+    setOpenGroup((curr) => (open ? key : curr === key ? null : curr));
   };
   const chartRoomOpen = openGroup === 'chartRoom';
   const toolsOpen = openGroup === 'tools';
