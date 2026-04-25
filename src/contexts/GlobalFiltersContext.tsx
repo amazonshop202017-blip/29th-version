@@ -59,6 +59,8 @@ interface GlobalFiltersContextType {
   setCurrency: (currency: CurrencyCode) => void;
   currencyConfig: CurrencyConfig;
   formatCurrency: (value: number, showSign?: boolean) => string;
+  // Resolver bridge: lets AccountsContext provide a function that maps accountId -> currency
+  setAccountCurrencyResolver: (fn: ((accountId: string) => CurrencyCode | undefined) | null) => void;
   
   // Breakeven Tolerance
   breakevenTolerance: BreakevenTolerance;
@@ -192,6 +194,13 @@ const loadPersistedDisplayMode = (): DisplayMode => {
 export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => {
   // Currency state - load from localStorage
   const [currency, setCurrencyState] = useState<CurrencyCode>(loadPersistedCurrency);
+
+  // Account currency resolver bridge (set by AccountsContext via a small bridge component)
+  const [accountCurrencyResolver, setAccountCurrencyResolverState] = useState<((accountId: string) => CurrencyCode | undefined) | null>(null);
+  const setAccountCurrencyResolver = useCallback((fn: ((accountId: string) => CurrencyCode | undefined) | null) => {
+    // Wrap in a setter callback because functions in useState are interpreted as updaters.
+    setAccountCurrencyResolverState(() => fn);
+  }, []);
   
   // Breakeven tolerance state - load from localStorage
   const [breakevenTolerance, setBreakevenToleranceState] = useState<BreakevenTolerance>(loadPersistedBreakevenTolerance);
@@ -368,7 +377,16 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedTradeComments.tradeManagements.length > 0 ||
     selectedTradeComments.exitComments.length > 0;
 
-  const currencyConfig = CURRENCIES[currency];
+  // Effective currency: use single-account's own currency when exactly one account is filtered,
+  // otherwise fall back to the global setting.
+  const effectiveCurrency: CurrencyCode = (() => {
+    if (selectedAccounts.length === 1 && accountCurrencyResolver) {
+      const c = accountCurrencyResolver(selectedAccounts[0]);
+      if (c) return c;
+    }
+    return currency;
+  })();
+  const currencyConfig = CURRENCIES[effectiveCurrency];
 
   const formatCurrency = (value: number, showSign: boolean = true): string => {
     const absValue = Math.abs(value);
@@ -438,6 +456,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setCurrency,
     currencyConfig,
     formatCurrency,
+    setAccountCurrencyResolver,
     breakevenTolerance,
     setBreakevenTolerance,
     classifyTradeOutcome,
@@ -495,7 +514,9 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   }), [
     currency, 
     setCurrency,
-    currencyConfig, 
+    currencyConfig,
+    setAccountCurrencyResolver,
+    accountCurrencyResolver, 
     breakevenTolerance,
     setBreakevenTolerance,
     classifyTradeOutcome,

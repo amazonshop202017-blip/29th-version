@@ -3,6 +3,7 @@ import { useTradesContext } from './TradesContext';
 import { useAuth } from './AuthContext';
 import { calculateTradeMetrics } from '@/types/trade';
 import { toISO, nowISO, auditISOValues, type ISODateString } from '@/lib/datetime';
+import type { CurrencyCode } from './GlobalFiltersContext';
 
 export type AccountMode = 'normal' | 'propfirm';
 export type PropFirmPhase = 'evaluation' | 'funded';
@@ -15,6 +16,7 @@ export interface Account {
   userId: string;
   name: string;
   startingBalance: number;
+  currency: CurrencyCode;
   createdAt: ISODateString;
   isArchived?: boolean;
   accountMode: AccountMode;
@@ -46,9 +48,9 @@ export interface AccountWithStats extends Account {
 interface AccountsContextType {
   accounts: Account[];
   transactions: Transaction[];
-  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => Account;
+  addAccount: (name: string, startingBalance: number, accountMode?: AccountMode, propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }, currency?: CurrencyCode) => Account;
   removeAccount: (id: string) => void;
-  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode) => void;
+  updateAccount: (id: string, name: string, startingBalance: number, accountMode?: AccountMode, currency?: CurrencyCode) => void;
   patchAccount: (id: string, patch: Partial<Pick<Account, 'name' | 'phase' | 'step' | 'status' | 'breachReason' | 'breachedAt' | 'isArchived'>>) => void;
   getAccountById: (id: string) => Account | undefined;
   getAccountWithStats: (id: string) => AccountWithStats | undefined;
@@ -87,8 +89,9 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
         const migrated = parsed.map(a => {
           const nextCreated = toISO(a.createdAt) || a.createdAt;
           const nextBreached = a.breachedAt ? (toISO(a.breachedAt) || a.breachedAt) : a.breachedAt;
-          if (nextCreated !== a.createdAt || nextBreached !== a.breachedAt) changed = true;
-          return { ...a, createdAt: nextCreated, breachedAt: nextBreached };
+          const nextCurrency: CurrencyCode = (a.currency as CurrencyCode) || 'USD';
+          if (nextCreated !== a.createdAt || nextBreached !== a.breachedAt || nextCurrency !== a.currency) changed = true;
+          return { ...a, createdAt: nextCreated, breachedAt: nextBreached, currency: nextCurrency };
         });
         setAccounts(migrated);
         if (changed) {
@@ -137,13 +140,14 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     return id;
   }, [accounts]);
 
-  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }) => {
+  const addAccount = useCallback((name: string, startingBalance: number, accountMode: AccountMode = 'normal', propFirmFields?: { challengeId?: string; step?: PropFirmStepType; phase?: PropFirmPhase; status?: PropFirmStatus }, currency: CurrencyCode = 'USD') => {
     const newAccount: Account = {
       id: crypto.randomUUID(),
       accountId: '', // filled below using latest state to avoid collisions
       userId: user?.userId || '',
       name: name.trim(),
       startingBalance,
+      currency,
       createdAt: nowISO(),
       isArchived: false,
       accountMode,
@@ -182,10 +186,10 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode) => {
+  const updateAccount = useCallback((id: string, name: string, startingBalance: number, accountMode?: AccountMode, currency?: CurrencyCode) => {
     setAccounts(prev => {
       const next = prev.map(a =>
-        a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }) } : a
+        a.id === id ? { ...a, name: name.trim(), startingBalance, ...(accountMode !== undefined && { accountMode }), ...(currency !== undefined && { currency }) } : a
       );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
