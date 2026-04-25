@@ -110,18 +110,33 @@ export const NewAccountModal = ({ open, onOpenChange, onCreateAccount, onUpdateA
             />
           </div>
 
-          {/* Starting Balance */}
+          {/* Currency + Starting Balance */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Starting Account Balance</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{currencySymbol}</span>
-              <Input
-                type="number"
-                placeholder="10,000"
-                value={balance}
-                onChange={(e) => setBalance(e.target.value)}
-                className="bg-input border-border pl-7"
-              />
+            <div className="flex gap-2">
+              <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+                <SelectTrigger className="bg-input border-border w-[130px] flex-shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(CURRENCIES) as CurrencyCode[]).map((code) => (
+                    <SelectItem key={code} value={code}>
+                      <span className="font-mono mr-2">{CURRENCIES[code].symbol}</span>
+                      {code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{CURRENCIES[currency].symbol}</span>
+                <Input
+                  type="number"
+                  placeholder="10,000"
+                  value={balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                  className="bg-input border-border pl-7"
+                />
+              </div>
             </div>
           </div>
 
