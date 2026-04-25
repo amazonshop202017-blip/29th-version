@@ -181,6 +181,7 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
               {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price (Price)</TableHead>}
               {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
+              {isColumnVisible('priceReachedFirst') && <TableHead className="px-2">Reached First</TableHead>}
               {categoryColumns.map((cc) => (
                 <TableHead key={cc.columnId} className="px-2 whitespace-nowrap">
                   {cc.name}
@@ -408,6 +409,21 @@ const TableWithStickyHorizontalScroll = ({
                   {isColumnVisible('postMinTickPip') && (
                     <TableCell className="font-mono text-right px-2 py-1">
                       {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
+                    </TableCell>
+                  )}
+                  {isColumnVisible('priceReachedFirst') && (
+                    <TableCell className="px-2 py-1">
+                      {trade.priceReachedFirst === 'takeProfit' ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-profit/20 text-profit">
+                          TP
+                        </span>
+                      ) : trade.priceReachedFirst === 'stopLoss' ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-loss/20 text-loss">
+                          SL
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </TableCell>
                   )}
                   {categoryColumns.map((cc) => {

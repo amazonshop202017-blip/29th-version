@@ -38,7 +38,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'priceMovement',
     label: 'Price Movement',
-    columns: ['farthestProfitPrice', 'farthestProfitTicks', 'farthestLossPrice', 'farthestLossTicks', 'postMaxPrice', 'postMaxTickPip', 'postMinPrice', 'postMinTickPip'],
+    columns: ['farthestProfitPrice', 'farthestProfitTicks', 'farthestLossPrice', 'farthestLossTicks', 'postMaxPrice', 'postMaxTickPip', 'postMinPrice', 'postMinTickPip', 'priceReachedFirst'],
   },
 ];
 
@@ -89,6 +89,7 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'postMaxTickPip', label: 'Highest Price (Ticks)', group: 'priceMovement', visible: false },
   { id: 'postMinPrice', label: 'Lowest Price (Price)', group: 'priceMovement', visible: false },
   { id: 'postMinTickPip', label: 'Lowest Price (Ticks)', group: 'priceMovement', visible: false },
+  { id: 'priceReachedFirst', label: 'Price Reached First (TP/SL)', group: 'priceMovement', visible: false },
 ];
 
 const STORAGE_KEY = 'trades-column-visibility';
