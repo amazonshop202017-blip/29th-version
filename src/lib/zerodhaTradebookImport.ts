@@ -20,7 +20,6 @@ export interface ZerodhaImportResult {
 }
 
 export interface ZerodhaImportOptions {
-  importOpenTrades: boolean;
   applyFeeRules: boolean;
 }
 
@@ -241,7 +240,7 @@ export function reconstructZerodhaTrades(
   accountBalanceSnapshot: number,
   options: ZerodhaImportOptions
 ): TradeFormData[] {
-  const { importOpenTrades, applyFeeRules } = options;
+  const { applyFeeRules } = options;
 
   // Group by symbol, sort chronologically.
   const bySymbol = new Map<string, TradebookRow[]>();
@@ -265,7 +264,7 @@ export function reconstructZerodhaTrades(
     let currentFills: InternalFill[] = [];
     let direction: 'LONG' | 'SHORT' | null = null;
 
-    const finalize = (isOpen: boolean) => {
+    const finalize = () => {
       if (currentFills.length === 0 || !direction) {
         currentFills = [];
         direction = null;
@@ -321,9 +320,7 @@ export function reconstructZerodhaTrades(
         preMaeTickPip: null,
         source: 'imported',
       };
-      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported', {
-        isOpen,
-      });
+      trade.fingerprint = buildFingerprintForTrade(trade as any, 'imported');
       trades.push(trade);
 
       currentFills = [];
@@ -348,14 +345,14 @@ export function reconstructZerodhaTrades(
         direction = row.side === 'B' ? 'LONG' : 'SHORT';
         pushFill(row.side === 'B' ? 'BUY' : 'SELL', row.iso, row.qty, row.price);
         position = next;
-        if (next === 0) finalize(false);
+        if (next === 0) finalize();
         continue;
       }
 
       if (sign(next) === sign(prev) || next === 0) {
         pushFill(row.side === 'B' ? 'BUY' : 'SELL', row.iso, row.qty, row.price);
         position = next;
-        if (next === 0) finalize(false);
+        if (next === 0) finalize();
       } else {
         // Reversal — close current direction, then open new one.
         const closingQty = Math.abs(prev);
@@ -368,7 +365,7 @@ export function reconstructZerodhaTrades(
           row.price
         );
         position = 0;
-        finalize(false);
+        finalize();
 
         direction = row.side === 'B' ? 'LONG' : 'SHORT';
         pushFill(
@@ -381,14 +378,10 @@ export function reconstructZerodhaTrades(
       }
     }
 
-    // Open position at end — emit only if user opted in.
+    // Open position at end → silently discard (matches Tradovate Fills behavior).
     if (position !== 0) {
-      if (importOpenTrades) {
-        finalize(true);
-      } else {
-        currentFills = [];
-        direction = null;
-      }
+      currentFills = [];
+      direction = null;
     }
   }
 
