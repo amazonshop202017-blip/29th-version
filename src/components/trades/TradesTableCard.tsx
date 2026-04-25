@@ -485,13 +485,43 @@ export const TradesTableCard = ({
   const { accounts } = useAccountsContext();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
-  const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
+  const { categories } = useCategoriesContext();
+  const { tags } = useTagsContext();
+  const { updateTrade } = useTradesContext();
+  const { columns, toggleColumn, isColumnVisible, columnGroups } =
+    useTradesColumnVisibility(categories);
 
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [tradesPerPage, setTradesPerPage] = useState(50);
+  const [tagModalTrade, setTagModalTrade] = useState<Trade | null>(null);
+
+  // Visible category columns (in category order)
+  const categoryColumns = useMemo(() => {
+    return categories
+      .map((cat) => {
+        const columnId = `category:${cat.id}`;
+        return isColumnVisible(columnId)
+          ? { columnId, categoryId: cat.id, name: cat.name }
+          : null;
+      })
+      .filter((c): c is { columnId: string; categoryId: string; name: string } => c !== null);
+  }, [categories, isColumnVisible]);
+
+  const handleOpenTagModal = useCallback((trade: Trade) => {
+    setTagModalTrade(trade);
+  }, []);
+
+  const handleTagsChange = useCallback(
+    (tagIds: string[]) => {
+      if (tagModalTrade) {
+        updateTrade(tagModalTrade.id, { ...tagModalTrade, tags: tagIds });
+      }
+    },
+    [tagModalTrade, updateTrade]
+  );
 
   const sortedTrades = useMemo(() => {
     return [...trades].sort((a, b) => {
