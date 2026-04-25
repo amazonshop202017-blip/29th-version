@@ -240,7 +240,7 @@ export function reconstructZerodhaTrades(
   accountBalanceSnapshot: number,
   options: ZerodhaImportOptions
 ): TradeFormData[] {
-  const { importOpenTrades, applyFeeRules } = options;
+  const { applyFeeRules } = options;
 
   // Group by symbol, sort chronologically.
   const bySymbol = new Map<string, TradebookRow[]>();
