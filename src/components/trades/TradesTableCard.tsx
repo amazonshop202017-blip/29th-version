@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Trash2,
@@ -29,6 +29,12 @@ import { cn } from '@/lib/utils';
 import { TradesColumnSettings } from '@/components/trades/TradesColumnSettings';
 import { useTradesColumnVisibility } from '@/hooks/useTradesColumnVisibility';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
+import { useCategoriesContext } from '@/contexts/CategoriesContext';
+import { useTagsContext } from '@/contexts/TagsContext';
+import { useTradesContext } from '@/contexts/TradesContext';
+import { AssignTagsModal } from '@/components/trades/AssignTagsModal';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import {
   DropdownMenu,
@@ -72,6 +78,18 @@ const formatDurationMinutes = (duration: string): string => {
   return `${mins}m`;
 };
 
+interface CategoryColumnInfo {
+  columnId: string;
+  categoryId: string;
+  name: string;
+}
+
+interface TagLike {
+  id: string;
+  name: string;
+  categoryId: string;
+}
+
 interface TableWithStickyHorizontalScrollProps {
   paginatedTrades: Trade[];
   allSelected: boolean;
@@ -85,6 +103,9 @@ interface TableWithStickyHorizontalScrollProps {
   formatCurrency: (v: number) => string;
   accounts: { id: string; name: string }[];
   emptyState?: { title: string; subtitle: string };
+  categoryColumns: CategoryColumnInfo[];
+  tags: TagLike[];
+  onOpenTagModal: (trade: Trade) => void;
 }
 
 const TableWithStickyHorizontalScroll = ({
@@ -100,6 +121,9 @@ const TableWithStickyHorizontalScroll = ({
   formatCurrency,
   accounts,
   emptyState,
+  categoryColumns,
+  tags,
+  onOpenTagModal,
 }: TableWithStickyHorizontalScrollProps) => {
   const { classifyTradeOutcome } = useGlobalFilters();
   if (paginatedTrades.length === 0) {
@@ -156,6 +180,11 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('postMaxTickPip') && <TableHead className="px-2 text-right">Highest Price (Ticks)</TableHead>}
               {isColumnVisible('postMinPrice') && <TableHead className="px-2 text-right">Lowest Price (Price)</TableHead>}
               {isColumnVisible('postMinTickPip') && <TableHead className="px-2 text-right">Lowest Price (Ticks)</TableHead>}
+              {categoryColumns.map((cc) => (
+                <TableHead key={cc.columnId} className="px-2 whitespace-nowrap">
+                  {cc.name}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -372,6 +401,52 @@ const TableWithStickyHorizontalScroll = ({
                       {typeof trade.postMinTickPip === 'number' ? trade.postMinTickPip : ''}
                     </TableCell>
                   )}
+                  {categoryColumns.map((cc) => {
+                    const tradeTagIds = trade.tags ?? [];
+                    const tagsInCategory = tradeTagIds
+                      .map((id) => tags.find((t) => t.id === id))
+                      .filter((t): t is TagLike => !!t && t.categoryId === cc.categoryId);
+                    return (
+                      <TableCell
+                        key={cc.columnId}
+                        className="px-2 py-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {tagsInCategory.length === 0 ? (
+                            <span className="text-muted-foreground text-xs">–</span>
+                          ) : (
+                            <>
+                              {tagsInCategory.slice(0, 2).map((tag) => (
+                                <Badge
+                                  key={tag.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                              {tagsInCategory.length > 2 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{tagsInCategory.length - 2}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenTagModal(trade);
+                            }}
+                            className="p-1 rounded hover:bg-muted/50 transition-colors"
+                            aria-label="Manage tags"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               );
             })}
@@ -406,13 +481,43 @@ export const TradesTableCard = ({
   const { accounts } = useAccountsContext();
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
-  const { columns, toggleColumn, isColumnVisible, columnGroups } = useTradesColumnVisibility();
+  const { categories } = useCategoriesContext();
+  const { tags } = useTagsContext();
+  const { updateTrade } = useTradesContext();
+  const { columns, toggleColumn, isColumnVisible, columnGroups } =
+    useTradesColumnVisibility(categories);
 
   const [selectedTrades, setSelectedTrades] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [tradesPerPage, setTradesPerPage] = useState(50);
+  const [tagModalTrade, setTagModalTrade] = useState<Trade | null>(null);
+
+  // Visible category columns (in category order)
+  const categoryColumns = useMemo(() => {
+    return categories
+      .map((cat) => {
+        const columnId = `category:${cat.id}`;
+        return isColumnVisible(columnId)
+          ? { columnId, categoryId: cat.id, name: cat.name }
+          : null;
+      })
+      .filter((c): c is { columnId: string; categoryId: string; name: string } => c !== null);
+  }, [categories, isColumnVisible]);
+
+  const handleOpenTagModal = useCallback((trade: Trade) => {
+    setTagModalTrade(trade);
+  }, []);
+
+  const handleTagsChange = useCallback(
+    (tagIds: string[]) => {
+      if (tagModalTrade) {
+        updateTrade(tagModalTrade.id, { ...tagModalTrade, tags: tagIds });
+      }
+    },
+    [tagModalTrade, updateTrade]
+  );
 
   const sortedTrades = useMemo(() => {
     return [...trades].sort((a, b) => {
@@ -638,6 +743,9 @@ export const TradesTableCard = ({
           formatCurrency={formatCurrency}
           accounts={accounts}
           emptyState={emptyState}
+          categoryColumns={categoryColumns}
+          tags={tags}
+          onOpenTagModal={handleOpenTagModal}
         />
 
         {totalTrades > 0 && (
@@ -706,6 +814,17 @@ export const TradesTableCard = ({
 
       {showImport && (
         <AccountImportModal open={importModalOpen} onOpenChange={setImportModalOpen} />
+      )}
+
+      {tagModalTrade && (
+        <AssignTagsModal
+          isOpen={!!tagModalTrade}
+          onClose={() => setTagModalTrade(null)}
+          selectedTagIds={tagModalTrade.tags || []}
+          onTagsChange={handleTagsChange}
+          symbol={tagModalTrade.symbol}
+          entryDate={calculateTradeMetrics(tagModalTrade).openDate}
+        />
       )}
     </>
   );
