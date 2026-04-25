@@ -377,7 +377,16 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedTradeComments.tradeManagements.length > 0 ||
     selectedTradeComments.exitComments.length > 0;
 
-  const currencyConfig = CURRENCIES[currency];
+  // Effective currency: use single-account's own currency when exactly one account is filtered,
+  // otherwise fall back to the global setting.
+  const effectiveCurrency: CurrencyCode = (() => {
+    if (selectedAccounts.length === 1 && accountCurrencyResolver) {
+      const c = accountCurrencyResolver(selectedAccounts[0]);
+      if (c) return c;
+    }
+    return currency;
+  })();
+  const currencyConfig = CURRENCIES[effectiveCurrency];
 
   const formatCurrency = (value: number, showSign: boolean = true): string => {
     const absValue = Math.abs(value);
