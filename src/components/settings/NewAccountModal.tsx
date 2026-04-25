@@ -6,8 +6,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { Account, AccountMode } from '@/contexts/AccountsContext';
+import { CURRENCIES, type CurrencyCode } from '@/contexts/GlobalFiltersContext';
 import { useNavigate } from 'react-router-dom';
 
 interface NewAccountModalProps {
@@ -17,12 +19,14 @@ interface NewAccountModalProps {
     name: string;
     startingBalance: number;
     accountMode: AccountMode;
+    currency: CurrencyCode;
   }) => void;
   onUpdateAccount?: (data: {
     id: string;
     name: string;
     startingBalance: number;
     accountMode: AccountMode;
+    currency: CurrencyCode;
   }) => void;
   editingAccount?: Account | null;
   currencySymbol: string;
