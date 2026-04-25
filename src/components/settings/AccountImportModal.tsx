@@ -116,6 +116,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     setImportSource('');
     setSelectedFile(null);
     setApplyFeeRules(false);
+    setImportOpenTrades(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
