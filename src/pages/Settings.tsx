@@ -168,6 +168,11 @@ const Settings = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+
+            <p className="mt-4 text-xs text-muted-foreground border-l-2 border-primary/40 pl-3 leading-relaxed">
+              Note: This currency is only used when multiple accounts are selected in filters (or no account filter is applied).
+              When a single account is selected, that account's own currency (set when the account was created) is used instead.
+            </p>
           </div>
 
           {/* Breakeven Tolerance Section */}
