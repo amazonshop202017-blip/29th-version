@@ -187,7 +187,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               added++;
             }
             return { added };
-          }
+          },
+          applyFeeRules
         );
       } else if (importSource === 'TradovateFills') {
         result = await importTradovateFills(
@@ -203,7 +204,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             ),
           // getContractSize: snapshot from rule onto each trade so PnL
           // matches what calculateTradeMetrics produces for manual trades.
-          (accId, sym) => getContractSizeForAccountSymbol(accId, sym)
+          (accId, sym) => getContractSizeForAccountSymbol(accId, sym),
+          applyFeeRules
         );
       } else {
         result = await importMT5Trades(
