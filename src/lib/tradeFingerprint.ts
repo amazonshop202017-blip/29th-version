@@ -88,7 +88,8 @@ export function extractIdentityFromTrade(
 
 export function buildFingerprintForTrade(
   trade: Trade | TradeFormData,
-  source: TradeSource
+  source: TradeSource,
+  options: { isOpen?: boolean } = {}
 ): string {
   const id = extractIdentityFromTrade(trade);
   return buildTradeFingerprint({
@@ -96,5 +97,6 @@ export function buildFingerprintForTrade(
     accountId: trade.accountId,
     symbol: trade.symbol,
     ...id,
+    isOpen: options.isOpen,
   });
 }
