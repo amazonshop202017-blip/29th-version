@@ -16,6 +16,7 @@ export interface Account {
   userId: string;
   name: string;
   startingBalance: number;
+  currency: CurrencyCode;
   createdAt: ISODateString;
   isArchived?: boolean;
   accountMode: AccountMode;
