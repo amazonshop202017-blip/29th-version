@@ -46,6 +46,7 @@ const IMPORT_SOURCES = [
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
   { value: 'TradovateFills', label: 'Tradovate (Fills)' },
+  { value: 'ZerodhaTradebook', label: 'Zerodha (Tradebook)' },
 ];
 
 interface AccountImportModalProps {
@@ -129,6 +130,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     
     if (importSource === 'MatchTrader') {
       toast.error('MatchTrader import is not yet implemented');
+      return;
+    }
+
+    if (importSource === 'ZerodhaTradebook') {
+      toast.error('Zerodha (Tradebook) import is not yet implemented');
       return;
     }
 
@@ -427,6 +433,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
               <p className="text-xs text-muted-foreground mt-1">
                 Upload a Tradovate Fills CSV export. Symbol Tick/Pip rules must
                 already exist for each traded symbol.
+              </p>
+            )}
+            {importSource === 'ZerodhaTradebook' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Zerodha (Tradebook) import will be available in a future update.
               </p>
             )}
           </div>
