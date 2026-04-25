@@ -20,7 +20,6 @@ export interface ZerodhaImportResult {
 }
 
 export interface ZerodhaImportOptions {
-  importOpenTrades: boolean;
   applyFeeRules: boolean;
 }
 
