@@ -435,6 +435,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
                 already exist for each traded symbol.
               </p>
             )}
+            {importSource === 'ZerodhaTradebook' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Zerodha (Tradebook) import will be available in a future update.
+              </p>
+            )}
           </div>
         </div>
         
