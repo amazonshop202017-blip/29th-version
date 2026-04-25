@@ -264,7 +264,7 @@ export function reconstructZerodhaTrades(
     let currentFills: InternalFill[] = [];
     let direction: 'LONG' | 'SHORT' | null = null;
 
-    const finalize = (isOpen: boolean) => {
+    const finalize = () => {
       if (currentFills.length === 0 || !direction) {
         currentFills = [];
         direction = null;
