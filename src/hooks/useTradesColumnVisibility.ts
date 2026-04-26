@@ -28,7 +28,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'execution',
     label: 'Execution & Plan',
-    columns: ['avgEntry', 'avgExit', 'initialRisk', 'initialTarget'],
+    columns: ['avgEntry', 'avgExit', 'initialRisk', 'initialTarget', 'strategy', 'tradeRiskDollar', 'tradeTargetDollar'],
   },
   {
     id: 'performance',
