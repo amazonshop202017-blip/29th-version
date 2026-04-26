@@ -325,8 +325,31 @@ const TableWithStickyHorizontalScroll = ({
                     </TableCell>
                   )}
 
-                  {isColumnVisible('grossPnl') && (
+                  {isColumnVisible('strategy') && (
+                    <TableCell className="text-muted-foreground px-2 py-1">
+                      {trade.strategyId ? (getStrategyById(trade.strategyId)?.name ?? '—') : '—'}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible('tradeRiskDollar') && (
                     <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {trade.tradeRisk > 0 ? maskCurrency(trade.tradeRisk, formatCurrency) : '—'}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible('tradeTargetDollar') && (
+                    <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {trade.tradeTarget > 0 ? maskCurrency(trade.tradeTarget, formatCurrency) : '—'}
+                    </TableCell>
+                  )}
+
+
                       'font-mono font-semibold px-2 py-1',
                       isPrivacyMode ? 'text-foreground' : metrics.grossPnl >= 0 ? 'text-profit' : 'text-loss'
                     )}>
