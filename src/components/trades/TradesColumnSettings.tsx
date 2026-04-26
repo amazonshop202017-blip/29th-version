@@ -138,7 +138,7 @@ export const TradesColumnSettings = ({
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                     {group.label}
                   </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2.5">
+                  <div className="flex flex-col gap-2.5">
                     {groupColumns.map((column) => (
                       <div
                         key={column.id}
