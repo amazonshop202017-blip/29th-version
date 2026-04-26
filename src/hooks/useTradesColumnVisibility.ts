@@ -28,7 +28,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = [
   {
     id: 'execution',
     label: 'Execution & Plan',
-    columns: ['avgEntry', 'avgExit', 'initialRisk', 'initialTarget'],
+    columns: ['avgEntry', 'avgExit', 'initialRisk', 'initialTarget', 'strategy', 'tradeRiskDollar', 'tradeTargetDollar'],
   },
   {
     id: 'performance',
@@ -72,6 +72,9 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'avgExit', label: 'Average Exit', group: 'execution', visible: false },
   { id: 'initialRisk', label: 'Initial Risk', group: 'execution', visible: false },
   { id: 'initialTarget', label: 'Initial Target', group: 'execution', visible: false },
+  { id: 'strategy', label: 'Strategy', group: 'execution', visible: false },
+  { id: 'tradeRiskDollar', label: 'Trade Risk ($)', group: 'execution', visible: false },
+  { id: 'tradeTargetDollar', label: 'Trade Target ($)', group: 'execution', visible: false },
   
   // Performance
   { id: 'grossPnl', label: 'Gross P&L', group: 'performance', visible: true },

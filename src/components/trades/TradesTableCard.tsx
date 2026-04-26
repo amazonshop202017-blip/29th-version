@@ -34,6 +34,7 @@ import { Plus } from 'lucide-react';
 import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
 import { AssignTagsModal } from '@/components/trades/AssignTagsModal';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import {
@@ -126,6 +127,7 @@ const TableWithStickyHorizontalScroll = ({
   onOpenTagModal,
 }: TableWithStickyHorizontalScrollProps) => {
   const { classifyTradeOutcome } = useGlobalFilters();
+  const { getStrategyById } = useStrategiesContext();
   if (paginatedTrades.length === 0) {
     return (
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -168,6 +170,9 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('avgExit') && <TableHead className="px-2">Avg Exit</TableHead>}
               {isColumnVisible('initialRisk') && <TableHead className="px-2">Stop Loss</TableHead>}
               {isColumnVisible('initialTarget') && <TableHead className="px-2">Take Profit</TableHead>}
+              {isColumnVisible('strategy') && <TableHead className="px-2">Strategy</TableHead>}
+              {isColumnVisible('tradeRiskDollar') && <TableHead className="px-2">Trade Risk ($)</TableHead>}
+              {isColumnVisible('tradeTargetDollar') && <TableHead className="px-2">Trade Target ($)</TableHead>}
               {isColumnVisible('grossPnl') && <TableHead className="px-2">Gross P&L</TableHead>}
               {isColumnVisible('netPnl') && <TableHead className="px-2">Net P&L</TableHead>}
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
@@ -318,6 +323,30 @@ const TableWithStickyHorizontalScroll = ({
                   {isColumnVisible('initialTarget') && (
                     <TableCell className="font-mono px-2 py-1">
                       {trade.takeProfit !== undefined && trade.takeProfit !== null ? trade.takeProfit.toFixed(2) : '—'}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible('strategy') && (
+                    <TableCell className="text-muted-foreground px-2 py-1">
+                      {trade.strategyId ? (getStrategyById(trade.strategyId)?.name ?? '—') : '—'}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible('tradeRiskDollar') && (
+                    <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {trade.tradeRisk > 0 ? maskCurrency(trade.tradeRisk, formatCurrency) : '—'}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible('tradeTargetDollar') && (
+                    <TableCell className={cn(
+                      'font-mono px-2 py-1',
+                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {trade.tradeTarget > 0 ? maskCurrency(trade.tradeTarget, formatCurrency) : '—'}
                     </TableCell>
                   )}
 
@@ -503,6 +532,7 @@ export const TradesTableCard = ({
   const { categories } = useCategoriesContext();
   const { tags } = useTagsContext();
   const { updateTrade } = useTradesContext();
+  const { getStrategyById } = useStrategiesContext();
   const { columns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
