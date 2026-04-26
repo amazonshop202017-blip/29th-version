@@ -34,6 +34,7 @@ import { Plus } from 'lucide-react';
 import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
 import { AssignTagsModal } from '@/components/trades/AssignTagsModal';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import {
