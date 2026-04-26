@@ -73,8 +73,7 @@ export const ALL_COLUMNS: ColumnConfig[] = [
   { id: 'initialRisk', label: 'Initial Risk', group: 'execution', visible: false },
   { id: 'initialTarget', label: 'Initial Target', group: 'execution', visible: false },
   { id: 'strategy', label: 'Strategy', group: 'execution', visible: false },
-  { id: 'tradeRiskDollar', label: 'Trade Risk ($)', group: 'execution', visible: false },
-  { id: 'tradeTargetDollar', label: 'Trade Target ($)', group: 'execution', visible: false },
+  { id: 'strategyChecklist', label: 'Strategy (Checklist)', group: 'execution', visible: false },
   
   // Performance
   { id: 'grossPnl', label: 'Gross P&L', group: 'performance', visible: true },
