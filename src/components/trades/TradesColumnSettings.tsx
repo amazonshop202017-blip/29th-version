@@ -94,7 +94,7 @@ export const TradesColumnSettings = ({
         <Settings2 className="w-4 h-4" />
       </Button>
 
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl flex flex-col">
         <DialogHeader>
           <DialogTitle>Select columns</DialogTitle>
           <DialogDescription>
