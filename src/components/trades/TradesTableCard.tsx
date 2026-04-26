@@ -127,6 +127,7 @@ const TableWithStickyHorizontalScroll = ({
   onOpenTagModal,
 }: TableWithStickyHorizontalScrollProps) => {
   const { classifyTradeOutcome } = useGlobalFilters();
+  const { getStrategyById } = useStrategiesContext();
   if (paginatedTrades.length === 0) {
     return (
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
