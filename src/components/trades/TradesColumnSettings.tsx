@@ -94,7 +94,7 @@ export const TradesColumnSettings = ({
         <Settings2 className="w-4 h-4" />
       </Button>
 
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl flex flex-col">
         <DialogHeader>
           <DialogTitle>Select columns</DialogTitle>
           <DialogDescription>
@@ -127,14 +127,13 @@ export const TradesColumnSettings = ({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-1 -mr-1">
-          <div className="space-y-5 py-2">
-            {columnGroups.map((group, groupIndex) => {
+        <div className="flex-1 min-h-0">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-6 py-2">
+            {columnGroups.map((group) => {
               const groupColumns = getColumnsByGroup(group.id);
               if (groupColumns.length === 0) return null;
               return (
-                <div key={group.id}>
-                  {groupIndex > 0 && <Separator className="mb-4" />}
+                <div key={group.id} className="break-inside-avoid mb-5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                     {group.label}
                   </p>
