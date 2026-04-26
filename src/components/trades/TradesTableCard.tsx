@@ -349,7 +349,8 @@ const TableWithStickyHorizontalScroll = ({
                     </TableCell>
                   )}
 
-
+                  {isColumnVisible('grossPnl') && (
+                    <TableCell className={cn(
                       'font-mono font-semibold px-2 py-1',
                       isPrivacyMode ? 'text-foreground' : metrics.grossPnl >= 0 ? 'text-profit' : 'text-loss'
                     )}>
