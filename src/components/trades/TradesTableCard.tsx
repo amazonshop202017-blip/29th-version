@@ -171,8 +171,7 @@ const TableWithStickyHorizontalScroll = ({
               {isColumnVisible('initialRisk') && <TableHead className="px-2">Stop Loss</TableHead>}
               {isColumnVisible('initialTarget') && <TableHead className="px-2">Take Profit</TableHead>}
               {isColumnVisible('strategy') && <TableHead className="px-2">Strategy</TableHead>}
-              {isColumnVisible('tradeRiskDollar') && <TableHead className="px-2">Trade Risk ($)</TableHead>}
-              {isColumnVisible('tradeTargetDollar') && <TableHead className="px-2">Trade Target ($)</TableHead>}
+              {isColumnVisible('strategyChecklist') && <TableHead className="px-2">Strategy (Checklist)</TableHead>}
               {isColumnVisible('grossPnl') && <TableHead className="px-2">Gross P&L</TableHead>}
               {isColumnVisible('netPnl') && <TableHead className="px-2">Net P&L</TableHead>}
               {isColumnVisible('realizedRMultiple') && <TableHead className="px-2">R Multiple</TableHead>}
@@ -332,21 +331,28 @@ const TableWithStickyHorizontalScroll = ({
                     </TableCell>
                   )}
 
-                  {isColumnVisible('tradeRiskDollar') && (
-                    <TableCell className={cn(
-                      'font-mono px-2 py-1',
-                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
-                    )}>
-                      {trade.tradeRisk > 0 ? maskCurrency(trade.tradeRisk, formatCurrency) : '—'}
-                    </TableCell>
-                  )}
-
-                  {isColumnVisible('tradeTargetDollar') && (
-                    <TableCell className={cn(
-                      'font-mono px-2 py-1',
-                      isPrivacyMode ? 'text-foreground' : 'text-muted-foreground'
-                    )}>
-                      {trade.tradeTarget > 0 ? maskCurrency(trade.tradeTarget, formatCurrency) : '—'}
+                  {isColumnVisible('strategyChecklist') && (
+                    <TableCell className="px-2 py-1">
+                      {(() => {
+                        const items = trade.selectedChecklistItems ?? [];
+                        if (items.length === 0) {
+                          return <span className="text-muted-foreground text-xs">—</span>;
+                        }
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            {items.slice(0, 2).map((item, idx) => (
+                              <Badge key={`${item}-${idx}`} variant="outline" className="text-xs">
+                                {item}
+                              </Badge>
+                            ))}
+                            {items.length > 2 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{items.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                   )}
 
