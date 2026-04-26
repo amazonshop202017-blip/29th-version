@@ -28,14 +28,14 @@ export const ProfitFactorRing = ({
   }
 
   return (
-    <div className="flex items-center justify-between w-full gap-2">
-      <div className="flex flex-col">
+    <div className="flex items-center justify-between w-full h-full gap-2">
+      <div className="flex flex-col items-start justify-start">
         <span className="text-xs text-muted-foreground">Profit Factor</span>
-        <span className="text-2xl font-bold font-mono">
+        <span className="text-2xl font-bold font-mono mt-0.5">
           {maskProfitFactor(profitFactor)}
         </span>
       </div>
-      <div style={{ width: 60, height: 60 }}>
+      <div style={{ width: 90, height: 90 }}>
         <PieChart
           series={[
             {
@@ -43,18 +43,18 @@ export const ProfitFactorRing = ({
                 ...d,
                 label: `${d.label}: ${total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%`,
               })),
-              innerRadius: 16,
-              outerRadius: 27,
+              innerRadius: 26,
+              outerRadius: 42,
               paddingAngle: 2,
-              cornerRadius: 3,
-              cx: 26,
-              cy: 26,
+              cornerRadius: 4,
+              cx: 41,
+              cy: 41,
               arcLabel: () => '',
               highlightScope: { fade: 'global', highlight: 'item' },
             },
           ]}
-          width={60}
-          height={60}
+          width={90}
+          height={90}
           hideLegend
           skipAnimation={false}
         />
