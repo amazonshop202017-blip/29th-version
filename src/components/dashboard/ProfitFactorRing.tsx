@@ -35,7 +35,7 @@ export const ProfitFactorRing = ({
           {maskProfitFactor(profitFactor)}
         </span>
       </div>
-      <div style={{ width: 70, height: 70 }}>
+      <div style={{ width: 90, height: 90 }}>
         <PieChart
           series={[
             {
@@ -43,18 +43,18 @@ export const ProfitFactorRing = ({
                 ...d,
                 label: `${d.label}: ${total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%`,
               })),
-              innerRadius: 20,
-              outerRadius: 32,
+              innerRadius: 26,
+              outerRadius: 42,
               paddingAngle: 2,
               cornerRadius: 4,
-              cx: 31,
-              cy: 31,
+              cx: 41,
+              cy: 41,
               arcLabel: () => '',
               highlightScope: { fade: 'global', highlight: 'item' },
             },
           ]}
-          width={70}
-          height={70}
+          width={90}
+          height={90}
           hideLegend
           skipAnimation={false}
         />
