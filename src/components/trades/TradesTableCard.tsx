@@ -504,6 +504,7 @@ export const TradesTableCard = ({
   const { categories } = useCategoriesContext();
   const { tags } = useTagsContext();
   const { updateTrade } = useTradesContext();
+  const { getStrategyById } = useStrategiesContext();
   const { columns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
