@@ -98,8 +98,6 @@ export function exportTradesToCsv(
       fmtNum(m.totalQuantity),
       fmtNum(trade.stopLoss),
       fmtNum(trade.takeProfit),
-      fmtNum(trade.tradeRisk),
-      fmtNum(trade.tradeTarget),
       m.closeDate ? fmtNum(grossPnl) : '',
       fmtNum(fees),
       fmtBool(trade.breakEven),
