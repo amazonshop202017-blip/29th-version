@@ -537,8 +537,8 @@ export const TradesTableCard = ({
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { categories } = useCategoriesContext();
   const { tags } = useTagsContext();
-  const { updateTrade } = useTradesContext();
-  const { getStrategyById } = useStrategiesContext();
+  const { updateTrade, trades: allTrades } = useTradesContext();
+  const { getStrategyById, strategies } = useStrategiesContext();
   const { columns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
