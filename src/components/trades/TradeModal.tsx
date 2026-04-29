@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useTradedSymbols } from '@/hooks/useTradedSymbols';
-import { X, Calendar, Star, Settings2, Clock, ChevronDown, Check, Plus, Info, Tags } from 'lucide-react';
+import { X, Star, Settings2, Clock, ChevronDown, Check, Plus, Info, Tags } from 'lucide-react';
 import { AppDateTimePicker } from '@/components/ui/app-date-pickers';
 import { ScaleInOutModal } from './ScaleInOutModal';
 import { AssignTagsModal } from './AssignTagsModal';
