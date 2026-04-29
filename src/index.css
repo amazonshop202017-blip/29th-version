@@ -277,3 +277,29 @@
 .dark [data-trade-modal] .bg-input textarea::placeholder {
   color: rgb(255 255 255 / 0.5);
 }
+
+/* Dark-mode styling for all MUI X date/time pickers used in the app */
+.dark .MuiOutlinedInput-root {
+  background-color: #0d0d0d !important;
+  color: #ffffff !important;
+}
+.dark .MuiPickersInputBase-root,
+.dark .MuiPickersOutlinedInput-root {
+  background-color: #0d0d0d !important;
+  color: #ffffff !important;
+}
+.dark .MuiPickersSectionList-root,
+.dark .MuiPickersInputBase-sectionsContainer,
+.dark .MuiPickersInputBase-sectionContent,
+.dark .MuiPickersInputBase-root .MuiPickersSectionList-section,
+.dark .MuiPickersInputBase-root input {
+  color: #ffffff !important;
+}
+.dark .MuiOutlinedInput-input,
+.dark .MuiInputBase-input {
+  color: #ffffff !important;
+}
+.dark .MuiPickersInputBase-root .MuiIconButton-root,
+.dark .MuiOutlinedInput-root .MuiIconButton-root {
+  color: #ffffff !important;
+}
