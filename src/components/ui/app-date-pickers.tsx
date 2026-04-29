@@ -97,7 +97,7 @@ export function AppDateTimePicker({
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
           },
-          htmlInput: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
@@ -150,7 +150,7 @@ export function AppDatePicker({
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
           },
-          htmlInput: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
@@ -205,7 +205,7 @@ export function AppDatePickerString({
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
           },
-          htmlInput: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
