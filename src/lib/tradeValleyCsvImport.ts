@@ -13,6 +13,30 @@ export interface TradeValleyImportResult {
   rowsSkipped: number;
   errors: string[];
   importedSymbols: string[];
+  strategiesCreated: number;
+  checklistItemsCreated: number;
+  categoriesCreated: number;
+  tagsCreated: number;
+}
+
+export interface TradeValleyImportReconcilers {
+  reconcileStrategiesForImport: (
+    inputs: { name: string; checklistItems: string[] }[],
+  ) => {
+    map: Map<string, Strategy>;
+    strategiesCreated: number;
+    checklistItemsCreated: number;
+  };
+  reconcileCategoriesForImport: (names: string[]) => {
+    map: Map<string, Category>;
+    categoriesCreated: number;
+  };
+  reconcileTagsForImport: (
+    inputs: { categoryId: string; name: string }[],
+  ) => {
+    map: Map<string, Tag>;
+    tagsCreated: number;
+  };
 }
 
 // ---------- CSV parsing (RFC 4180-ish) ----------
@@ -73,9 +97,7 @@ export async function importTradeValleyCsv(
   accountId: string,
   accountBalanceSnapshot: number,
   bulkAddTrades: (trades: TradeFormData[]) => void,
-  strategies: Strategy[],
-  tags: Tag[],
-  categories: Category[],
+  reconcilers: TradeValleyImportReconcilers,
   existingFingerprints: Set<string> = new Set(),
 ): Promise<TradeValleyImportResult> {
   const errors: string[] = [];
@@ -89,31 +111,105 @@ export async function importTradeValleyCsv(
         success: false, tradesImported: 0, duplicatesSkipped: 0,
         rowsSkipped: 0, errors: ['File is empty or has no data rows'],
         importedSymbols: [],
+        strategiesCreated: 0, checklistItemsCreated: 0,
+        categoriesCreated: 0, tagsCreated: 0,
       };
     }
 
     const headers = rows[0].map(h => h.trim());
     const idx = (name: string): number => headers.indexOf(name);
 
-    // Build name->Strategy map for setup columns
-    const strategyByHeader = new Map<number, Strategy>();
+    // ---------------- Pass 1: discover headers & values ----------------
+    // Setup columns: header index → strategy name
+    const setupHeaders: { colIdx: number; name: string }[] = [];
+    // Category columns: header index → category name
+    const categoryHeaders: { colIdx: number; name: string }[] = [];
     headers.forEach((h, i) => {
       if (h.endsWith(STRATEGY_HEADER_SUFFIX)) {
         const name = h.slice(0, -STRATEGY_HEADER_SUFFIX.length).trim();
-        const s = strategies.find(s => s.name.toLowerCase() === name.toLowerCase());
-        if (s) strategyByHeader.set(i, s);
+        if (name) setupHeaders.push({ colIdx: i, name });
+      } else if (h.endsWith(CATEGORY_HEADER_SUFFIX)) {
+        const name = h.slice(0, -CATEGORY_HEADER_SUFFIX.length).trim();
+        if (name) categoryHeaders.push({ colIdx: i, name });
       }
     });
 
-    // Build name->Category map for tag-category columns
-    const categoryByHeader = new Map<number, Category>();
-    headers.forEach((h, i) => {
-      if (h.endsWith(CATEGORY_HEADER_SUFFIX)) {
-        const name = h.slice(0, -CATEGORY_HEADER_SUFFIX.length).trim();
-        const c = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
-        if (c) categoryByHeader.set(i, c);
+    // Walk rows to gather every checklist item per setup and every tag per
+    // category. Use case-insensitive dedupe but keep first-seen casing.
+    const setupChecklists = new Map<string, { name: string; items: Map<string, string> }>();
+    for (const sh of setupHeaders) {
+      setupChecklists.set(sh.name.toLowerCase(), { name: sh.name, items: new Map() });
+    }
+    const categoryTags = new Map<string, { name: string; tagNames: Map<string, string> }>();
+    for (const ch of categoryHeaders) {
+      categoryTags.set(ch.name.toLowerCase(), { name: ch.name, tagNames: new Map() });
+    }
+
+    for (let r = 1; r < rows.length; r++) {
+      const cols = rows[r];
+      for (const sh of setupHeaders) {
+        const cell = (cols[sh.colIdx] || '').trim();
+        if (!cell) continue;
+        const bucket = setupChecklists.get(sh.name.toLowerCase())!;
+        for (const raw of cell.split(',')) {
+          const item = raw.trim();
+          if (!item) continue;
+          const key = item.toLowerCase();
+          if (!bucket.items.has(key)) bucket.items.set(key, item);
+        }
       }
-    });
+      for (const ch of categoryHeaders) {
+        const cell = (cols[ch.colIdx] || '').trim();
+        if (!cell) continue;
+        const bucket = categoryTags.get(ch.name.toLowerCase())!;
+        for (const raw of cell.split(',')) {
+          const tagName = raw.trim();
+          if (!tagName) continue;
+          const key = tagName.toLowerCase();
+          if (!bucket.tagNames.has(key)) bucket.tagNames.set(key, tagName);
+        }
+      }
+    }
+
+    // ---------------- Pass 2: reconcile (find-or-create) ----------------
+    // Strategies (with merged checklist items).
+    const strategyReconcileInputs = Array.from(setupChecklists.values()).map(
+      v => ({ name: v.name, checklistItems: Array.from(v.items.values()) }),
+    );
+    const {
+      map: strategyMap,
+      strategiesCreated,
+      checklistItemsCreated,
+    } = reconcilers.reconcileStrategiesForImport(strategyReconcileInputs);
+
+    // Categories.
+    const categoryReconcileInputs = Array.from(categoryTags.values()).map(v => v.name);
+    const { map: categoryMap, categoriesCreated } =
+      reconcilers.reconcileCategoriesForImport(categoryReconcileInputs);
+
+    // Tags (per category).
+    const tagReconcileInputs: { categoryId: string; name: string }[] = [];
+    for (const bucket of categoryTags.values()) {
+      const cat = categoryMap.get(bucket.name.toLowerCase());
+      if (!cat) continue; // shouldn't happen — defensive
+      for (const tagName of bucket.tagNames.values()) {
+        tagReconcileInputs.push({ categoryId: cat.id, name: tagName });
+      }
+    }
+    const { map: tagMap, tagsCreated } =
+      reconcilers.reconcileTagsForImport(tagReconcileInputs);
+
+    // Per-column strategy/category resolution for trade insertion.
+    const strategyByHeader = new Map<number, Strategy>();
+    for (const sh of setupHeaders) {
+      const s = strategyMap.get(sh.name.toLowerCase());
+      if (s) strategyByHeader.set(sh.colIdx, s);
+    }
+    const categoryByHeader = new Map<number, Category>();
+    for (const ch of categoryHeaders) {
+      const c = categoryMap.get(ch.name.toLowerCase());
+      if (c) categoryByHeader.set(ch.colIdx, c);
+    }
 
     const seen = new Set<string>(existingFingerprints);
     const toInsert: TradeFormData[] = [];
@@ -178,7 +274,14 @@ export async function importTradeValleyCsv(
           if (!cell) continue;
           strategyId = strat.id;
           const itemTexts = cell.split(',').map(s => s.trim()).filter(Boolean);
-          selectedChecklistItems = itemTexts.filter(t => strat.checklistItems.includes(t));
+          // Case-insensitive match against the (now-merged) checklist items,
+          // preserving the canonical text stored on the strategy.
+          const checklistByLower = new Map(
+            strat.checklistItems.map(i => [i.toLowerCase(), i]),
+          );
+          selectedChecklistItems = itemTexts
+            .map(t => checklistByLower.get(t.toLowerCase()))
+            .filter((v): v is string => !!v);
           break;
         }
 
@@ -189,9 +292,7 @@ export async function importTradeValleyCsv(
           if (!cell) continue;
           const names = cell.split(',').map(s => s.trim()).filter(Boolean);
           for (const name of names) {
-            const t = tags.find(
-              tg => tg.categoryId === cat.id && tg.name.toLowerCase() === name.toLowerCase(),
-            );
+            const t = tagMap.get(`${cat.id}::${name.toLowerCase()}`);
             if (t) tagIds.push(t.id);
           }
         }
@@ -259,6 +360,10 @@ export async function importTradeValleyCsv(
       rowsSkipped,
       errors,
       importedSymbols: Array.from(importedSymbols),
+      strategiesCreated,
+      checklistItemsCreated,
+      categoriesCreated,
+      tagsCreated,
     };
   } catch (err) {
     return {
@@ -268,6 +373,10 @@ export async function importTradeValleyCsv(
       rowsSkipped: 0,
       errors: [err instanceof Error ? err.message : 'Unknown error'],
       importedSymbols: [],
+      strategiesCreated: 0,
+      checklistItemsCreated: 0,
+      categoriesCreated: 0,
+      tagsCreated: 0,
     };
   }
 }

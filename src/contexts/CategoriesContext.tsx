@@ -12,6 +12,15 @@ interface CategoriesContextType {
   removeCategory: (id: string) => void;
   updateCategory: (id: string, name: string, color: string) => void;
   onCategoryRemove: (callback: (categoryId: string) => void) => () => void;
+  /**
+   * Bulk reconcile categories for import flows. Creates any missing
+   * categories (assigning colors from a default palette) in a single state
+   * write, returning a name→Category lookup map.
+   */
+  reconcileCategoriesForImport: (names: string[]) => {
+    map: Map<string, Category>;
+    categoriesCreated: number;
+  };
 }
 
 const CategoriesContext = createContext<CategoriesContextType | undefined>(undefined);
@@ -19,6 +28,17 @@ const CategoriesContext = createContext<CategoriesContextType | undefined>(undef
 const CATEGORIES_STORAGE_KEY = 'trading-journal-categories';
 
 const generateId = () => `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+const DEFAULT_CATEGORY_PALETTE = [
+  '#3B82F6', // blue
+  '#10B981', // emerald
+  '#F59E0B', // amber
+  '#EF4444', // red
+  '#8B5CF6', // violet
+  '#EC4899', // pink
+  '#14B8A6', // teal
+  '#F97316', // orange
+];
 
 export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -70,8 +90,41 @@ export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  const reconcileCategoriesForImport = useCallback((names: string[]) => {
+    const map = new Map<string, Category>();
+    let categoriesCreated = 0;
+
+    const next = [...categories];
+    for (const c of next) {
+      map.set(c.name.trim().toLowerCase(), c);
+    }
+
+    let paletteIdx = next.length;
+    for (const rawName of names) {
+      const trimmed = rawName.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (map.has(key)) continue;
+      const created: Category = {
+        id: generateId(),
+        name: trimmed,
+        color: DEFAULT_CATEGORY_PALETTE[paletteIdx % DEFAULT_CATEGORY_PALETTE.length],
+      };
+      next.push(created);
+      map.set(key, created);
+      paletteIdx++;
+      categoriesCreated++;
+    }
+
+    if (categoriesCreated > 0) {
+      saveCategories(next);
+    }
+
+    return { map, categoriesCreated };
+  }, [categories, saveCategories]);
+
   return (
-    <CategoriesContext.Provider value={{ categories, addCategory, removeCategory, updateCategory, onCategoryRemove }}>
+    <CategoriesContext.Provider value={{ categories, addCategory, removeCategory, updateCategory, onCategoryRemove, reconcileCategoriesForImport }}>
       {children}
     </CategoriesContext.Provider>
   );
