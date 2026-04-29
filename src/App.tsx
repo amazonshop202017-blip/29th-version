@@ -3,8 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TradeModalProvider } from "@/contexts/TradeModalContext";
 import { TradesProvider } from "@/contexts/TradesContext";
@@ -166,13 +164,11 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <InterfaceThemeProvider>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <BrowserRouter>
-              <Toaster />
-              <Sonner />
-              <AuthenticatedApp />
-            </BrowserRouter>
-          </LocalizationProvider>
+          <BrowserRouter>
+            <Toaster />
+            <Sonner />
+            <AuthenticatedApp />
+          </BrowserRouter>
         </InterfaceThemeProvider>
       </AuthProvider>
     </TooltipProvider>
