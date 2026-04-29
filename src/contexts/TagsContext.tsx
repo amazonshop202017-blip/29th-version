@@ -21,6 +21,18 @@ interface TagsContextType {
   deleteTagPermanently: (id: string) => void;
   getActiveTags: () => Tag[];
   getArchivedTags: () => Tag[];
+  /**
+   * Bulk reconcile tags for import flows. For each (categoryId, tagName)
+   * pair, find an existing tag in that category by case-insensitive name or
+   * create one. Single state write, returns a lookup map keyed by
+   * `${categoryId}::${nameLower}`.
+   */
+  reconcileTagsForImport: (
+    inputs: { categoryId: string; name: string }[],
+  ) => {
+    map: Map<string, Tag>;
+    tagsCreated: number;
+  };
 }
 
 const TagsContext = createContext<TagsContextType | undefined>(undefined);
@@ -118,6 +130,43 @@ export const TagsProvider = ({ children }: { children: ReactNode }) => {
     return trades.filter(trade => trade.tags?.includes(tagId)).length;
   }, []);
 
+  const reconcileTagsForImport = useCallback((
+    inputs: { categoryId: string; name: string }[],
+  ) => {
+    const map = new Map<string, Tag>();
+    let tagsCreated = 0;
+
+    const next = [...tags];
+    const keyOf = (categoryId: string, name: string) =>
+      `${categoryId}::${name.trim().toLowerCase()}`;
+    for (const t of next) {
+      map.set(keyOf(t.categoryId, t.name), t);
+    }
+
+    for (const input of inputs) {
+      const trimmed = input.name.trim();
+      if (!trimmed || !input.categoryId) continue;
+      const key = keyOf(input.categoryId, trimmed);
+      if (map.has(key)) continue;
+      const created: Tag = {
+        id: generateId(),
+        name: trimmed,
+        categoryId: input.categoryId,
+        description: '',
+        archived: false,
+      };
+      next.push(created);
+      map.set(key, created);
+      tagsCreated++;
+    }
+
+    if (tagsCreated > 0) {
+      saveTags(next);
+    }
+
+    return { map, tagsCreated };
+  }, [tags, saveTags]);
+
   return (
     <TagsContext.Provider value={{ 
       tags, 
@@ -131,6 +180,7 @@ export const TagsProvider = ({ children }: { children: ReactNode }) => {
       deleteTagPermanently,
       getActiveTags,
       getArchivedTags,
+      reconcileTagsForImport,
     }}>
       {children}
     </TagsContext.Provider>
