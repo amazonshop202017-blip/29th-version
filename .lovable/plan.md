@@ -1,138 +1,144 @@
-## TradeValley CSV Export & Import
+## Goal
 
-Add round-trip CSV export/import for trades. Re-imports are treated as new trades (same model as MT5 / Tradovate); fingerprint dedupes accidental re-imports of the same file.
+When importing a TradeValley CSV, scan all rows up-front to discover every **Setup (Strategy)**, **Checklist item**, **Tag Category**, and **Tag** referenced by the trades. For each one:
 
----
+- If it already exists (case-insensitive name match) → reuse it and link trades to the existing id.
+- If it does not exist → create it before inserting trades, so trades reference real ids from day one.
 
-## Final CSV column set
+Result: a fresh account / fresh project can ingest a CSV from another TradeValley user and end up with the same setups, checklists, categories, and tags wired up automatically.
 
-Per your call: drop calc_* metrics, drop Notes & Comments, drop Account Name.
+## What gets auto-created
 
-### A. Trade core
+From the CSV headers:
 
-- `Symbol`
-- `Side` (LONG / SHORT)
-- `Open Date/Time` (ISO UTC)
-- `Close Date/Time` (ISO UTC, blank if open)
-- `Avg Entry Price`
-- `Avg Exit Price`
-- `Quantity` (closed quantity)
-- `Fees` (manualFees if set, else summed entry charges)
+- Every column ending in `(Setup)` → a Strategy with that name.
+- Every column ending in `(Tag Category)` → a Category with that name.
 
-### B. Plan & risk (user-entered)
+From the CSV cell values:
 
-- `Stop Loss`
-- `Take Profit`
-- `Trade Risk`
-- `Trade Target`
+- Each comma-separated text inside a `(Setup)` cell → added to that Strategy's `checklistItems` (deduped, case-insensitive).
+- Each comma-separated text inside a `(Tag Category)` cell → a Tag with that name under that category.
 
-### C. Manual overrides
+Matching for "already exists" is **case-insensitive on trimmed name** (mirrors current import logic).
 
-- `Manual Gross P&L` (blank if not overridden)
-- `Manual Fees` (blank if not overridden)
-- `Break Even` (true / false / blank)
-- `Price Reached First` (`takeProfit` / `stopLoss` / blank)
+Honest limitation to surface in the result: the export only writes **checked** checklist items per trade. Checklist items defined on a Strategy but never checked in any exported trade will not appear in the CSV and therefore won't be recreated. We will mention this in the success toast.
 
-### D. Strategy & tags (by name, portable)
+## Behavior details
 
-- `Strategy` (name)
-- `Strategy Checklist` (`;`-joined checked item texts)
-- `Tags` (`;`-joined tag names — all categories combined)
+- New Categories get an auto-assigned color (cycle through a small palette so they're visually distinct).
+- New Strategies get an empty description; their `checklistItems` are the union of all checked items seen across rows for that strategy column.
+- New Tags are created as active (not archived) with empty description.
+- All creation happens **before** `bulkAddTrades`, so each trade's `strategyId`, `selectedChecklistItems`, and `tags[]` reference the freshly-created ids.
+- A single import run reuses anything it just created (no double-creates within the same file).
+- Result object gains four counters: `strategiesCreated`, `checklistItemsCreated`, `categoriesCreated`, `tagsCreated`. The success toast in `AccountImportModal` shows them when > 0.
 
-(a little change here in structure of these strategies and tags, first strategy: Column name must be " Strategy Name (Setup) ", under this all the checklist of the user tagges of that strategy(setup), so if user have 5 setup, user used 1 of the 5 setup, the checklist of that used setup is written with commas in that field, same goes for tags, column name is "Tag Category Name (Tag Category)", and under that what tags are used in that category with commas. 
+## Technical implementation
 
-### E. Price-movement (user-entered, not recalculated)
+Files touched:
 
-- `MFE Price (pre-exit)` / `MFE Ticks`
-- `MAE Price (pre-exit)` / `MAE Ticks`
-- `Highest Price (post-exit)` / `Highest Ticks`
-- `Lowest Price (post-exit)` / `Lowest Ticks`
+1. `src/contexts/StrategiesContext.tsx`
+  - Add `addStrategyWithChecklist(name, checklistItems)` returning the new `Strategy` (single save, avoids racing two state updates).
+2. `src/contexts/CategoriesContext.tsx`
+  - Change `addCategory` to also return the created `Category` (or add `addCategoryReturning`) so the importer can grab the new id synchronously.
+3. `src/contexts/TagsContext.tsx`
+  - `addTag` already returns `Tag | null`; no change needed.
+  - Add `bulkAddTags(items: { name, categoryId, description }[]): Tag[]` for a single localStorage write.
+4. `src/lib/tradeValleyCsvImport.ts`
+  - Update signature to accept the new context helpers (or accept callbacks: `createStrategy`, `appendChecklistItems`, `createCategory`, `createTag`).
+  - **Pass 1 (discovery)**: parse all rows, walk Setup and Tag-Category columns, collect:
+    - `setupName -> Set<checklistItem>`
+    - `categoryName -> Set<tagName>`
+  - **Pass 2 (reconcile)**: for each setup, find or create the Strategy; merge missing checklist items into its `checklistItems`. For each category, find or create the Category; for each tag in it, find or create the Tag. Build live lookup maps keyed by lowercased name.
+  - **Pass 3 (insert)**: existing per-row trade build, but use the live lookup maps so even rows referencing newly-created entities resolve correctly.
+  - Extend `TradeValleyImportResult` with the four new counters.
+5. `src/components/settings/AccountImportModal.tsx`
+  - Pass the new context helpers into `importTradeValleyCsv`.
+  - Extend the success toast: e.g. *"Imported 42 trades. Created 2 setups, 5 checklist items, 1 category, 7 tags."*
 
-**Excluded:** screenshots, diary, scale entries/exits, contractSize/tickSize, account name, id/fingerprint/timestamps/source, account balance snapshot, calc_* metrics, notes/entry/management/exit comments.
+## ASCII flow
 
----
-
-## UI: Export dropdown
-
-`src/components/trades/TradesTableCard.tsx` (around line 778)
-
-Replace the bare Download `Button` with a `DropdownMenu`:
-
-- Trigger: same Download icon button.
-- One item: **Export All Trades** → exports every trade in `useTradesContext().trades` (not just filtered/visible) for the current account scope.
-- On click: build CSV from the schema above, trigger download as `tradevalley-trades-YYYY-MM-DD.csv`.
-
-Filename + MIME via a Blob + temporary `<a>` (no new deps).
-
----
-
-## Export logic
-
-New file: `src/lib/tradeValleyCsv.ts`
-
-```ts
-export function exportTradesToCsv(trades: Trade[], strategies, tags): string
+```text
+CSV rows
+   |
+   v
+Pass 1: scan headers + cells
+   - setups:    {Breakout: {item A, item B}, Reversal: {...}}
+   - tagCats:   {Mistakes: {FOMO, Late entry}, Mood: {Calm}}
+   |
+   v
+Pass 2: reconcile vs current state
+   - for each setup: existing? merge checklist : create
+   - for each category: existing? : create (assign color)
+   - for each tag: existing in that category? : create
+   |
+   v
+Pass 3: build trades using freshly-resolved ids
+   |
+   v
+bulkAddTrades(...)  +  result counters
 ```
 
-- Header row = the column list above.
-- For each trade, compute `avgEntryPrice`, `avgExitPrice`, `totalQuantity`, summed `charges` via existing `calculateTradeMetrics`.
-- Resolve `strategyId` → strategy name; `tags` (ids) → name list; `selectedChecklistItems` (ids) → checklist text from the strategy.
-- CSV escaping: wrap in quotes if value contains `,`, `"`, `;`, or newline; escape `"` as `""`.
-- Boolean fields written as `true`/`false`/empty.
+## Out of scope
+
+- Renaming / merging similarly-named entities (e.g. "Breakout" vs "BreakOut " is matched case-insensitively after trim, but no fuzzy matching).
+- Recreating checklist items that were defined on a strategy but never checked (CSV doesn't carry them).
+- Tag descriptions / category colors beyond a default palette.
 
 ---
 
-## Import logic
+## IN-MEMORY LOOKUP CACHE
 
-New file: `src/lib/tradeValleyCsvImport.ts`
+During import, maintain temporary maps:
 
-```ts
-export async function importTradeValleyCsv(
-  file: File,
-  accountId: string,
-  strategies, tags,
-  accountBalance: number,
-): Promise<{ trades: TradeFormData[]; skipped: number; errors: string[] }>
-```
+- strategyMap
+- categoryMap
+- tagMap
 
-For each row → one new `TradeFormData`:
-
-- `accountId` = the account selected in the import modal (no name matching, since we don't export it).
-- `source = 'imported'`, fresh `id` and `fingerprint` generated by `useTrades` on insert.
-- Synthesize 2 executions from avg prices:
-  - `BUY` exec at open datetime (LONG) or close datetime (SHORT)
-  - `SELL` exec at close datetime (LONG) or open datetime (SHORT)
-  - Quantity = `Quantity` on both legs; `Fees` attached to the entry leg, exit leg charges = 0.
-- Strategy lookup by name (case-insensitive); if not found → leave blank, no auto-create.
-- Tag lookup by name; missing tags → silently dropped (warning collected).
-- Checklist items resolved by matching text against the resolved strategy's items.
-- All MFE/MAE/post-exit price+ticks copied through.
-- Manual override columns copied through if present.
-- `accountBalanceSnapshot` = current account balance at import time (same convention MT5 uses).
-
-Fingerprint dedupe (existing `tradeFingerprint`) prevents duplicate inserts on accidental re-import.
+All keyed by normalized name.
 
 ---
 
-## Wire into Import modal
+## RULE
 
-`src/components/settings/AccountImportModal.tsx`
-
-- Add option: `{ value: 'TradeValley', label: 'TradeValley CSV' }` to `IMPORT_SOURCES` (line 46 area).
-- Accepted file type for `TradeValley` = `.csv`.
-- Add a new branch in the import dispatch (alongside MT5/Tradovate/Zerodha) that calls `importTradeValleyCsv` and feeds the result into the same `bulkAddTrades` flow used by other importers.
-- No missing-symbol modal needed (trade carries its own symbol; user re-sets contract/tick size in Settings).
+Once an entity is created or resolved,  
+it must be reused from the in-memory map  
+for the rest of the import.
 
 ---
 
-## Files
+## GOAL
 
-**New**
+Avoid duplicate creation and unnecessary state writes
 
-- `src/lib/tradeValleyCsv.ts` (export)
-- `src/lib/tradeValleyCsvImport.ts` (import parser)
+---
 
-**Edited**
+## CHECKLIST MERGE RULE
 
-- `src/components/trades/TradesTableCard.tsx` — Download button → DropdownMenu with "Export All Trades".
-- `src/components/settings/AccountImportModal.tsx` — add `TradeValley` source + dispatch branch.
+When updating an existing strategy:
+
+- Only ADD missing checklist items
+- NEVER remove or overwrite existing items
+
+---
+
+## GOAL
+
+Preserve user-defined checklist integrity
+
+&nbsp;
+
+---
+
+## IMPORT ATOMICITY (SOFT GUARANTEE)
+
+If any critical failure occurs during Pass 2:
+
+- Do NOT proceed to trade insertion
+- Abort import gracefully
+- Return error message
+
+---
+
+## GOAL
+
+Prevent partial inconsistent state
