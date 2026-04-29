@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import { CalendarIcon, ChevronDown, Check, Tag, X } from 'lucide-react';
+import { ChevronDown, Check, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
@@ -27,6 +25,7 @@ import {
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { CompareGroupFiltersPanel } from './CompareGroupFiltersPanel';
 import { getMatchedTradesCount } from '@/lib/compareUtils';
+import { AppDatePicker } from '@/components/ui/AppDatePicker';
 
 export interface CompareGroupFilters {
   symbols: string[];
@@ -251,57 +250,27 @@ export const CompareGroupCard = ({ groupNumber, filters, onFiltersChange }: Comp
           {/* Start Date */}
           <div className="flex items-center gap-4">
             <label className="text-sm text-muted-foreground w-20 shrink-0">Start date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left h-10 bg-background border-border",
-                    !filters.startDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.startDate ? format(filters.startDate, "MM/dd/yy") : "MM/DD/YY"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-popover border-border z-[100]" align="start">
-                <Calendar
-                  mode="single"
-                  selected={filters.startDate}
-                  onSelect={handleStartDateChange}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex-1">
+              <AppDatePicker
+                valueType="date"
+                value={filters.startDate}
+                onChange={handleStartDateChange}
+                placeholder="MM/DD/YY"
+              />
+            </div>
           </div>
 
           {/* End Date */}
           <div className="flex items-center gap-4">
             <label className="text-sm text-muted-foreground w-20 shrink-0">End date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left h-10 bg-background border-border",
-                    !filters.endDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.endDate ? format(filters.endDate, "MM/dd/yy") : "MM/DD/YY"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-popover border-border z-[100]" align="start">
-                <Calendar
-                  mode="single"
-                  selected={filters.endDate}
-                  onSelect={handleEndDateChange}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex-1">
+              <AppDatePicker
+                valueType="date"
+                value={filters.endDate}
+                onChange={handleEndDateChange}
+                placeholder="MM/DD/YY"
+              />
+            </div>
           </div>
         </div>
       </div>
