@@ -64,6 +64,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const { accounts, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { trades, bulkAddTrades } = useTradesContext();
   const { contractSizes, setContractSize, tickPipRules, addTickPipRule, getContractSizeForAccountSymbol } = useSymbolTickSize();
+  const { strategies } = useStrategiesContext();
+  const { tags } = useTagsContext();
+  const { categories } = useCategoriesContext();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [importSource, setImportSource] = useState<string>('');
