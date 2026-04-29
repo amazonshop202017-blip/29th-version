@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import { CalendarIcon, ChevronDown, Check, Tag, X } from 'lucide-react';
+import { ChevronDown, Check, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
