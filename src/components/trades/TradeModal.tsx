@@ -875,6 +875,12 @@ export const TradeModal = () => {
               e.preventDefault();
             }
           }}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest('.MuiPickersPopper-root, .MuiDialog-root, .MuiPopover-root')) {
+              e.preventDefault();
+            }
+          }}
       >
         <TradeModalErrorBoundary>
         {/* Header */}
