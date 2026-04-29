@@ -2,6 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TradeModalProvider } from "@/contexts/TradeModalContext";
@@ -161,17 +163,19 @@ const AuthenticatedApp = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <InterfaceThemeProvider>
-          <BrowserRouter>
-            <Toaster />
-            <Sonner />
-            <AuthenticatedApp />
-          </BrowserRouter>
-        </InterfaceThemeProvider>
-      </AuthProvider>
-    </TooltipProvider>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <TooltipProvider>
+        <AuthProvider>
+          <InterfaceThemeProvider>
+            <BrowserRouter>
+              <Toaster />
+              <Sonner />
+              <AuthenticatedApp />
+            </BrowserRouter>
+          </InterfaceThemeProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </LocalizationProvider>
   </QueryClientProvider>
 );
 
