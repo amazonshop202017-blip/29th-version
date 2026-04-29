@@ -537,8 +537,8 @@ export const TradesTableCard = ({
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { categories } = useCategoriesContext();
   const { tags } = useTagsContext();
-  const { updateTrade } = useTradesContext();
-  const { getStrategyById } = useStrategiesContext();
+  const { updateTrade, trades: allTrades } = useTradesContext();
+  const { getStrategyById, strategies } = useStrategiesContext();
   const { columns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
@@ -775,13 +775,29 @@ export const TradesTableCard = ({
               columnGroups={columnGroups}
               onToggleColumn={toggleColumn}
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const { exportTradesToCsv, downloadTradesCsv } = await import('@/lib/tradeValleyCsv');
+                    const csv = exportTradesToCsv(allTrades, strategies, tags, categories);
+                    const date = format(new Date(), 'yyyy-MM-dd');
+                    downloadTradesCsv(csv, `tradevalley-trades-${date}.csv`);
+                  }}
+                >
+                  Export All Trades
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

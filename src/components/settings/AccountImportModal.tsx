@@ -37,12 +37,17 @@ import { importMT5Trades } from '@/lib/mt5Import';
 import { importTradovateTrades } from '@/lib/tradovateImport';
 import { importTradovateFills, type MissingSymbolInfo } from '@/lib/tradovateFillsImport';
 import { importZerodhaTradebook } from '@/lib/zerodhaTradebookImport';
+import { importTradeValleyCsv } from '@/lib/tradeValleyCsvImport';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
+import { useTagsContext } from '@/contexts/TagsContext';
+import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { MissingSymbolRulesModal } from '@/components/settings/MissingSymbolRulesModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 
 const IMPORT_SOURCES = [
+  { value: 'TradeValley', label: 'TradeValley CSV' },
   { value: 'MT5', label: 'MT5' },
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
@@ -59,6 +64,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const { accounts, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { trades, bulkAddTrades } = useTradesContext();
   const { contractSizes, setContractSize, tickPipRules, addTickPipRule, getContractSizeForAccountSymbol } = useSymbolTickSize();
+  const { strategies } = useStrategiesContext();
+  const { tags } = useTagsContext();
+  const { categories } = useCategoriesContext();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [importSource, setImportSource] = useState<string>('');
@@ -85,7 +93,12 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
     if (importSource === 'MT5') {
       return '.csv,.htm,.html';
     }
-    if (importSource === 'Tradovate' || importSource === 'TradovateFills' || importSource === 'ZerodhaTradebook') {
+    if (
+      importSource === 'Tradovate' ||
+      importSource === 'TradovateFills' ||
+      importSource === 'ZerodhaTradebook' ||
+      importSource === 'TradeValley'
+    ) {
       return '.csv';
     }
     // Default accept for MatchTrader (will be expanded later)
@@ -135,7 +148,13 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
-    if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills' && importSource !== 'ZerodhaTradebook') {
+    if (
+      importSource !== 'MT5' &&
+      importSource !== 'Tradovate' &&
+      importSource !== 'TradovateFills' &&
+      importSource !== 'ZerodhaTradebook' &&
+      importSource !== 'TradeValley'
+    ) {
       toast.error('Invalid import source');
       return;
     }
@@ -160,9 +179,21 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         | Awaited<ReturnType<typeof importTradovateTrades>>
         | Awaited<ReturnType<typeof importMT5Trades>>
         | Awaited<ReturnType<typeof importTradovateFills>>
-        | Awaited<ReturnType<typeof importZerodhaTradebook>>;
+        | Awaited<ReturnType<typeof importZerodhaTradebook>>
+        | Awaited<ReturnType<typeof importTradeValleyCsv>>;
 
-      if (importSource === 'Tradovate') {
+      if (importSource === 'TradeValley') {
+        result = await importTradeValleyCsv(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          strategies,
+          tags,
+          categories,
+          existingFingerprints,
+        );
+      } else if (importSource === 'Tradovate') {
         result = await importTradovateTrades(
           selectedFile,
           selectedAccountId,
