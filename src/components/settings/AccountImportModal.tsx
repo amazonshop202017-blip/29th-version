@@ -182,7 +182,18 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         | Awaited<ReturnType<typeof importZerodhaTradebook>>
         | Awaited<ReturnType<typeof importTradeValleyCsv>>;
 
-      if (importSource === 'Tradovate') {
+      if (importSource === 'TradeValley') {
+        result = await importTradeValleyCsv(
+          selectedFile,
+          selectedAccountId,
+          accountBalanceSnapshot,
+          bulkAddTrades,
+          strategies,
+          tags,
+          categories,
+          existingFingerprints,
+        );
+      } else if (importSource === 'Tradovate') {
         result = await importTradovateTrades(
           selectedFile,
           selectedAccountId,
