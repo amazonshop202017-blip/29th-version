@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AppDatePicker } from '@/components/ui/app-date-pickers';
-import { format } from 'date-fns';
 
 interface SelectDayModalProps {
   open: boolean;
