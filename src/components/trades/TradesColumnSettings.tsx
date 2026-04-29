@@ -88,7 +88,7 @@ export const TradesColumnSettings = ({
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        className="h-8 w-8 text-muted-foreground hover:text-accent-foreground"
         onClick={() => setOpen(true)}
       >
         <Settings2 className="w-4 h-4" />
