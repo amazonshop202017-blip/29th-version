@@ -69,7 +69,7 @@ function localInputStringToDayjs(s: string): Dayjs | null {
 export function AppDateTimePicker({
   value,
   onChange,
-  placeholder,
+  placeholder: _placeholder,
   disabled,
   className,
 }: AppDateTimePickerProps) {
@@ -88,7 +88,6 @@ export function AppDateTimePicker({
         format="YYYY-MM-DD HH:mm"
         slotProps={{
           textField: {
-            placeholder: placeholder ?? "YYYY-MM-DD HH:mm",
             size: "small",
             fullWidth: true,
             sx: fieldSx,
@@ -114,7 +113,7 @@ export interface AppDatePickerProps {
 export function AppDatePicker({
   value,
   onChange,
-  placeholder,
+  placeholder: _placeholder,
   disabled,
   className,
 }: AppDatePickerProps) {
@@ -136,7 +135,6 @@ export function AppDatePicker({
         format="YYYY-MM-DD"
         slotProps={{
           textField: {
-            placeholder: placeholder ?? "YYYY-MM-DD",
             size: "small",
             fullWidth: true,
             sx: fieldSx,
@@ -163,7 +161,7 @@ export interface AppDatePickerStringProps {
 export function AppDatePickerString({
   value,
   onChange,
-  placeholder,
+  placeholder: _placeholder,
   disabled,
   className,
 }: AppDatePickerStringProps) {
@@ -186,7 +184,6 @@ export function AppDatePickerString({
         format="YYYY-MM-DD"
         slotProps={{
           textField: {
-            placeholder: placeholder ?? "YYYY-MM-DD",
             size: "small",
             fullWidth: true,
             sx: fieldSx,
