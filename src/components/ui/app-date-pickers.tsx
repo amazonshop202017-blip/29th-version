@@ -96,9 +96,9 @@ export function AppDateTimePicker({
             fullWidth: true,
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
+            inputProps: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
           },
-          field: { readOnly: true } as any,
-        }}
+        } as any}
       />
     </div>
   );
@@ -149,9 +149,9 @@ export function AppDatePicker({
             fullWidth: true,
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
+            inputProps: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
           },
-          field: { readOnly: true } as any,
-        }}
+        } as any}
       />
     </div>
   );
@@ -204,9 +204,9 @@ export function AppDatePickerString({
             fullWidth: true,
             sx: fieldSx,
             onClick: () => { if (!disabled) setOpen(true); },
+            inputProps: { readOnly: true, style: { cursor: disabled ? "not-allowed" : "pointer" } },
           },
-          field: { readOnly: true } as any,
-        }}
+        } as any}
       />
     </div>
   );
