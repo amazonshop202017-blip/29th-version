@@ -572,7 +572,7 @@ export function TrackAccountModal({ open, onClose, mode = 'create', challengeId:
                 <div><label className="block text-sm font-medium text-foreground mb-1.5">Broker</label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-muted/30 opacity-60 cursor-not-allowed"><span className="text-sm text-muted-foreground">Coming soon</span><Search className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
                 {/* Start date + Quantity */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Start date <span className="text-rose-500">*</span></label><div className="flex items-center justify-between border border-border rounded-lg px-3 py-2.5 bg-background"><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="flex-1 text-sm focus:outline-none bg-transparent text-foreground" /><CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" /></div></div>
+                  <div><label className="block text-sm font-medium text-foreground mb-1.5">Start date <span className="text-rose-500">*</span></label><AppDatePicker value={startDate} onChange={setStartDate} /></div>
                   <div><label className="block text-sm font-medium text-foreground mb-1.5">Quantity</label><input type="number" value={1} disabled className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-muted/30 opacity-60 cursor-not-allowed" /></div>
                 </div>
               </div>
