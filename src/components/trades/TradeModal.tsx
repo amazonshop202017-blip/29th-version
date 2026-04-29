@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useTradedSymbols } from '@/hooks/useTradedSymbols';
-import { X, Star, Settings2, Clock, ChevronDown, Check, Plus, Info, Tags } from 'lucide-react';
-import { AppDateTimePicker } from '@/components/ui/app-date-pickers';
+import { X, Calendar, Star, Settings2, Clock, ChevronDown, Check, Plus, Info, Tags } from 'lucide-react';
 import { ScaleInOutModal } from './ScaleInOutModal';
 import { AssignTagsModal } from './AssignTagsModal';
 import { ScreenshotsTab } from './ScreenshotsTab';
@@ -935,10 +934,15 @@ export const TradeModal = () => {
                 {/* Entry Date */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Entry Date *</Label>
-                  <AppDateTimePicker
-                    value={entryDate}
-                    onChange={setEntryDate}
-                  />
+                  <div className="relative">
+                    <Input
+                      type="datetime-local"
+                      value={entryDate}
+                      onChange={(e) => setEntryDate(e.target.value)}
+                      className="h-10 bg-input border-border pr-10"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  </div>
                 </div>
 
                 {/* Symbol - Searchable/Creatable Dropdown */}
@@ -1147,10 +1151,15 @@ export const TradeModal = () => {
                   
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Exit Date</Label>
-                    <AppDateTimePicker
-                      value={exitDate}
-                      onChange={setExitDate}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="datetime-local"
+                        value={exitDate}
+                        onChange={(e) => setExitDate(e.target.value)}
+                        className="h-10 bg-input border-border pr-10"
+                      />
+                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
