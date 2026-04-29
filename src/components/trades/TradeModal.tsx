@@ -1147,15 +1147,10 @@ export const TradeModal = () => {
                   
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Exit Date</Label>
-                    <div className="relative">
-                      <Input
-                        type="datetime-local"
-                        value={exitDate}
-                        onChange={(e) => setExitDate(e.target.value)}
-                        className="h-10 bg-input border-border pr-10"
-                      />
-                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    </div>
+                    <AppDateTimePicker
+                      value={exitDate}
+                      onChange={setExitDate}
+                    />
                   </div>
 
                   <div className="space-y-1.5">
