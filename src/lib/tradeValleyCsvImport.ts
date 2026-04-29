@@ -137,7 +137,9 @@ export async function importTradeValleyCsv(
         const avgEntry = num(get('Avg Entry Price'));
         const avgExit = num(get('Avg Exit Price'));
         const quantity = num(get('Quantity'));
-        const fees = num(get('Fees')) ?? 0;
+        const grossPnlCsv = num(get('Gross P&L'));
+        const feesCsv = num(get('Fees'));
+        const fees = feesCsv ?? 0;
 
         if (!symbol || !openDt || avgEntry === undefined || quantity === undefined || quantity <= 0) {
           rowsSkipped++;
