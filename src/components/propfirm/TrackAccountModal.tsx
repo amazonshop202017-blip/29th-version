@@ -7,6 +7,7 @@ import { useAccountsContext } from "@/contexts/AccountsContext";
 import { useChallengesContext, generateChallengeId, createDefaultStepRules, createDefaultFundedRules, type Challenge, type ChallengeRulesSchema, type StepRules as NewStepRules, type FundedRules as NewFundedRules } from "@/contexts/ChallengesContext";
 import { toast } from "sonner";
 import { toISO, nowISO, isoToDateInputValue } from "@/lib/datetime";
+import { AppDatePicker } from "@/components/ui/AppDatePicker";
 
 type TrackAccountModalProps = { open: boolean; onClose: () => void; mode?: 'create' | 'edit'; challengeId?: string };
 type Phase = "Evaluation" | "Funded";
