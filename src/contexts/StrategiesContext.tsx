@@ -16,6 +16,21 @@ interface StrategiesContextType {
   updateStrategy: (id: string, name: string, description: string) => void;
   updateStrategyChecklist: (id: string, checklistItems: string[]) => void;
   getStrategyById: (id: string) => Strategy | undefined;
+  /**
+   * Bulk reconcile strategies for import flows.
+   * For each input, find an existing strategy by case-insensitive name (or
+   * create one), then merge in any missing checklist items. Performed in a
+   * single state write so callers can synchronously rely on the returned
+   * lookup map without waiting for re-render.
+   */
+  reconcileStrategiesForImport: (
+    inputs: { name: string; checklistItems: string[] }[],
+  ) => {
+    /** Map keyed by lowercased name → resolved Strategy (existing or new). */
+    map: Map<string, Strategy>;
+    strategiesCreated: number;
+    checklistItemsCreated: number;
+  };
 }
 
 const StrategiesContext = createContext<StrategiesContextType | undefined>(undefined);
@@ -76,8 +91,66 @@ export const StrategiesProvider = ({ children }: { children: ReactNode }) => {
     return strategies.find(s => s.id === id);
   }, [strategies]);
 
+  const reconcileStrategiesForImport = useCallback((
+    inputs: { name: string; checklistItems: string[] }[],
+  ) => {
+    const map = new Map<string, Strategy>();
+    let strategiesCreated = 0;
+    let checklistItemsCreated = 0;
+
+    let next = [...strategies];
+    // Seed map with existing strategies (lowercased name key).
+    for (const s of next) {
+      map.set(s.name.trim().toLowerCase(), s);
+    }
+
+    for (const input of inputs) {
+      const trimmedName = input.name.trim();
+      if (!trimmedName) continue;
+      const key = trimmedName.toLowerCase();
+      let existing = map.get(key);
+
+      if (!existing) {
+        existing = {
+          id: crypto.randomUUID(),
+          name: trimmedName,
+          description: '',
+          createdAt: nowISO(),
+          checklistItems: [],
+        };
+        next.push(existing);
+        map.set(key, existing);
+        strategiesCreated++;
+      }
+
+      // Merge missing checklist items (case-insensitive, preserve existing order).
+      const existingLowered = new Set(existing.checklistItems.map(i => i.toLowerCase()));
+      const additions: string[] = [];
+      for (const item of input.checklistItems) {
+        const trimmedItem = item.trim();
+        if (!trimmedItem) continue;
+        const lower = trimmedItem.toLowerCase();
+        if (existingLowered.has(lower)) continue;
+        existingLowered.add(lower);
+        additions.push(trimmedItem);
+      }
+      if (additions.length > 0) {
+        const merged = { ...existing, checklistItems: [...existing.checklistItems, ...additions] };
+        next = next.map(s => s.id === merged.id ? merged : s);
+        map.set(key, merged);
+        checklistItemsCreated += additions.length;
+      }
+    }
+
+    if (strategiesCreated > 0 || checklistItemsCreated > 0) {
+      saveStrategies(next);
+    }
+
+    return { map, strategiesCreated, checklistItemsCreated };
+  }, [strategies, saveStrategies]);
+
   return (
-    <StrategiesContext.Provider value={{ strategies, addStrategy, removeStrategy, updateStrategy, updateStrategyChecklist, getStrategyById }}>
+    <StrategiesContext.Provider value={{ strategies, addStrategy, removeStrategy, updateStrategy, updateStrategyChecklist, getStrategyById, reconcileStrategiesForImport }}>
       {children}
     </StrategiesContext.Provider>
   );
