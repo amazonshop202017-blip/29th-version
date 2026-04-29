@@ -868,6 +868,13 @@ export const TradeModal = () => {
       <SheetContent 
         side="right" 
           className="w-full sm:max-w-[520px] p-0 flex flex-col bg-background border-l border-border overflow-hidden overflow-x-hidden"
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement | null;
+            // Keep sheet open when interacting with MUI Date/Time picker portals
+            if (target?.closest('.MuiPickersPopper-root, .MuiDialog-root, .MuiPopover-root')) {
+              e.preventDefault();
+            }
+          }}
       >
         <TradeModalErrorBoundary>
         {/* Header */}
