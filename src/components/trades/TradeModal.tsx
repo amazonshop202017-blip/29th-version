@@ -913,7 +913,7 @@ export const TradeModal = () => {
                     onValueChange={(val) => setSelectedAccountId(val === "none" ? "" : val)}
                   >
                     <SelectTrigger className={cn(
-                      "h-10 bg-card text-white",
+                      "h-10 bg-input",
                       accountError 
                         ? "border-destructive ring-1 ring-destructive" 
                         : "border-border"
@@ -958,7 +958,7 @@ export const TradeModal = () => {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Setup</Label>
                     <Select value={strategyId || "none"} onValueChange={(val) => setStrategyId(val === "none" ? "" : val)}>
-                      <SelectTrigger className="h-10 bg-card border-border text-white">
+                      <SelectTrigger className="h-10 bg-input border-border">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -979,7 +979,7 @@ export const TradeModal = () => {
                           variant="outline"
                           role="combobox"
                           aria-expanded={checklistOpen}
-                          className="h-10 w-full justify-between bg-card border-border text-white font-normal"
+                          className="h-10 w-full justify-between bg-input border-border font-normal"
                           disabled={!strategyId || currentStrategyChecklist.length === 0}
                         >
                           <span className="truncate text-sm">
@@ -1070,7 +1070,7 @@ export const TradeModal = () => {
                             setEntryPrice(val);
                           }
                         }}
-                        className="h-10 bg-card border-border text-white flex-1"
+                        className="h-10 bg-input border-border flex-1"
                       />
                       <Button
                         type="button"
@@ -1097,7 +1097,7 @@ export const TradeModal = () => {
                           setQuantity(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white"
+                      className="h-10 bg-input border-border"
                     />
                     {openQuantity > 0 && (
                       <p className="text-xs text-destructive font-medium">
@@ -1119,7 +1119,7 @@ export const TradeModal = () => {
                           setStopLoss(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white"
+                      className="h-10 bg-input border-border"
                     />
                   </div>
 
@@ -1136,7 +1136,7 @@ export const TradeModal = () => {
                           setTakeProfit(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white"
+                      className="h-10 bg-input border-border"
                     />
                   </div>
                 </div>
@@ -1167,7 +1167,7 @@ export const TradeModal = () => {
                             setExitPrice(val);
                           }
                         }}
-                        className="h-10 bg-card border-border text-white flex-1"
+                        className="h-10 bg-input border-border flex-1"
                       />
                       <Button
                         type="button"
@@ -1195,7 +1195,7 @@ export const TradeModal = () => {
                           setManualGrossPnl(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white"
+                      className="h-10 bg-input border-border"
                     />
                   </div>
 
@@ -1223,7 +1223,7 @@ export const TradeModal = () => {
                             setFees(val);
                           }
                         }}
-                        className="h-10 bg-card border-border text-white text-sm"
+                        className="h-10 bg-input border-border text-sm"
                       />
                     </div>
                   </div>
@@ -1237,7 +1237,7 @@ export const TradeModal = () => {
                   placeholder="Add notes about this trade..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[100px] bg-card border-border text-white resize-none"
+                  className="min-h-[100px] bg-input border-border resize-none"
                 />
               </div>
             </div>
@@ -1327,7 +1327,7 @@ export const TradeModal = () => {
                           setFarthestPriceInProfit(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white disabled:cursor-not-allowed"
+                      className="h-10 bg-input border-border disabled:cursor-not-allowed"
                     />
                     {openQuantity > 0 && (
                       <p className="text-[10px] text-muted-foreground italic">Available after trade is fully closed</p>
@@ -1347,7 +1347,7 @@ export const TradeModal = () => {
                           setFarthestPriceInLoss(val);
                         }
                       }}
-                      className="h-10 bg-card border-border text-white disabled:cursor-not-allowed"
+                      className="h-10 bg-input border-border disabled:cursor-not-allowed"
                     />
                     {openQuantity > 0 && (
                       <p className="text-[10px] text-muted-foreground italic">Available after trade is fully closed</p>
@@ -1406,7 +1406,7 @@ export const TradeModal = () => {
                               setAfterExitHighest(val);
                             }
                           }}
-                          className="h-10 bg-card border-border text-white"
+                          className="h-10 bg-input border-border"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -1422,7 +1422,7 @@ export const TradeModal = () => {
                               setAfterExitLowest(val);
                             }
                           }}
-                          className="h-10 bg-card border-border text-white"
+                          className="h-10 bg-input border-border"
                         />
                       </div>
                     </div>
