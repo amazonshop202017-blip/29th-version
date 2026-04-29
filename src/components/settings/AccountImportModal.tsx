@@ -37,12 +37,17 @@ import { importMT5Trades } from '@/lib/mt5Import';
 import { importTradovateTrades } from '@/lib/tradovateImport';
 import { importTradovateFills, type MissingSymbolInfo } from '@/lib/tradovateFillsImport';
 import { importZerodhaTradebook } from '@/lib/zerodhaTradebookImport';
+import { importTradeValleyCsv } from '@/lib/tradeValleyCsvImport';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
+import { useTagsContext } from '@/contexts/TagsContext';
+import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { MissingSymbolRulesModal } from '@/components/settings/MissingSymbolRulesModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 
 const IMPORT_SOURCES = [
+  { value: 'TradeValley', label: 'TradeValley CSV' },
   { value: 'MT5', label: 'MT5' },
   { value: 'MatchTrader', label: 'MatchTrader' },
   { value: 'Tradovate', label: 'Tradovate (Position History)' },
