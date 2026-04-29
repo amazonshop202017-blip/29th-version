@@ -867,6 +867,7 @@ export const TradeModal = () => {
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleDiscard()}>
       <SheetContent 
         side="right" 
+          data-trade-modal
           className="w-full sm:max-w-[520px] p-0 flex flex-col bg-background border-l border-border overflow-hidden overflow-x-hidden"
           onInteractOutside={(e) => {
             const target = e.target as HTMLElement | null;
