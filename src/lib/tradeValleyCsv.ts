@@ -30,8 +30,6 @@ const FIXED_HEADERS = [
   'Quantity',
   'Stop Loss',
   'Take Profit',
-  'Trade Risk',
-  'Trade Target',
   'Gross P&L',
   'Fees',
   'Break Even',
