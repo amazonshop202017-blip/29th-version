@@ -69,10 +69,10 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = (props) => {
         textField: {
           fullWidth: true,
           size: "small",
-          placeholder,
+          inputProps: placeholder ? { placeholder } : undefined,
           className,
           sx: muiTextFieldSx,
-        },
+        } as any,
         popper: { sx: muiPopperSx },
         dialog: { sx: muiDialogSx },
       }}
