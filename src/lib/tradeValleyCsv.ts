@@ -85,8 +85,10 @@ export function exportTradesToCsv(
 
   for (const trade of trades) {
     const m = calculateTradeMetrics(trade);
-    const computedCharges = (trade.entries || []).reduce((s, e) => s + (e.charges || 0), 0);
-    const fees = trade.manualFees !== undefined ? trade.manualFees : computedCharges;
+    // Always write the FINAL gross P&L and fees (manual override if set,
+    // otherwise auto-calculated). calculateTradeMetrics already resolves both.
+    const grossPnl = m.grossPnl;
+    const fees = m.totalCharges;
 
     const cells: string[] = [
       trade.symbol || '',
@@ -96,13 +98,12 @@ export function exportTradesToCsv(
       fmtNum(m.avgEntryPrice),
       fmtNum(m.avgExitPrice),
       fmtNum(m.totalQuantity),
-      fmtNum(fees),
       fmtNum(trade.stopLoss),
       fmtNum(trade.takeProfit),
       fmtNum(trade.tradeRisk),
       fmtNum(trade.tradeTarget),
-      trade.manualGrossPnl !== undefined ? fmtNum(trade.manualGrossPnl) : '',
-      trade.manualFees !== undefined ? fmtNum(trade.manualFees) : '',
+      m.closeDate ? fmtNum(grossPnl) : '',
+      fmtNum(fees),
       fmtBool(trade.breakEven),
       trade.priceReachedFirst || '',
       fmtNum(trade.preMfePrice),
