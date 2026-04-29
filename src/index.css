@@ -264,3 +264,16 @@
 .recharts-bar-rectangle rect {
   transition: filter 0.15s ease;
 }
+
+/* Trade modal — dark-mode only field overrides */
+.dark [data-trade-modal] {
+  --input: 0 0% 5%; /* #0d0d0d */
+}
+.dark [data-trade-modal] .bg-input {
+  color: #ffffff;
+}
+.dark [data-trade-modal] .bg-input::placeholder,
+.dark [data-trade-modal] .bg-input input::placeholder,
+.dark [data-trade-modal] .bg-input textarea::placeholder {
+  color: rgb(255 255 255 / 0.5);
+}
