@@ -64,9 +64,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const { accounts, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { trades, bulkAddTrades } = useTradesContext();
   const { contractSizes, setContractSize, tickPipRules, addTickPipRule, getContractSizeForAccountSymbol } = useSymbolTickSize();
-  const { strategies } = useStrategiesContext();
-  const { tags } = useTagsContext();
-  const { categories } = useCategoriesContext();
+  const { reconcileStrategiesForImport } = useStrategiesContext();
+  const { reconcileTagsForImport } = useTagsContext();
+  const { reconcileCategoriesForImport } = useCategoriesContext();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [importSource, setImportSource] = useState<string>('');
@@ -188,9 +188,11 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
           selectedAccountId,
           accountBalanceSnapshot,
           bulkAddTrades,
-          strategies,
-          tags,
-          categories,
+          {
+            reconcileStrategiesForImport,
+            reconcileCategoriesForImport,
+            reconcileTagsForImport,
+          },
           existingFingerprints,
         );
       } else if (importSource === 'Tradovate') {
@@ -292,6 +294,15 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         }
         if (importSource === 'TradovateFills' && missing.length > 0) {
           parts.push(`${missing.length} symbol${missing.length !== 1 ? 's' : ''} need configuration`);
+        }
+        if (importSource === 'TradeValley') {
+          const r = result as Awaited<ReturnType<typeof importTradeValleyCsv>>;
+          const created: string[] = [];
+          if (r.strategiesCreated > 0) created.push(`${r.strategiesCreated} setup${r.strategiesCreated !== 1 ? 's' : ''}`);
+          if (r.checklistItemsCreated > 0) created.push(`${r.checklistItemsCreated} checklist item${r.checklistItemsCreated !== 1 ? 's' : ''}`);
+          if (r.categoriesCreated > 0) created.push(`${r.categoriesCreated} categor${r.categoriesCreated !== 1 ? 'ies' : 'y'}`);
+          if (r.tagsCreated > 0) created.push(`${r.tagsCreated} tag${r.tagsCreated !== 1 ? 's' : ''}`);
+          if (created.length > 0) parts.push(`created ${created.join(', ')}`);
         }
         toast.success(parts.join(' · '));
         resetForm();
