@@ -148,7 +148,13 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
       return;
     }
 
-    if (importSource !== 'MT5' && importSource !== 'Tradovate' && importSource !== 'TradovateFills' && importSource !== 'ZerodhaTradebook') {
+    if (
+      importSource !== 'MT5' &&
+      importSource !== 'Tradovate' &&
+      importSource !== 'TradovateFills' &&
+      importSource !== 'ZerodhaTradebook' &&
+      importSource !== 'TradeValley'
+    ) {
       toast.error('Invalid import source');
       return;
     }
