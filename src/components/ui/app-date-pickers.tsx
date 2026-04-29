@@ -77,6 +77,7 @@ export function AppDateTimePicker({
   const Picker = isMobile ? MobileDateTimePicker : DesktopDateTimePicker;
 
   const dayjsValue = React.useMemo(() => localInputStringToDayjs(value), [value]);
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div className={className}>
@@ -86,12 +87,17 @@ export function AppDateTimePicker({
         disabled={disabled}
         ampm={false}
         format="YYYY-MM-DD HH:mm"
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
         slotProps={{
           textField: {
             size: "small",
             fullWidth: true,
             sx: fieldSx,
+            onClick: () => { if (!disabled) setOpen(true); },
           },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
@@ -121,6 +127,7 @@ export function AppDatePicker({
     () => (value ? dayjs(value) : null),
     [value],
   );
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div className={className}>
@@ -133,12 +140,17 @@ export function AppDatePicker({
         disabled={disabled}
         views={["year", "month", "day"]}
         format="YYYY-MM-DD"
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
         slotProps={{
           textField: {
             size: "small",
             fullWidth: true,
             sx: fieldSx,
+            onClick: () => { if (!disabled) setOpen(true); },
           },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
@@ -170,6 +182,7 @@ export function AppDatePickerString({
     const d = dayjs(value);
     return d.isValid() ? d : null;
   }, [value]);
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div className={className}>
@@ -182,12 +195,17 @@ export function AppDatePickerString({
         disabled={disabled}
         views={["year", "month", "day"]}
         format="YYYY-MM-DD"
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
         slotProps={{
           textField: {
             size: "small",
             fullWidth: true,
             sx: fieldSx,
+            onClick: () => { if (!disabled) setOpen(true); },
           },
+          field: { readOnly: true } as any,
         }}
       />
     </div>
