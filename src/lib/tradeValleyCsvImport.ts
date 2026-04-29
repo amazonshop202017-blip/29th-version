@@ -209,8 +209,11 @@ export async function importTradeValleyCsv(
           notes: '',
           stopLoss: num(get('Stop Loss')),
           takeProfit: num(get('Take Profit')),
-          manualGrossPnl: num(get('Manual Gross P&L')),
-          manualFees: num(get('Manual Fees')),
+          // Treat CSV Gross P&L / Fees as manual overrides so the final values
+          // round-trip exactly, regardless of whether they were originally
+          // auto-calculated or manually entered.
+          manualGrossPnl: grossPnlCsv,
+          manualFees: feesCsv,
           breakEven: bool(get('Break Even')),
           priceReachedFirst: (() => {
             const v = get('Price Reached First').trim();
