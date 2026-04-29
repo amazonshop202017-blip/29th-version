@@ -28,7 +28,22 @@ export const SelectDayModal = ({ open, onOpenChange, onConfirm }: SelectDayModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent
+        className="max-w-sm"
+        onPointerDownOutside={(e) => {
+          // Don't close when interacting with MUI date picker popper/dialog
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('.MuiPickersPopper-root, .MuiDialog-root, .MuiPickersLayout-root')) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('.MuiPickersPopper-root, .MuiDialog-root, .MuiPickersLayout-root')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Select date for Day Note</DialogTitle>
         </DialogHeader>
