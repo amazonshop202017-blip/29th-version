@@ -85,14 +85,16 @@ export const DisplayModeSelector = () => {
               className={cn(
                 "flex items-start gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
                 displayMode === option.value 
-                  ? "bg-accent" 
+                  ? "bg-accent text-accent-foreground" 
                   : "hover:bg-accent/50 hover:text-accent-foreground"
               )}
             >
               {/* Icon Circle */}
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                "bg-primary/10 text-primary"
+                displayMode === option.value
+                  ? "bg-background/20 text-accent-foreground"
+                  : "bg-primary/10 text-primary"
               )}>
                 {option.icon}
               </div>
