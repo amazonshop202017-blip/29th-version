@@ -42,6 +42,27 @@ const fieldSx = {
   "& fieldset": { top: 0 },
 } as const;
 
+// MUI popper/dialog must render above Radix Dialog (z-50) and must not let
+// Radix interpret clicks inside the picker as "outside" interactions.
+const POPPER_Z = 10000;
+const stopPointer = (e: React.PointerEvent | React.MouseEvent | React.TouchEvent) => {
+  e.stopPropagation();
+};
+const sharedPopperSlotProps = {
+  popper: {
+    sx: { zIndex: POPPER_Z },
+    onPointerDown: stopPointer,
+    onMouseDown: stopPointer,
+    onTouchStart: stopPointer,
+  },
+  dialog: {
+    sx: { zIndex: POPPER_Z },
+  },
+  mobilePaper: {
+    sx: { zIndex: POPPER_Z },
+  },
+} as const;
+
 /* ------------------------------------------------------------------ */
 /*  AppDateTimePicker                                                  */
 /* ------------------------------------------------------------------ */
@@ -92,6 +113,9 @@ export function AppDateTimePicker({
             fullWidth: true,
             sx: fieldSx,
           },
+          popper: sharedPopperSlotProps.popper,
+          dialog: sharedPopperSlotProps.dialog,
+          mobilePaper: sharedPopperSlotProps.mobilePaper,
         }}
       />
     </div>
@@ -139,6 +163,9 @@ export function AppDatePicker({
             fullWidth: true,
             sx: fieldSx,
           },
+          popper: sharedPopperSlotProps.popper,
+          dialog: sharedPopperSlotProps.dialog,
+          mobilePaper: sharedPopperSlotProps.mobilePaper,
         }}
       />
     </div>
@@ -188,6 +215,9 @@ export function AppDatePickerString({
             fullWidth: true,
             sx: fieldSx,
           },
+          popper: sharedPopperSlotProps.popper,
+          dialog: sharedPopperSlotProps.dialog,
+          mobilePaper: sharedPopperSlotProps.mobilePaper,
         }}
       />
     </div>
