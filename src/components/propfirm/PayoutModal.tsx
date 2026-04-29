@@ -1,10 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import { format } from "date-fns";
-import { X, CalendarDays } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AppDatePicker } from "@/components/ui/app-date-pickers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useChallengesContext } from "@/contexts/ChallengesContext";
@@ -88,17 +85,7 @@ export function PayoutModal({ open, onClose }: PayoutModalProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Date</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-11 w-full justify-between font-normal", !date && "text-muted-foreground")}>
-                    {date ? format(date, "PP") : "MM/DD/YYYY"}
-                    <CalendarDays className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus className={cn("p-3 pointer-events-auto")} />
-                </PopoverContent>
-              </Popover>
+              <AppDatePicker value={date} onChange={setDate} />
             </div>
           </div>
           <div className="flex items-center justify-between px-7 py-4 border-t border-border">

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { AppDatePicker } from '@/components/ui/app-date-pickers';
 
 interface SelectDayModalProps {
   open: boolean;
@@ -41,29 +34,7 @@ export const SelectDayModal = ({ open, onOpenChange, onConfirm }: SelectDayModal
         </DialogHeader>
 
         <div className="py-4">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <AppDatePicker value={selectedDate} onChange={setSelectedDate} />
         </div>
 
         <div className="flex justify-end gap-2">
