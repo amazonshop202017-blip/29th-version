@@ -179,7 +179,8 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
         | Awaited<ReturnType<typeof importTradovateTrades>>
         | Awaited<ReturnType<typeof importMT5Trades>>
         | Awaited<ReturnType<typeof importTradovateFills>>
-        | Awaited<ReturnType<typeof importZerodhaTradebook>>;
+        | Awaited<ReturnType<typeof importZerodhaTradebook>>
+        | Awaited<ReturnType<typeof importTradeValleyCsv>>;
 
       if (importSource === 'Tradovate') {
         result = await importTradovateTrades(
