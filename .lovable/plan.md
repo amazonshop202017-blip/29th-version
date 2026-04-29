@@ -1,64 +1,138 @@
-# Per-Category Tag Columns in Trades Table
+## TradeValley CSV Export & Import
 
-Add a new dynamic section to the Trades table column settings called **Custom Tag Categories**. Each user-created category becomes its own column in the trades table, displaying only the tags from that category assigned to each trade — using the same bubbled badge design used in the Day View trades table.
+Add round-trip CSV export/import for trades. Re-imports are treated as new trades (same model as MT5 / Tradovate); fingerprint dedupes accidental re-imports of the same file.
 
-## What the user will see
+---
 
-**Column Settings panel (Trades page → ⚙️):**
+## Final CSV column set
 
-- Existing groups (Trade Identification, Timing, Execution & Plan, Performance, Price Movement) stay unchanged.
-- A new last section **Custom Tag Categories** lists every category from Settings → Categories. Each row is a checkbox toggling that category's column.
-- If no categories exist yet, the section shows a small muted helper line: "Create categories in Settings → Tags to enable per-category columns."
-- All category columns default to **off** (so existing users see no change until they opt-in).
+Per your call: drop calc_* metrics, drop Notes & Comments, drop Account Name.
 
-**Trades table:**
+### A. Trade core
 
-- For each enabled category, a new column appears at the right end of the table (after Price Movement columns), header = category name.
-- Each cell shows the trade's assigned tags **belonging to that category only**, rendered as outline badges (same style as Day View):
-  - Show up to 2 badges, then `+N` muted text for overflow.
-  - A small `+` icon button opens the existing `AssignTagsModal` for that trade (same behaviour as Day View).
-  - Empty cell shows `–`.
-- Clicking the row still opens the trade modal; the `+` button stops propagation.
+- `Symbol`
+- `Side` (LONG / SHORT)
+- `Open Date/Time` (ISO UTC)
+- `Close Date/Time` (ISO UTC, blank if open)
+- `Avg Entry Price`
+- `Avg Exit Price`
+- `Quantity` (closed quantity)
+- `Fees` (manualFees if set, else summed entry charges)
 
-## Technical details
+### B. Plan & risk (user-entered)
 
-**1. `src/hooks/useTradesColumnVisibility.ts**`
+- `Stop Loss`
+- `Take Profit`
+- `Trade Risk`
+- `Trade Target`
 
-- Keep `ALL_COLUMNS` and `COLUMN_GROUPS` for static columns unchanged.
-- Add a new exported helper `buildCategoryColumns(categories)` that returns one `ColumnConfig` per category with id `category:<categoryId>`, group `tagCategories`, default `visible: false`.
-- Update the hook to accept categories and merge static + dynamic columns. Persist visibility under existing `STORAGE_KEY` keyed by id (works automatically because ids are stable).
-- Add a `tagCategories` group to a new returned `columnGroups` array (only included when there's ≥1 category) with label "Custom Tag Categories".
-- Prune visibility entries for deleted categories on load (defensive).
+### C. Manual overrides
 
-**2. `src/components/trades/TradesColumnSettings.tsx**`
+- `Manual Gross P&L` (blank if not overridden)
+- `Manual Fees` (blank if not overridden)
+- `Break Even` (true / false / blank)
+- `Price Reached First` (`takeProfit` / `stopLoss` / blank)
 
-- No structural change needed — it already iterates `columnGroups` and renders each. The new dynamic group will render automatically.
-- Add an inline empty-state message inside the section if the group exists but has 0 columns (handled by passing the group with empty columns or by skipping render — we'll skip and show no section if no categories).
+### D. Strategy & tags (by name, portable)
 
-**3. `src/components/trades/TradesTableCard.tsx**`
+- `Strategy` (name)
+- `Strategy Checklist` (`;`-joined checked item texts)
+- `Tags` (`;`-joined tag names — all categories combined)
 
-- Read `categories` from `useCategoriesContext` and `tags` from `useTagsContext`.
-- Pass `categories` into `useTradesColumnVisibility(categories)`.
-- In `TableWithStickyHorizontalScroll`:
-  - Accept `categoryColumns` (list of `{id, categoryId, name}` for visible category columns) and the `tags` list.
-  - Append one `<TableHead>` per visible category column at the end of the header row.
-  - For each row, append one `<TableCell>` per visible category column rendering badges for `trade.tags` filtered to `tag.categoryId === categoryId`. Reuse the same JSX block as `DayTradesTable` (outline Badge, `+N` overflow, `Plus` icon button).
-- Wire the `+` button to open `AssignTagsModal` (already imported pattern from Day View) — add modal state at the card level and call `updateTrade` on save.
+(a little change here in structure of these strategies and tags, first strategy: Column name must be " Strategy Name (Setup) ", under this all the checklist of the user tagges of that strategy(setup), so if user have 5 setup, user used 1 of the 5 setup, the checklist of that used setup is written with commas in that field, same goes for tags, column name is "Tag Category Name (Tag Category)", and under that what tags are used in that category with commas. 
 
-**4. Reuse**
+### E. Price-movement (user-entered, not recalculated)
 
-- `AssignTagsModal` is already used by `DayTradesTable.tsx` — import and reuse it identically.
-- `Badge` styling: `variant="outline"` with `className="text-xs"`, identical to Day View.
+- `MFE Price (pre-exit)` / `MFE Ticks`
+- `MAE Price (pre-exit)` / `MAE Ticks`
+- `Highest Price (post-exit)` / `Highest Ticks`
+- `Lowest Price (post-exit)` / `Lowest Ticks`
 
-## Files to edit
+**Excluded:** screenshots, diary, scale entries/exits, contractSize/tickSize, account name, id/fingerprint/timestamps/source, account balance snapshot, calc_* metrics, notes/entry/management/exit comments.
 
-- `src/hooks/useTradesColumnVisibility.ts`
-- `src/components/trades/TradesTableCard.tsx`
+---
 
-## Files unchanged but read
+## UI: Export dropdown
 
-- `src/components/trades/TradesColumnSettings.tsx` (works as-is once the hook returns the new group)
-- `src/contexts/CategoriesContext.tsx`, `src/contexts/TagsContext.tsx` (data sources)
-- `src/components/dayview/DayTradesTable.tsx` (reference for badge design)
+`src/components/trades/TradesTableCard.tsx` (around line 778)
 
-make sure it doesnt affect the current logics. only adds the logic of categories as column and values of tags assigned of that category to each trade.
+Replace the bare Download `Button` with a `DropdownMenu`:
+
+- Trigger: same Download icon button.
+- One item: **Export All Trades** → exports every trade in `useTradesContext().trades` (not just filtered/visible) for the current account scope.
+- On click: build CSV from the schema above, trigger download as `tradevalley-trades-YYYY-MM-DD.csv`.
+
+Filename + MIME via a Blob + temporary `<a>` (no new deps).
+
+---
+
+## Export logic
+
+New file: `src/lib/tradeValleyCsv.ts`
+
+```ts
+export function exportTradesToCsv(trades: Trade[], strategies, tags): string
+```
+
+- Header row = the column list above.
+- For each trade, compute `avgEntryPrice`, `avgExitPrice`, `totalQuantity`, summed `charges` via existing `calculateTradeMetrics`.
+- Resolve `strategyId` → strategy name; `tags` (ids) → name list; `selectedChecklistItems` (ids) → checklist text from the strategy.
+- CSV escaping: wrap in quotes if value contains `,`, `"`, `;`, or newline; escape `"` as `""`.
+- Boolean fields written as `true`/`false`/empty.
+
+---
+
+## Import logic
+
+New file: `src/lib/tradeValleyCsvImport.ts`
+
+```ts
+export async function importTradeValleyCsv(
+  file: File,
+  accountId: string,
+  strategies, tags,
+  accountBalance: number,
+): Promise<{ trades: TradeFormData[]; skipped: number; errors: string[] }>
+```
+
+For each row → one new `TradeFormData`:
+
+- `accountId` = the account selected in the import modal (no name matching, since we don't export it).
+- `source = 'imported'`, fresh `id` and `fingerprint` generated by `useTrades` on insert.
+- Synthesize 2 executions from avg prices:
+  - `BUY` exec at open datetime (LONG) or close datetime (SHORT)
+  - `SELL` exec at close datetime (LONG) or open datetime (SHORT)
+  - Quantity = `Quantity` on both legs; `Fees` attached to the entry leg, exit leg charges = 0.
+- Strategy lookup by name (case-insensitive); if not found → leave blank, no auto-create.
+- Tag lookup by name; missing tags → silently dropped (warning collected).
+- Checklist items resolved by matching text against the resolved strategy's items.
+- All MFE/MAE/post-exit price+ticks copied through.
+- Manual override columns copied through if present.
+- `accountBalanceSnapshot` = current account balance at import time (same convention MT5 uses).
+
+Fingerprint dedupe (existing `tradeFingerprint`) prevents duplicate inserts on accidental re-import.
+
+---
+
+## Wire into Import modal
+
+`src/components/settings/AccountImportModal.tsx`
+
+- Add option: `{ value: 'TradeValley', label: 'TradeValley CSV' }` to `IMPORT_SOURCES` (line 46 area).
+- Accepted file type for `TradeValley` = `.csv`.
+- Add a new branch in the import dispatch (alongside MT5/Tradovate/Zerodha) that calls `importTradeValleyCsv` and feeds the result into the same `bulkAddTrades` flow used by other importers.
+- No missing-symbol modal needed (trade carries its own symbol; user re-sets contract/tick size in Settings).
+
+---
+
+## Files
+
+**New**
+
+- `src/lib/tradeValleyCsv.ts` (export)
+- `src/lib/tradeValleyCsvImport.ts` (import parser)
+
+**Edited**
+
+- `src/components/trades/TradesTableCard.tsx` — Download button → DropdownMenu with "Export All Trades".
+- `src/components/settings/AccountImportModal.tsx` — add `TradeValley` source + dispatch branch.
