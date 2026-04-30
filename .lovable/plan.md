@@ -1,69 +1,88 @@
-## Problem
+## Add Analysis Mode (Execution vs Opportunity) to Trade Management
 
-On the Trade Management page, trades show **0R** even when the trade popup clearly displays an achieved R-Multiple like **+3.4R**.
+Extend `src/pages/chartroom/TradeManagement.tsx` so users can switch between **Execution** (pre-exit MFE) and **Opportunity** (post-exit max/min) analysis. The chart and capture-rate card must both reflect the selected mode through a single shared data pipeline.
 
-### Root cause
+### 1. Mode state & toggle UI
 
-There are two different "R" concepts in the codebase, and they are out of sync:
-
-1. **Modal popup "R-Multiple"** (what the user sees and trusts):
-  `(exit − entry) / (entry − stopLoss)` — a **price-based** R using the SL distance as risk.
-   Computed in `TradeModal.tsx` as `rMultipleCalculated` (line 830).
-2. **Stored `savedRMultiple**` (what `useTrades.reconcileSavedFields` writes):
-  `netPnl / trade.tradeRisk` — a **dollar-based** R using the user-entered `tradeRisk` field.
-
-When `tradeRisk` is `0` or missing, the reconciler sets `savedRMultiple = undefined`, and Trade Management falls back to `metrics.rFactor` which is also `netPnl / tradeRisk = 0`. Result: **0R everywhere**, even though the popup correctly shows 3.4R.
-
-The same mismatch can hit `savedReturnPercent` indirectly, but the user's complaint is specifically about R-Multiple, so we'll fix that without changing return % behavior.
-
-## Fix
-
-Make `savedRMultiple` use the **same price-based formula** the trade popup displays. This is the single source of truth the user expects.
-
-### Change `reconcileSavedFields` in `src/hooks/useTrades.ts`
-
-Replace the `savedRMultiple` block so it uses Entry / Stop Loss / Exit price (direction-aware) instead of `tradeRisk`:
+At the top of the page (above the chart card), add a segmented control:
 
 ```text
-savedRMultiple = (exitPrice − entryPrice) / (entryPrice − stopLoss)   // LONG
-savedRMultiple = (entryPrice − exitPrice) / (stopLoss − entryPrice)   // SHORT
+Analysis Mode:  [ Execution ]  [ Opportunity ]
 ```
 
-Conditions for computing it:
+- State: `const [analysisMode, setAnalysisMode] = useState<'execution' | 'opportunity'>('execution')`
+- Built with existing `ToggleGroup` / `ToggleGroupItem` (single-select, type="single", non-deselectable).
+- Tooltip via existing `Tooltip` primitive: *"Execution = before exit (MFE/MAE) · Opportunity = after exit (post max/min)"*.
+- Mode persists across re-renders within the page (no filter/tab resets it).
 
-- Trade is `CLOSED`
-- `avgEntryPrice > 0`
-- `avgExitPrice > 0` (from `calculateTradeMetrics`)
-- `stopLoss > 0`
-- `side` set
-- Risk distance (`|entry − sl|`) > 0
+### 2. Single source of truth — `prepareTradeManagementData`
 
-Otherwise set `savedRMultiple = undefined`.
+Refactor the current `useMemo` block into one helper used for **both** the chart and the capture-rate card:
 
-This matches `rMultipleCalculated` in `TradeModal.tsx` (lines 830–853) exactly, so the value stored is the same number shown in the popup.
+```ts
+type AnalysisMode = 'execution' | 'opportunity';
 
-### Also update the load-time migration (lines 202–214 of `useTrades.ts`)
+function prepareTradeManagementData(trades: Trade[], mode: AnalysisMode) { ... }
+```
 
-The localStorage migration currently backfills `savedRMultiple` from `netPnl / tradeRisk`. Update it to use the same price-based formula so existing trades get corrected on next load (one-time migration via `isMissing || isStaleZero || sign-mismatch-with-netPnl` check). Trades without entry/SL/exit remain `undefined`.
+Returns `{ data: ChartDataPoint[], hasPotentialData: boolean }` (same shape used today).
 
-### Leave alone
+**Eligibility (shared base):** entry price, stopLoss, takeProfit, side, priceReachedFirst, position CLOSED, and a usable actualR (`savedRMultiple ?? rFactor`). Sort by openDate ascending.
 
-- `savedRRR` (planned RR from Entry/SL/TP) — already correct.
-- `savedReturnPercent` — already correct (uses frozen `accountBalanceSnapshot`).
-- `accountBalanceSnapshot` immutability — already correct.
-- `metrics.rFactor` in `types/trade.ts` — internal, unrelated to user-facing R-Multiple. Not changing.
-- The Trade Management page itself — already prefers `savedRMultiple` over `metrics.rFactor`, so once storage is fixed it will display correctly.
+**Per-trade fields:**
+- `actualR` → `trade.savedRMultiple ?? metrics.rFactor` — **identical in both modes**.
+- `setForgetR` → unchanged (TP→planned RR, SL→-1).
+- `potentialR` → mode-dependent (see below). If unavailable for the trade in the selected mode, set `potentialR = null` and **skip** it from cumulative-potential and from capture-rate rows. Do **not** fall back to the other mode's data.
 
-## Files to edit
+**Execution mode `potentialR` (current logic, unchanged):**
+- If `priceReachedFirst === 'stopLoss'` → `-1`.
+- Else if `preMfePrice` present:
+  - LONG: `max(-1, (preMfePrice - entry) / (entry - sl))`
+  - SHORT: `max(-1, (entry - preMfePrice) / (sl - entry))`
+- Else → `null`.
 
-- `src/hooks/useTrades.ts`
-  - Rewrite the `savedRMultiple` branch in `reconcileSavedFields` to use the price-based formula.
-  - Update the migration block (≈ lines 202–214) to recompute legacy `savedRMultiple` with the same formula.
+**Opportunity mode `potentialR` (new):**
+- LONG: requires `postMaxPrice` → `(postMaxPrice - entry) / (entry - sl)`
+- SHORT: requires `postMinPrice` → `(entry - postMinPrice) / (sl - entry)`
+- Risk denominator must be `> 0`; otherwise `null`.
+- No `-1` floor (opportunity is post-exit only; SL outcome no longer constrains it). No clamp.
+- If the required post-exit field is missing → trade is **skipped** for `potentialR` (`null`). It still contributes `actualR` and `setForgetR` to the chart, matching how execution-mode trades without `preMfePrice` are handled today.
 
-## Result
+### 3. Chart behavior (unchanged shape)
 
-- Trade popup R-Multiple = stored `savedRMultiple` = value shown on Trade Management page.
-- Edits to entry, exit, stopLoss, or direction propagate to `savedRMultiple` automatically (already covered by `reconcileSavedFields` running on every add/update).
-- Existing trades with `0R` get corrected on next load via the migration.
+The existing line chart keeps three series:
+- `cumulativeActual` — unchanged across modes.
+- `cumulativeSetForget` — unchanged across modes.
+- `cumulativePotential` — driven by mode-specific `potentialR`. Series is hidden when `hasPotentialData === false`.
 
-okay, also there is no trade risk or anyuthing similar where user enters in $ terms, check tradepopup again, we have everything based on pricing.. rest plan is correct..
+Title/subtitle below the chart title shows a dynamic caption:
+- Execution: *"Based on price movement before exit (MFE)"*
+- Opportunity: *"Based on full price movement after exit"*
+
+Append to the methodology/help text: *"This analysis is based on price ranges and does not consider order of movement."*
+
+### 4. Capture-rate card ("Realized RR vs Max Available RR")
+
+- Uses the **same** `chartDataArray` returned by `prepareTradeManagementData` — no separate computation.
+- Title stays the same; add the same dynamic caption ("...before exit (MFE)" / "...after exit") under the title so the mode is unambiguous.
+- Rows, averages, and bars automatically reflect the selected mode because they read `potentialR`/`actualR` from the shared dataset.
+- Trades skipped in opportunity mode (missing `postMaxPrice`/`postMinPrice`) drop out of this card automatically — matches the "missing data → skip trade" rule.
+
+### 5. KPI summary cards
+
+The four summary cards (Eligible Trades, Total Actual, Total Set & Forget, Total Potential) keep reading from the same dataset. The "Total Potential (MFE)" card label becomes dynamic:
+- Execution: *"Total Potential (MFE)"*
+- Opportunity: *"Total Potential (Post-Exit)"*
+
+### 6. Strict rules enforced by the design
+
+- Mode branching exists **only** inside `prepareTradeManagementData`.
+- Chart + capture card + KPIs are mode-agnostic.
+- `actualR` is computed once and never differs between modes.
+- No cross-mode fallback. Missing post-exit data → trade skipped from `potentialR`/capture rows in opportunity mode.
+
+### Files to change
+
+- `src/pages/chartroom/TradeManagement.tsx` — add mode state + toggle UI, extract `prepareTradeManagementData`, wire dynamic captions/labels, ensure capture card consumes the shared dataset.
+
+No type changes needed: `postMaxPrice` and `postMinPrice` already exist on `Trade` (`src/types/trade.ts`). No migrations required.
