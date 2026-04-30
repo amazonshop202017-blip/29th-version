@@ -1,89 +1,87 @@
-# Migrate date / datetime inputs to MUI X Date Pickers
+## Goal
 
-Goal: replace the current `<input type="date">`, `<input type="datetime-local">`, and shadcn `Calendar`+`Popover` pickers with MUI X pickers — exactly mirroring the reference project "Date Picker Duo". All surrounding logic (state shape, validation, save handlers, ISO conversion, defaults, edit-mode prefill) stays the same.
+Bring three behaviors from the reference project ("Trade Data Refiner") into the current Trades page table, with **no logical changes** to data, filters, selection, pagination, deletion, duplication, import/export, column visibility, or category-tag handling. Only the rendering layer of the table changes:
 
-## Library choice (mirrors reference project)
+1. **Column sorting** — click any header to toggle asc/desc/none, with visual indicators (`ArrowUp` / `ArrowDown` / `ChevronsUpDown`). Persisted in `localStorage`.
+2. **Drag-and-drop column reordering** — drag header to reorder; touch + keyboard supported. Persisted in `localStorage`.
+3. **Column resizing** — left + right edge handles on each header; double-click resets; live resize via `columnResizeMode: 'onChange'`. Persisted in `localStorage`.
 
-- `@mui/material@^9`
-- `@mui/x-date-pickers@^9`
-- `@emotion/react@^11`, `@emotion/styled@^11`
-- `dayjs@^1.11`
+The first two columns (`select` checkbox and `actions` star/eye/image) stay fixed (non-draggable, non-resizable, non-sortable) — same as the reference.
 
-Wrap pickers in `<LocalizationProvider dateAdapter={AdapterDayjs}>`.
+## Files affected
 
-## Responsive datetime behavior (per reference)
+- `package.json` — add `@tanstack/react-table` and `@dnd-kit/modifiers` (other `@dnd-kit/*` already present).
+- `src/components/trades/TradesTableCard.tsx` — replace the inner `<Table>` (currently `TableWithStickyHorizontalScroll`) with a TanStack-driven `<table>` that mirrors the reference's `DraggableTableHeader` / `DragAlongCell` pattern. All existing behavior (action bar, alert dialogs, import modal, tag modal, pagination, category columns, visibility, theming, profit/loss row tinting) is preserved.
 
-```ts
-const isMobile = useIsMobile(); // existing hook
-const ResponsiveDateTimePicker = isMobile ? MobileDateTimePicker : DesktopDateTimePicker;
-```
+No other files change. `useTradesColumnVisibility` keeps its current API and remains the source of truth for which columns are shown.
 
-For date-only fields, use the single `DatePicker` component (it already adapts internally — same approach as reference `Index.tsx`).
+## Approach
 
-## Shared wrapper components (new)
+### 1. Build a unified column registry inside `TradesTableCard.tsx`
 
-To avoid repeating the responsive switch and theming in every modal, add two thin wrappers:
+Define `ColumnDef<Trade>[]` for every existing column: `symbol`, `side`, `volume`, `ticksPips`, `accountName`, `openDateTime`, `closeDateTime`, `duration`, `avgEntry`, `avgExit`, `initialRisk`, `initialTarget`, `strategy`, `strategyChecklist`, `grossPnl`, `netPnl`, `realizedRMultiple`, `plannedRRR`, `fees`, `farthestProfitPrice`, `farthestProfitTicks`, `farthestLossPrice`, `farthestLossTicks`, `postMaxPrice`, `postMaxTickPip`, `postMinPrice`, `postMinTickPip`, `priceReachedFirst`, plus dynamic `category:<id>` columns.
 
-- `src/components/ui/AppDateTimePicker.tsx`
-  - Props: `value: string` (ISO or `YYYY-MM-DDTHH:mm`), `onChange: (iso: string) => void`, `label?`, `disabled?`, `className?`
-  - Internally converts string ↔ `Dayjs`. On change, emits the same naive `YYYY-MM-DDTHH:mm` string the existing `<input type="datetime-local">` produced (so downstream `toISO()` calls keep working unchanged).
-  - Renders `MobileDateTimePicker` on mobile, `DesktopDateTimePicker` otherwise.
-- `src/components/ui/AppDatePicker.tsx`
-  - Props: `value: string` (`YYYY-MM-DD`) **or** `Date | undefined`, `onChange`, `label?`, `placeholder?`.
-  - Two value modes (matching the two existing patterns in the codebase):
-    1. String mode → emits `YYYY-MM-DD` (drop-in for `<input type="date">`)
-    2. Date mode → emits `Date | undefined` (drop-in for shadcn `Calendar mode="single"`)
-  - Uses `DatePicker` with `views={["year","month","day"]}` like the reference.
+Each `cell` renderer is the exact JSX currently rendered inside the corresponding `isColumnVisible(...)` block (Symbol bold, Side badge with arrows, mono numbers, profit/loss color via `classifyTradeOutcome`, formatted dates via `date-fns`, `maskCurrency`, badge groups for checklist + tags, "+N" overflow, the per-category Plus button that opens the tag modal, etc.).
 
-Single mount of `LocalizationProvider` at the app root (in `src/App.tsx`) so every picker has the dayjs adapter without per-modal boilerplate.
+`accessorFn` is set so sorting works on raw values:
+- Date columns sort by `Date.getTime()`.
+- Numeric columns sort by the numeric metric (`metrics.netPnl`, `trade.savedRMultiple`, etc.).
+- String columns sort alphabetically.
+- Columns without a meaningful sort (e.g. `priceReachedFirst`, category tag list, `strategyChecklist`) set `enableSorting: false`.
 
-## Styling
+### 2. Wire visibility into TanStack
 
-MUI components ship Material styling out of the box. To keep the existing Tailwind/shadcn look:
+Translate `useTradesColumnVisibility`'s `isColumnVisible` map into TanStack's `columnVisibility` state and pass it via `state.columnVisibility`. `toggleColumn` continues to drive it through the existing `TradesColumnSettings` popover — no UX change there.
 
-- Apply a small `sx` preset inside the wrappers so the input height matches `h-10`/`h-11`, border uses `hsl(var(--border))`, background uses `hsl(var(--background))`, text uses `hsl(var(--foreground))`. This is purely cosmetic — behavior is unchanged.
-- Trigger button keeps the existing `CalendarDays`/`CalendarIcon` adornment via MUI `InputAdornment` where the current UI shows one.
+### 3. Column order (drag-and-drop)
 
-No global MUI theme is required for behavior; styling tweaks live inside the two wrappers only.
+- `DRAGGABLE_COLUMN_IDS` = all data column ids in their initial display order, plus the active `category:<id>` ids appended at the end (same order categories appear today).
+- Persist to `localStorage` under `trades-table-column-order`. On load, filter out unknown ids, append any new ones (e.g. newly created categories) so the list stays valid.
+- `DndContext` with `MouseSensor` (4px activation), `TouchSensor` (150ms delay, 5px tolerance), `KeyboardSensor`, `closestCenter`, and `restrictToHorizontalAxis` modifier — identical to reference.
+- `arrayMove` on drag end.
 
-## Files to change
+### 4. Column sizing (resizing)
 
-Datetime (date + time) — swap `<input type="datetime-local">` for `AppDateTimePicker`:
-1. `src/components/trades/TradeModal.tsx` — entry datetime (line ~939) and exit datetime (line ~1156). Keep `entryDate`/`exitDate` as `YYYY-MM-DDTHH:mm` strings; `toISO()` calls in submit stay untouched.
-2. `src/components/trades/ScaleInOutModal.tsx` — note: actual per-leg datetime inputs live in TradeModal's scale rows (verified by grep). If/when scale-leg rows expose datetime, replace with `AppDateTimePicker` using the same string contract. (No change needed if file has no datetime input — confirmed during exploration.)
+- `columnResizeMode: 'onChange'`, `defaultColumn: { minSize: 60, maxSize: 600 }`, per-column `size` defaults tuned to current visual widths.
+- Two edge resize handles per `DraggableTableHeader` (left + right), styled with the reference's primary-colored thin bar that appears on hover or while resizing.
+- `onPointerDown`/`onMouseDown`/`onTouchStart` on the handle stop propagation so resizing never starts a drag, and `onClick` stop-propagation prevents accidental sort.
+- Persist sizing to `localStorage` under `trades-table-column-sizing`.
+- Use the reference's CSS-variable trick (`--header-{id}-size`, `--col-{id}-size`) recomputed via `useMemo` keyed on `columnSizingInfo` + `columnSizing` + `columnOrder` for buttery resize without rerendering every cell.
 
-Date only — swap shadcn `Calendar`+`Popover` or `<input type="date">` for `AppDatePicker`:
-3. `src/components/diary/SelectDayModal.tsx` — replace `Popover`+`Calendar` with `AppDatePicker` in Date mode. `onConfirm(format(d,'yyyy-MM-dd'))` logic preserved.
-4. `src/components/propfirm/TrackAccountModal.tsx` — replace `<input type="date">` (line ~574) with `AppDatePicker` in String mode. `setStartDate` still receives `YYYY-MM-DD`.
-5. `src/components/propfirm/AddEditTransactionModal.tsx` — replace `Calendar` (line ~220) with `AppDatePicker` in Date mode (state is `Date | undefined`).
-6. `src/components/propfirm/PayoutModal.tsx` — replace `Popover`+`Calendar` with `AppDatePicker` in Date mode. `toISO(date)` on save unchanged.
-7. `src/components/reports/CompareGroupCard.tsx` — replace the two `Popover`+`Calendar` blocks (start ~line 268, end ~line 296) with two `AppDatePicker`s in Date mode. `onFiltersChange({...filters, startDate / endDate })` keeps the same `Date | undefined` shape.
+### 5. Sorting
 
-App-level:
-8. `src/App.tsx` — wrap the existing tree in `<LocalizationProvider dateAdapter={AdapterDayjs}>` once.
-9. `package.json` — add `@mui/material`, `@mui/x-date-pickers`, `@emotion/react`, `@emotion/styled`, `dayjs`.
+- `getSortedRowModel()` enabled. Sorting state persisted under `trades-table-column-sorting`.
+- Default sort = `[{ id: 'closeDateTime', desc: true }]` (matches the current `sortedTrades` behavior of newest close-date first).
+- The current `useMemo`-based pre-sort is removed; pagination now slices `table.getRowModel().rows` instead of `sortedTrades`. Trade order behavior is unchanged on first load.
+- Header click toggles sort only when no drag movement (reference uses `getToggleSortingHandler` inside the same div that has drag listeners — works because dnd-kit's MouseSensor needs a 4px move before activating).
 
-## What stays exactly the same
+### 6. Preserved logic (unchanged)
 
-- All state variables, their types, and update handlers.
-- Validation (`valid`, disabled CTA, required-field markers).
-- `toISO()` / `isoToDateInputValue()` / `isoToDateTimeLocalInputValue()` usage — wrappers emit the exact string/Date shapes those helpers already accept.
-- Default values (`new Date()`, `nowISO()`), edit-mode prefill, reset on open/close.
-- Save / submit logic and downstream context calls (`addTransaction`, `updateTrade`, `onConfirm`, `onFiltersChange`, etc.).
-- Date-range filter in `GlobalHeader` and `DateRangeCalendar` — untouched (per your scope).
-- Day View / calendar bubbles — untouched.
+- `useFilteredTrades`, `useTradeModal`, `useAccountsContext`, `useGlobalFilters`, `usePrivacyMode`, `useCategoriesContext`, `useTagsContext`, `useTradesContext`, `useStrategiesContext` — all wired exactly as today.
+- Action bar: Select All/Deselect, Delete (with `AlertDialog`), Import (`AccountImportModal`), Merge, Duplicate, mobile dropdown, `TradesColumnSettings`, Export CSV — unchanged.
+- Pagination controls (per-page select, page select, prev/next) — unchanged.
+- Row click opens `TradeModal` via `openModal`.
+- Per-row profit/loss tinting via `classifyTradeOutcome` (uses `outcome === 'win'/'loss'` and theme-specific neutral background) — unchanged.
+- Sticky header, horizontal scroll, touch scrolling — preserved.
+- `framer-motion` wrapper (`motion.div`) and `glass-card` styling — preserved.
+- `AssignTagsModal` and `AccountImportModal` — preserved.
 
-## QA checklist after implementation
+### 7. Storage keys
 
-For each of the 7 surfaces above, on desktop and mobile (≤768 px):
-- Open modal → picker shows current value (or default).
-- Pick a new date/time → state updates; CTA enables when valid.
-- Save → record in context has identical ISO string as before migration.
-- Edit existing record → picker pre-fills with the right local time.
-- Mobile viewport renders the full-screen `MobileDateTimePicker` for datetime fields (matching reference behavior).
+To avoid clashing with the reference project's keys (which only had 11 columns), use namespaced keys:
+- `tradesTable.columnOrder.v1`
+- `tradesTable.columnSizing.v1`
+- `tradesTable.columnSorting.v1`
+
+### 8. Dependencies
+
+Add via `bun add`:
+- `@tanstack/react-table`
+- `@dnd-kit/modifiers`
 
 ## Out of scope
 
-- `GlobalHeader` date range, `DayView` calendar, `YearlyCalendar`, `MonthlyPerformanceCalendar`, dashboard calendar bubbles.
-- Any visual redesign beyond matching current heights/colors.
-- Migration of stored data — storage format is unchanged.
+- No change to `useTradesColumnVisibility` signature, group definitions, `TradesColumnSettings` UI, or any other consumer of the table.
+- No change to data, calculations, filters, or persistence of trades themselves.
+- No change to the action bar buttons, modals, or pagination behavior.
+- No styling refactor beyond what's needed to make headers draggable/resizable (hover handles, sort icons).
