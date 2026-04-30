@@ -1256,43 +1256,65 @@ export const TradeModal = () => {
 
           {activeTab === 'advanced' && (
             <div className="space-y-6">
-              {/* Trade Comments Section */}
+              {/* Tags Section — one field per Custom Category */}
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Trade Comments</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Entry Comments</Label>
-                    <TypeableCombobox
-                      value={entryComment}
-                      onChange={setEntryComment}
-                      options={[]}
-                      onAddNew={noopAddOption}
-                      placeholder="Select..."
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Trade Management</Label>
-                    <TypeableCombobox
-                      value={tradeManagement}
-                      onChange={setTradeManagement}
-                      options={[]}
-                      onAddNew={noopAddOption}
-                      placeholder="Select..."
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Exit Comments</Label>
-                    <TypeableCombobox
-                      value={exitComment}
-                      onChange={setExitComment}
-                      options={[]}
-                      onAddNew={noopAddOption}
-                      placeholder="Select..."
-                    />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-foreground">Tags</h4>
+                  {categories.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => navigate('/settings?tab=custom-tags')}
+                    >
+                      Manage
+                    </Button>
+                  )}
                 </div>
+
+                {categories.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-lg border border-dashed border-border bg-muted/20">
+                    <p className="text-sm text-muted-foreground text-center">
+                      No tag categories yet. Create categories and tags to organize your trades.
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate('/settings?tab=custom-tags')}
+                      className="gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Make Tags
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {categories.map((category) => (
+                      <CategoryTagField
+                        key={category.id}
+                        category={category}
+                        tags={getActiveTags()}
+                        selectedTagIds={selectedTags}
+                        onToggleTag={(tagId) =>
+                          setSelectedTags((prev) =>
+                            prev.includes(tagId)
+                              ? prev.filter((id) => id !== tagId)
+                              : [...prev, tagId]
+                          )
+                        }
+                        onCreateTag={(name, categoryId) => {
+                          const newTag = addTag(name, categoryId, '');
+                          if (newTag) {
+                            setSelectedTags((prev) => [...prev, newTag.id]);
+                          }
+                        }}
+                        compact
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Divider */}
