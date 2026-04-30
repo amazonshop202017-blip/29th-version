@@ -224,27 +224,6 @@ function DraggableTableHeader({
         onDoubleClick={() => header.column.resetSize()}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'absolute top-0 left-0 h-full w-1 cursor-col-resize select-none touch-none z-10',
-          'opacity-0 group-hover:opacity-100 transition-opacity',
-          'after:content-[""] after:absolute after:top-1 after:bottom-1 after:left-0 after:w-0.5 after:bg-primary after:rounded-full',
-          isResizing && 'opacity-100',
-        )}
-        aria-label="Resize column from left"
-        role="separator"
-      />
-      <div
-        onPointerDown={(e) => e.stopPropagation()}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          header.getResizeHandler()(e);
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-          header.getResizeHandler()(e);
-        }}
-        onDoubleClick={() => header.column.resetSize()}
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
           'absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none z-10',
           'opacity-0 group-hover:opacity-100 transition-opacity',
           'after:content-[""] after:absolute after:top-1 after:bottom-1 after:right-0 after:w-0.5 after:bg-primary after:rounded-full',
