@@ -63,10 +63,9 @@ export const TradeModal = () => {
   const { accounts, getAccountWithStats, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { currencyConfig, selectedAccounts: globalSelectedAccounts, isAllAccountsSelected } = useGlobalFilters();
   const { tickSizes, contractSizes, setContractSize, getTickSizeForAccountSymbol, getContractSizeForAccountSymbol } = useSymbolTickSize();
-  // Trade Comment dropdowns are kept as free-text combobox fields.
-  // Storage/management for predefined options has been removed; values
-  // still save directly on the trade record.
-  const noopAddOption = (_v: string) => {};
+  const { categories } = useCategoriesContext();
+  const { addTag, getActiveTags } = useTagsContext();
+  const navigate = useNavigate();
 
   // Symbol options: single source of truth shared with Settings → Symbol Tick/Pip
   const symbolOptions = useTradedSymbols();
