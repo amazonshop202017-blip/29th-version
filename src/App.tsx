@@ -62,6 +62,9 @@ import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
 import PropFirmTransactionsPage from "./pages/propfirm/PropFirmTransactionsPage";
 import PropFirmAccountDetailsPage from "./pages/propfirm/PropFirmAccountDetailsPage";
 import ForexNews from "./pages/ForexNews";
+import CoachingLayout from "./pages/coaching/CoachingLayout";
+import MentorMode from "./pages/coaching/MentorMode";
+import StudentMode from "./pages/coaching/StudentMode";
 
 const queryClient = new QueryClient();
 
@@ -136,6 +139,11 @@ const AuthenticatedApp = () => {
                                     <Route path="accounts" element={<PropFirmAccountsPage />} />
                                     <Route path="accounts/:accountId" element={<PropFirmAccountDetailsPage />} />
                                     <Route path="transactions" element={<PropFirmTransactionsPage />} />
+                                  </Route>
+                                  <Route path="/coaching" element={<CoachingLayout />}>
+                                    <Route index element={<Navigate to="/coaching/mentor" replace />} />
+                                    <Route path="mentor" element={<MentorMode />} />
+                                    <Route path="student" element={<StudentMode />} />
                                   </Route>
                                   <Route path="/entering" element={<Navigate to="/" replace />} />
                                   <Route path="*" element={<NotFound />} />
