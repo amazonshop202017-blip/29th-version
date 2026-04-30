@@ -1,8 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFilteredTrades } from '@/hooks/useFilteredTrades';
 import { calculateTradeMetrics, Trade } from '@/types/trade';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  Tooltip as UITooltip,
+  TooltipContent as UITooltipContent,
+  TooltipProvider,
+  TooltipTrigger as UITooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
+
+type AnalysisMode = 'execution' | 'opportunity';
 
 interface ChartDataPoint {
   tradeIndex: number;
@@ -16,12 +26,16 @@ interface ChartDataPoint {
   cumulativePotential: number | null;
 }
 
-const TradeManagement = () => {
-  const { filteredTrades } = useFilteredTrades();
-
-  const chartData = useMemo(() => {
-    // Filter eligible trades: must have entry price, stop loss, take profit, direction, and priceReachedFirst
-    const eligibleTrades = filteredTrades.filter(trade => {
+/**
+ * Single source of truth for both the chart and the capture-rate card.
+ * Mode-specific branching lives ONLY here.
+ */
+function prepareTradeManagementData(
+  trades: Trade[],
+  mode: AnalysisMode,
+): { data: ChartDataPoint[]; hasPotentialData: boolean } {
+  // Shared eligibility — identical across modes.
+  const eligibleTrades = trades.filter(trade => {
       const metrics = calculateTradeMetrics(trade);
       if (metrics.positionStatus !== 'CLOSED') return false;
       if (!metrics.avgEntryPrice || metrics.avgEntryPrice <= 0) return false;
@@ -29,19 +43,16 @@ const TradeManagement = () => {
       if (!trade.takeProfit || trade.takeProfit <= 0) return false;
       if (!trade.side) return false;
       if (!trade.priceReachedFirst) return false;
-      // savedRMultiple may be missing on legacy trades — fall back to computed rFactor
       if (trade.savedRMultiple === undefined && (metrics.rFactor === undefined || isNaN(metrics.rFactor))) return false;
       return true;
     });
 
-    // Sort by entry date (openDate)
     const sortedTrades = [...eligibleTrades].sort((a, b) => {
       const metricsA = calculateTradeMetrics(a);
       const metricsB = calculateTradeMetrics(b);
       return new Date(metricsA.openDate).getTime() - new Date(metricsB.openDate).getTime();
     });
 
-    // Build chart data
     let cumulativeActual = 0;
     let cumulativeSetForget = 0;
     let cumulativePotential = 0;
@@ -53,14 +64,11 @@ const TradeManagement = () => {
       const tp = trade.takeProfit!;
       const sl = trade.stopLoss!;
       
-      // Actual R: prefer stored savedRMultiple; fall back to computed rFactor for legacy trades
+    // actualR is identical across modes — never branches on mode.
       const actualR = trade.savedRMultiple ?? metrics.rFactor ?? 0;
       
-      // Set & Forget R: TP/SL only logic (renamed from "Potential")
       let setForgetR = 0;
-      
       if (trade.priceReachedFirst === 'takeProfit') {
-        // Calculate planned RR
         if (trade.side === 'LONG') {
           const risk = entry - sl;
           const reward = tp - entry;
@@ -73,33 +81,51 @@ const TradeManagement = () => {
       } else if (trade.priceReachedFirst === 'stopLoss') {
         setForgetR = -1;
       }
-      
-      // Potential R: Maximum favorable excursion (MFE in R)
-      // Uses farthestPriceInProfit for BOTH long and short trades
+
+    // potentialR — the only field that depends on AnalysisMode.
       let potentialR: number | null = null;
-      
+
+    if (mode === 'execution') {
       if (trade.priceReachedFirst === 'stopLoss') {
-        // If SL was hit first, potential is -1R
         potentialR = -1;
-      } else {
-        // Calculate based on preMfePrice (direction-aware)
-        if (trade.preMfePrice !== undefined && trade.preMfePrice !== null && trade.preMfePrice > 0) {
+      } else if (trade.preMfePrice !== undefined && trade.preMfePrice !== null && trade.preMfePrice > 0) {
           if (trade.side === 'LONG') {
             const risk = entry - sl;
             if (risk > 0) {
               potentialR = Math.max(-1, (trade.preMfePrice - entry) / risk);
             }
           } else {
-            // SHORT: profit = entry - preMfePrice
             const risk = sl - entry;
             if (risk > 0) {
               potentialR = Math.max(-1, (entry - trade.preMfePrice) / risk);
             }
           }
         }
+    } else {
+      // Opportunity mode — post-exit only. No fallback, no clamp.
+      if (trade.side === 'LONG') {
+        const risk = entry - sl;
+        if (
+          risk > 0 &&
+          trade.postMaxPrice !== undefined &&
+          trade.postMaxPrice !== null &&
+          trade.postMaxPrice > 0
+        ) {
+          potentialR = (trade.postMaxPrice - entry) / risk;
+        }
+      } else {
+        const risk = sl - entry;
+        if (
+          risk > 0 &&
+          trade.postMinPrice !== undefined &&
+          trade.postMinPrice !== null &&
+          trade.postMinPrice > 0
+        ) {
+          potentialR = (entry - trade.postMinPrice) / risk;
       }
+      }
+    }
       
-      // Track if we have any potential data
       if (potentialR !== null) {
         hasPotentialData = true;
         cumulativePotential += potentialR;
@@ -122,7 +148,24 @@ const TradeManagement = () => {
     });
     
     return { data, hasPotentialData };
-  }, [filteredTrades]);
+}
+
+const TradeManagement = () => {
+  const { filteredTrades } = useFilteredTrades();
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('execution');
+
+  const chartData = useMemo(
+    () => prepareTradeManagementData(filteredTrades, analysisMode),
+    [filteredTrades, analysisMode],
+  );
+
+  const modeCaption =
+    analysisMode === 'execution'
+      ? 'Based on price movement before exit (MFE)'
+      : 'Based on full price movement after exit';
+
+  const potentialKpiLabel =
+    analysisMode === 'execution' ? 'Total Potential (MFE)' : 'Total Potential (Post-Exit)';
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -228,10 +271,44 @@ const TradeManagement = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-foreground">Analysis Mode</span>
+        <ToggleGroup
+          type="single"
+          value={analysisMode}
+          onValueChange={(v) => {
+            if (v === 'execution' || v === 'opportunity') setAnalysisMode(v);
+          }}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="execution">Execution</ToggleGroupItem>
+          <ToggleGroupItem value="opportunity">Opportunity</ToggleGroupItem>
+        </ToggleGroup>
+        <TooltipProvider>
+          <UITooltip>
+            <UITooltipTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Analysis Mode info"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            </UITooltipTrigger>
+            <UITooltipContent>
+              Execution = before exit (MFE/MAE) · Opportunity = after exit (post max/min)
+            </UITooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+      </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Performance Comparison (R-Multiple)</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {modeCaption}. This analysis is based on price ranges and does not consider order of movement.
+          </p>
         </CardHeader>
         <CardContent>
           {chartDataArray.length === 0 ? (
@@ -336,7 +413,7 @@ const TradeManagement = () => {
                   <p className={`text-2xl font-bold ${(chartDataArray[chartDataArray.length - 1]?.cumulativePotential ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                     {chartDataArray[chartDataArray.length - 1]?.cumulativePotential?.toFixed(2) ?? '0.00'}R
                   </p>
-                  <p className="text-sm text-muted-foreground">Total Potential (MFE)</p>
+                  <p className="text-sm text-muted-foreground">{potentialKpiLabel}</p>
                 </div>
               </CardContent>
             </Card>
@@ -348,7 +425,9 @@ const TradeManagement = () => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Realized RR vs Max Available RR</CardTitle>
-            <p className="text-xs text-muted-foreground">Trade-level capture efficiency</p>
+            <p className="text-xs text-muted-foreground">
+              Trade-level capture efficiency · {modeCaption}
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
