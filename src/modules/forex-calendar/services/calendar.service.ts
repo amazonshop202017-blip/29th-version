@@ -13,6 +13,40 @@ const DEFAULT_CONFIG: CalendarConfig = {
   defaultImpacts: [],
 };
 
+const CACHE_KEY = "forex-calendar-cache-v1";
+
+function getTodayLocalKey(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function readCache(): CalendarEventRaw[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { date: string; data: CalendarEventRaw[] };
+    if (!parsed?.date || !Array.isArray(parsed.data)) return null;
+    if (parsed.date !== getTodayLocalKey()) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(data: CalendarEventRaw[]): void {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ date: getTodayLocalKey(), data }),
+    );
+  } catch {
+    // ignore quota/serialization errors
+  }
+}
+
 async function fetchRawEvents(
   apiUrl: string
 ): Promise<CalendarEventRaw[]> {
@@ -55,7 +89,12 @@ export async function getCalendarEvents(
   config: Partial<CalendarConfig> = {}
 ): Promise<CalendarEvent[]> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+  const cached = readCache();
+  if (cached) {
+    return transformEvents(cached);
+  }
   const raw = await fetchRawEvents(mergedConfig.apiUrl);
+  writeCache(raw);
   return transformEvents(raw);
 }
 
