@@ -23,7 +23,7 @@ export const AssignTagsModal = ({
   entryDate,
 }: AssignTagsModalProps) => {
   const { categories } = useCategoriesContext();
-  const { tags, addTag, getActiveTags } = useTagsContext();
+  const { addTag, getActiveTags } = useTagsContext();
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedTagIds);
   
   // Only show active (non-archived) tags in the selection UI
