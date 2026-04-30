@@ -563,8 +563,7 @@ export const GlobalHeader = () => {
       {/* Spacer to push all desktop filters to the right */}
       <div className="flex-1 hidden lg:block" />
 
-      {/* Desktop filter UI — hidden on /tools/* pages */}
-      {!isToolsRoute && (<>
+      {/* Desktop filter UI */}
       {/* Desktop: All filter buttons inline */}
       {/* Display Mode Selector */}
       <div className="hidden lg:block">
@@ -1327,7 +1326,6 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      </>)}
       {isDashboard && (
         <button
           onClick={toggleEditMode}
