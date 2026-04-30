@@ -30,11 +30,29 @@ const reconcileSavedFields = <T extends Partial<Trade>>(trade: T): T => {
   const next: any = { ...trade };
   const metrics = calculateTradeMetrics(next as Trade);
 
-  // savedRMultiple — achieved R from net P&L vs trade risk
-  if (typeof next.tradeRisk === 'number' && next.tradeRisk > 0 && metrics.positionStatus === 'CLOSED') {
-    next.savedRMultiple = metrics.netPnl / next.tradeRisk;
-  } else {
-    next.savedRMultiple = undefined;
+  // savedRMultiple — achieved R from PRICE-based math, matching the trade
+  // popup's displayed R-Multiple exactly. Formula:
+  //   LONG : (exit - entry) / (entry - stopLoss)
+  //   SHORT: (entry - exit) / (stopLoss - entry)
+  // Requires Entry, Exit, Stop Loss, side, and a closed position.
+  {
+    const entryP = metrics.avgEntryPrice;
+    const exitP = metrics.avgExitPrice;
+    const slP = next.stopLoss;
+    const sideP = next.side;
+    if (
+      metrics.positionStatus === 'CLOSED' &&
+      typeof entryP === 'number' && entryP > 0 &&
+      typeof exitP === 'number' && exitP > 0 &&
+      typeof slP === 'number' && slP > 0 &&
+      (sideP === 'LONG' || sideP === 'SHORT')
+    ) {
+      const riskDist = sideP === 'LONG' ? entryP - slP : slP - entryP;
+      const realized = sideP === 'LONG' ? exitP - entryP : entryP - exitP;
+      next.savedRMultiple = riskDist > 0 ? realized / riskDist : undefined;
+    } else {
+      next.savedRMultiple = undefined;
+    }
   }
 
   // savedRRR — planned RR from entry / SL / TP
@@ -199,17 +217,48 @@ export const useTrades = () => {
           // Calculate metrics once for all derived field reconciliation
           const metrics = calculateTradeMetrics(updated);
           
-          // Migration 2: Reconcile savedRMultiple
-          if (updated.tradeRisk > 0 && metrics.positionStatus === 'CLOSED') {
-            const calculatedRMultiple = metrics.netPnl / updated.tradeRisk;
-            const isMissing = updated.savedRMultiple === undefined || updated.savedRMultiple === null;
-            const isStaleZero = updated.savedRMultiple === 0 && Math.abs(calculatedRMultiple) > 0.0001;
-            
-            if (isMissing || isStaleZero) {
-              updated = {
-                ...updated,
-                savedRMultiple: calculatedRMultiple,
-              };
+          // Migration 2: Reconcile savedRMultiple using PRICE-based math
+          // (matches the trade popup's displayed R-Multiple exactly).
+          //   LONG : (exit - entry) / (entry - stopLoss)
+          //   SHORT: (entry - exit) / (stopLoss - entry)
+          {
+            const entryP = metrics.avgEntryPrice;
+            const exitP = metrics.avgExitPrice;
+            const slP = updated.stopLoss;
+            const sideP = updated.side;
+            const eligible =
+              metrics.positionStatus === 'CLOSED' &&
+              typeof entryP === 'number' && entryP > 0 &&
+              typeof exitP === 'number' && exitP > 0 &&
+              typeof slP === 'number' && slP > 0 &&
+              (sideP === 'LONG' || sideP === 'SHORT');
+
+            if (eligible) {
+              const riskDist = sideP === 'LONG' ? entryP - slP : slP - entryP;
+              const realized = sideP === 'LONG' ? exitP - entryP : entryP - exitP;
+              const calculatedRMultiple = riskDist > 0 ? realized / riskDist : undefined;
+
+              if (calculatedRMultiple !== undefined) {
+                const stored = updated.savedRMultiple;
+                const isMissing = stored === undefined || stored === null;
+                const isStaleZero = stored === 0 && Math.abs(calculatedRMultiple) > 0.0001;
+                // Sign mismatch with net P&L means the stored value was
+                // computed against a different (e.g. dollar-based) risk —
+                // recompute so it matches the popup.
+                const signMismatch =
+                  typeof stored === 'number' &&
+                  ((metrics.netPnl > 0 && stored < 0) || (metrics.netPnl < 0 && stored > 0));
+                const valueDiverges =
+                  typeof stored === 'number' &&
+                  Math.abs(stored - calculatedRMultiple) > 0.01;
+
+                if (isMissing || isStaleZero || signMismatch || valueDiverges) {
+                  updated = { ...updated, savedRMultiple: calculatedRMultiple };
+                }
+              }
+            } else if (updated.savedRMultiple !== undefined) {
+              // No longer eligible (e.g. SL removed) — clear stale value
+              updated = { ...updated, savedRMultiple: undefined };
             }
           }
           
