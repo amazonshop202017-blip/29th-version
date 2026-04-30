@@ -410,8 +410,7 @@ export const GlobalHeader = () => {
         </h1>
       )}
 
-      {/* Mobile/Tablet: Single "Filters" menu button — hidden on /tools/* pages */}
-      {!isToolsRoute && (
+      {/* Mobile/Tablet: Single "Filters" menu button */}
       <div className="lg:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -457,7 +456,6 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      )}
 
       {/* Mobile/Tablet Sheets for filter panels */}
       {/* Basic Filters Sheet - reuses the same DropdownMenu with open state */}
@@ -565,8 +563,7 @@ export const GlobalHeader = () => {
       {/* Spacer to push all desktop filters to the right */}
       <div className="flex-1 hidden lg:block" />
 
-      {/* Desktop filter UI — hidden on /tools/* pages */}
-      {!isToolsRoute && (<>
+      {/* Desktop filter UI */}
       {/* Desktop: All filter buttons inline */}
       {/* Display Mode Selector */}
       <div className="hidden lg:block">
@@ -1329,7 +1326,6 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      </>)}
       {isDashboard && (
         <button
           onClick={toggleEditMode}
