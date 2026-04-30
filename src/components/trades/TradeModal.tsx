@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useTradedSymbols } from '@/hooks/useTradedSymbols';
-import { X, Calendar, Star, Settings2, Clock, ChevronDown, Check, Plus, Info, Tags } from 'lucide-react';
+import { X, Calendar, Star, Settings2, Clock, ChevronDown, Check, Plus, Info } from 'lucide-react';
 import { ScaleInOutModal } from './ScaleInOutModal';
-import { AssignTagsModal } from './AssignTagsModal';
 import { ScreenshotsTab } from './ScreenshotsTab';
 import { TypeableCombobox } from './TypeableCombobox';
 import { CategoryTagField } from './CategoryTagField';
@@ -134,8 +133,7 @@ export const TradeModal = () => {
     return hasExit ? 0 : qty;
   }, [scaleEntries, scaleExits, entries, quantity, exitPrice]);
 
-  // Assign Tags modal state
-  const [assignTagsModalOpen, setAssignTagsModalOpen] = useState(false);
+  // (Assign Tags modal removed — tag assignment is now inline per category)
 
   // Advanced Data fields
   const [entryComment, setEntryComment] = useState('');
@@ -1291,9 +1289,12 @@ export const TradeModal = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {categories.map((category) => (
+                    {categories.map((category, index) => {
+                      const isLastOdd =
+                        categories.length % 2 === 1 && index === categories.length - 1;
+                      return (
+                      <div key={category.id} className={isLastOdd ? 'sm:col-span-2' : undefined}>
                       <CategoryTagField
-                        key={category.id}
                         category={category}
                         tags={getActiveTags()}
                         selectedTagIds={selectedTags}
@@ -1312,7 +1313,9 @@ export const TradeModal = () => {
                         }}
                         compact
                       />
-                    ))}
+                      </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1543,23 +1546,6 @@ export const TradeModal = () => {
                 </div>
               </div>
 
-              {/* Assign Tags Section */}
-              <div className="space-y-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-10 gap-2"
-                  onClick={() => setAssignTagsModalOpen(true)}
-                >
-                  <Tags className="w-4 h-4" />
-                  Assign Tags
-                  {selectedTags.length > 0 && (
-                    <span className="ml-auto bg-muted px-2 py-0.5 rounded-full text-xs">
-                      {selectedTags.length}
-                    </span>
-                  )}
-                </Button>
-              </div>
             </div>
           )}
 
@@ -1629,16 +1615,6 @@ export const TradeModal = () => {
         initialExitQuantity={quantity}
         existingScaleEntries={scaleEntries}
         existingScaleExits={scaleExits}
-      />
-
-      {/* Assign Tags Modal */}
-      <AssignTagsModal
-        isOpen={assignTagsModalOpen}
-        onClose={() => setAssignTagsModalOpen(false)}
-        selectedTagIds={selectedTags}
-        onTagsChange={setSelectedTags}
-        symbol={symbol}
-        entryDate={entryDate}
       />
     </Sheet>
   );
