@@ -30,11 +30,29 @@ const reconcileSavedFields = <T extends Partial<Trade>>(trade: T): T => {
   const next: any = { ...trade };
   const metrics = calculateTradeMetrics(next as Trade);
 
-  // savedRMultiple — achieved R from net P&L vs trade risk
-  if (typeof next.tradeRisk === 'number' && next.tradeRisk > 0 && metrics.positionStatus === 'CLOSED') {
-    next.savedRMultiple = metrics.netPnl / next.tradeRisk;
-  } else {
-    next.savedRMultiple = undefined;
+  // savedRMultiple — achieved R from PRICE-based math, matching the trade
+  // popup's displayed R-Multiple exactly. Formula:
+  //   LONG : (exit - entry) / (entry - stopLoss)
+  //   SHORT: (entry - exit) / (stopLoss - entry)
+  // Requires Entry, Exit, Stop Loss, side, and a closed position.
+  {
+    const entryP = metrics.avgEntryPrice;
+    const exitP = metrics.avgExitPrice;
+    const slP = next.stopLoss;
+    const sideP = next.side;
+    if (
+      metrics.positionStatus === 'CLOSED' &&
+      typeof entryP === 'number' && entryP > 0 &&
+      typeof exitP === 'number' && exitP > 0 &&
+      typeof slP === 'number' && slP > 0 &&
+      (sideP === 'LONG' || sideP === 'SHORT')
+    ) {
+      const riskDist = sideP === 'LONG' ? entryP - slP : slP - entryP;
+      const realized = sideP === 'LONG' ? exitP - entryP : entryP - exitP;
+      next.savedRMultiple = riskDist > 0 ? realized / riskDist : undefined;
+    } else {
+      next.savedRMultiple = undefined;
+    }
   }
 
   // savedRRR — planned RR from entry / SL / TP
