@@ -17,6 +17,53 @@ const getCurrentUserId = (): string | undefined => {
 
 const STORAGE_KEY = 'trading-journal-trades';
 
+/**
+ * Recompute the three derived "saved*" fields from the trade's current inputs.
+ * Called on every add/update so that any change to entries, SL, TP, risk,
+ * fees, manual P&L, or account balance snapshot is reflected in storage.
+ *
+ * - savedRMultiple = netPnl / tradeRisk        (achieved RR)
+ * - savedRRR       = |TP-Entry| / |Entry-SL|   (planned RR)
+ * - savedReturnPercent = netPnl / accountBalanceSnapshot * 100
+ */
+const reconcileSavedFields = <T extends Partial<Trade>>(trade: T): T => {
+  const next: any = { ...trade };
+  const metrics = calculateTradeMetrics(next as Trade);
+
+  // savedRMultiple — achieved R from net P&L vs trade risk
+  if (typeof next.tradeRisk === 'number' && next.tradeRisk > 0 && metrics.positionStatus === 'CLOSED') {
+    next.savedRMultiple = metrics.netPnl / next.tradeRisk;
+  } else {
+    next.savedRMultiple = undefined;
+  }
+
+  // savedRRR — planned RR from entry / SL / TP
+  const entry = metrics.avgEntryPrice;
+  const sl = next.stopLoss;
+  const tp = next.takeProfit;
+  if (
+    typeof entry === 'number' && entry > 0 &&
+    typeof sl === 'number' && sl > 0 &&
+    typeof tp === 'number' && tp > 0 &&
+    next.side
+  ) {
+    const risk = next.side === 'LONG' ? entry - sl : sl - entry;
+    const reward = next.side === 'LONG' ? tp - entry : entry - tp;
+    next.savedRRR = risk > 0 && reward > 0 ? reward / risk : undefined;
+  } else {
+    next.savedRRR = undefined;
+  }
+
+  // savedReturnPercent — from net P&L vs account balance snapshot
+  if (typeof next.accountBalanceSnapshot === 'number' && next.accountBalanceSnapshot > 0) {
+    next.savedReturnPercent = (metrics.netPnl / next.accountBalanceSnapshot) * 100;
+  } else {
+    next.savedReturnPercent = undefined;
+  }
+
+  return next as T;
+};
+
 export const useTrades = () => {
   const [trades, setTrades] = useState<Trade[]>([]);
 
@@ -247,7 +294,7 @@ export const useTrades = () => {
     };
     const fingerprint =
       data.fingerprint ?? buildFingerprintForTrade(tradeBase as Trade, source);
-    const newTrade: Trade = {
+    const newTrade: Trade = reconcileSavedFields({
       ...tradeBase,
       source,
       fingerprint,
@@ -255,7 +302,7 @@ export const useTrades = () => {
       userId: getCurrentUserId(),
       createdAt: nowISO(),
       updatedAt: nowISO(),
-    };
+    } as Trade);
     saveTrades([...trades, newTrade]);
     return newTrade;
   }, [trades, saveTrades]);
@@ -267,7 +314,7 @@ export const useTrades = () => {
       const source = data.source ?? 'manual';
       const fingerprint =
         data.fingerprint ?? buildFingerprintForTrade({ ...data, source } as Trade, source);
-      return {
+      return reconcileSavedFields({
         ...data,
         source,
         fingerprint,
@@ -275,7 +322,7 @@ export const useTrades = () => {
         userId,
         createdAt: now,
         updatedAt: now,
-      };
+      } as Trade);
     });
     saveTrades([...trades, ...newTrades]);
     return newTrades;
@@ -286,7 +333,7 @@ export const useTrades = () => {
       if (trade.id !== id) return trade;
       // Preserve original source — never flip imported→manual on edit
       const source = trade.source ?? data.source ?? 'manual';
-      const next: Trade = {
+      const next: Trade = reconcileSavedFields({
         ...trade,
         ...data,
         source,
@@ -297,7 +344,7 @@ export const useTrades = () => {
             ? trade.fingerprint
             : buildFingerprintForTrade({ ...trade, ...data, source } as Trade, 'manual'),
         updatedAt: nowISO(),
-      };
+      } as Trade);
       return next;
     });
     saveTrades(updated);
@@ -310,7 +357,7 @@ export const useTrades = () => {
       const patch = updates.get(trade.id);
       if (!patch) return trade;
       const source = trade.source ?? 'manual';
-      const merged = { ...trade, ...patch, source, updatedAt: now } as Trade;
+      const merged = reconcileSavedFields({ ...trade, ...patch, source, updatedAt: now } as Trade);
       // Recompute fingerprint only for manual trades; imported keep stored identity
       merged.fingerprint =
         source === 'imported'
