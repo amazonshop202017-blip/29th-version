@@ -5,7 +5,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useGlobalFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
 import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
-import { useCustomStats } from '@/contexts/CustomStatsContext';
 import {
   Popover,
   PopoverContent,
@@ -37,7 +36,6 @@ export const AdvancedFiltersPanel = () => {
   
   const { categories } = useCategoriesContext();
   const { getActiveTags } = useTagsContext();
-  const { getActiveEntryComments, getActiveTradeManagements, getActiveExitComments } = useCustomStats();
   const {
     selectedTagsByCategory,
     toggleCategoryTagFilter,
@@ -62,9 +60,9 @@ export const AdvancedFiltersPanel = () => {
   }, [categories, activeTags]);
 
   // Get active comment options
-  const activeEntryComments = useMemo(() => getActiveEntryComments(), [getActiveEntryComments]);
-  const activeTradeManagements = useMemo(() => getActiveTradeManagements(), [getActiveTradeManagements]);
-  const activeExitComments = useMemo(() => getActiveExitComments(), [getActiveExitComments]);
+  const activeEntryComments: string[] = useMemo(() => [], []);
+  const activeTradeManagements: string[] = useMemo(() => [], []);
+  const activeExitComments: string[] = useMemo(() => [], []);
 
   const commentCategories: { key: TradeCommentCategory; label: string; comments: string[] }[] = [
     { key: 'entryComments', label: 'Entry Comments', comments: activeEntryComments },

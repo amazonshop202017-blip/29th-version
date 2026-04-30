@@ -22,7 +22,6 @@ import { useStrategiesContext } from '@/contexts/StrategiesContext';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCustomStats } from '@/contexts/CustomStatsContext';
 import { useTagsContext } from '@/contexts/TagsContext';
 import { useSymbolTickSize } from '@/contexts/SymbolTickSizeContext';
 import { TradeFormData, TradeEntry, ScaleEntry, TradeScreenshot, calculateTradeMetrics, Trade } from '@/types/trade';
@@ -61,14 +60,10 @@ export const TradeModal = () => {
   const { accounts, getAccountWithStats, getAccountBalanceBeforeTrades } = useAccountsContext();
   const { currencyConfig, selectedAccounts: globalSelectedAccounts, isAllAccountsSelected } = useGlobalFilters();
   const { tickSizes, contractSizes, setContractSize, getTickSizeForAccountSymbol, getContractSizeForAccountSymbol } = useSymbolTickSize();
-  const { 
-    addEntryComment,
-    addTradeManagement,
-    addExitComment,
-    getActiveEntryComments,
-    getActiveTradeManagements,
-    getActiveExitComments,
-  } = useCustomStats();
+  // Trade Comment dropdowns are kept as free-text combobox fields.
+  // Storage/management for predefined options has been removed; values
+  // still save directly on the trade record.
+  const noopAddOption = (_v: string) => {};
 
   // Symbol options: single source of truth shared with Settings → Symbol Tick/Pip
   const symbolOptions = useTradedSymbols();
@@ -1268,8 +1263,8 @@ export const TradeModal = () => {
                     <TypeableCombobox
                       value={entryComment}
                       onChange={setEntryComment}
-                      options={getActiveEntryComments()}
-                      onAddNew={addEntryComment}
+                      options={[]}
+                      onAddNew={noopAddOption}
                       placeholder="Select..."
                     />
                   </div>
@@ -1279,8 +1274,8 @@ export const TradeModal = () => {
                     <TypeableCombobox
                       value={tradeManagement}
                       onChange={setTradeManagement}
-                      options={getActiveTradeManagements()}
-                      onAddNew={addTradeManagement}
+                      options={[]}
+                      onAddNew={noopAddOption}
                       placeholder="Select..."
                     />
                   </div>
@@ -1290,8 +1285,8 @@ export const TradeModal = () => {
                     <TypeableCombobox
                       value={exitComment}
                       onChange={setExitComment}
-                      options={getActiveExitComments()}
-                      onAddNew={addExitComment}
+                      options={[]}
+                      onAddNew={noopAddOption}
                       placeholder="Select..."
                     />
                   </div>

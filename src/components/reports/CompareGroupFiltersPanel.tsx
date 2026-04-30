@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
-import { useCustomStats } from '@/contexts/CustomStatsContext';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -49,7 +48,6 @@ export const CompareGroupFiltersPanel = ({
 
   const { categories } = useCategoriesContext();
   const { getActiveTags } = useTagsContext();
-  const { getActiveEntryComments, getActiveTradeManagements, getActiveExitComments } = useCustomStats();
 
   // Get active (non-archived) tags only
   const activeTags = useMemo(() => getActiveTags(), [getActiveTags]);
@@ -64,9 +62,9 @@ export const CompareGroupFiltersPanel = ({
   }, [categories, activeTags]);
 
   // Get active comment options
-  const activeEntryComments = useMemo(() => getActiveEntryComments(), [getActiveEntryComments]);
-  const activeTradeManagements = useMemo(() => getActiveTradeManagements(), [getActiveTradeManagements]);
-  const activeExitComments = useMemo(() => getActiveExitComments(), [getActiveExitComments]);
+  const activeEntryComments: string[] = useMemo(() => [], []);
+  const activeTradeManagements: string[] = useMemo(() => [], []);
+  const activeExitComments: string[] = useMemo(() => [], []);
 
   const commentCategories: { key: TradeCommentCategory; label: string; comments: string[] }[] = [
     { key: 'entryComments', label: 'Entry Comments', comments: activeEntryComments },

@@ -1,15 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Wallet, Tag, MessageSquare, Ruler, Target, DollarSign, ArrowLeft } from 'lucide-react';
+import { Settings, Wallet, Tag, Ruler, Target, DollarSign, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-export type SettingsTab = 'main' | 'accounts' | 'custom-tags' | 'trade-comments' | 'symbol-tick' | 'tpsl' | 'fees';
+export type SettingsTab = 'main' | 'accounts' | 'custom-tags' | 'symbol-tick' | 'tpsl' | 'fees';
 
 export const settingsMenuItems: { icon: typeof Settings; label: string; tab: SettingsTab }[] = [
   { icon: Settings, label: 'Main', tab: 'main' },
   { icon: Wallet, label: 'Accounts', tab: 'accounts' },
   { icon: Tag, label: 'Custom Tags', tab: 'custom-tags' },
-  { icon: MessageSquare, label: 'Trade Comments', tab: 'trade-comments' },
   { icon: Ruler, label: 'Symbol Tick / Pip', tab: 'symbol-tick' },
   { icon: Target, label: 'TP / SL Settings', tab: 'tpsl' },
   { icon: DollarSign, label: 'Fees Settings', tab: 'fees' },

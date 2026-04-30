@@ -15,7 +15,6 @@ import DepositWithdrawModal from '@/components/settings/DepositWithdrawModal';
 import { CategoriesManagement } from '@/components/settings/CategoriesManagement';
 import { TagsManagement } from '@/components/settings/TagsManagement';
 import { ScreenshotTagsManagement } from '@/components/settings/ScreenshotTagsManagement';
-import { TradeCommentsManagement } from '@/components/settings/TradeCommentsManagement';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import { SymbolTickSizeManagement } from '@/components/settings/SymbolTickSizeManagement';
 import { TpSlSettings } from '@/components/settings/TpSlSettings';
@@ -559,11 +558,6 @@ const Settings = () => {
             </div>
           )}
         </div>
-      )}
-
-      {/* Trade Comments Tab Content */}
-      {activeSettingsTab === 'trade-comments' && (
-        <TradeCommentsManagement />
       )}
 
       {/* Symbol Tick / Pip Tab Content */}
