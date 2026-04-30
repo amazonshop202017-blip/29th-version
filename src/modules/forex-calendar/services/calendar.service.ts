@@ -8,12 +8,14 @@ import { normalizeImpact, generateEventId } from "../utils/format.utils";
 
 const DEFAULT_CONFIG: CalendarConfig = {
   apiUrl: "/api/calendar/ff_calendar_thisweek.json",
-  refreshIntervalMs: 60_000,
+  refreshIntervalMs: 0,
   defaultCurrencies: [],
   defaultImpacts: [],
 };
 
 const CACHE_KEY = "forex-calendar-cache-v1";
+let inFlightRequest: Promise<CalendarEventRaw[]> | null = null;
+let inFlightDateKey = "";
 
 function getTodayLocalKey(): string {
   const d = new Date();
@@ -93,8 +95,19 @@ export async function getCalendarEvents(
   if (cached) {
     return transformEvents(cached);
   }
-  const raw = await fetchRawEvents(mergedConfig.apiUrl);
-  writeCache(raw);
+  const todayKey = getTodayLocalKey();
+  if (!inFlightRequest || inFlightDateKey !== todayKey) {
+    inFlightDateKey = todayKey;
+    inFlightRequest = fetchRawEvents(mergedConfig.apiUrl)
+      .then((raw) => {
+        writeCache(raw);
+        return raw;
+      })
+      .finally(() => {
+        inFlightRequest = null;
+      });
+  }
+  const raw = await inFlightRequest;
   return transformEvents(raw);
 }
 
