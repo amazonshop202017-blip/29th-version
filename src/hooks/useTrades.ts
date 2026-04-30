@@ -287,6 +287,39 @@ export const useTrades = () => {
             }
           }
 
+          // Migration 3b: Reconcile savedRRR (planned RR from entry/SL/TP).
+          // Applies to all trades, including imported ones once the user
+          // adds SL/TP after import.
+          {
+            const entryP = metrics.avgEntryPrice;
+            const slP = updated.stopLoss;
+            const tpP = updated.takeProfit;
+            const sideP = updated.side;
+            const eligible =
+              typeof entryP === 'number' && entryP > 0 &&
+              typeof slP === 'number' && slP > 0 &&
+              typeof tpP === 'number' && tpP > 0 &&
+              (sideP === 'LONG' || sideP === 'SHORT');
+
+            if (eligible) {
+              const risk = sideP === 'LONG' ? entryP - slP : slP - entryP;
+              const reward = sideP === 'LONG' ? tpP - entryP : entryP - tpP;
+              const calculatedRRR = risk > 0 && reward > 0 ? reward / risk : undefined;
+              if (calculatedRRR !== undefined) {
+                const stored = updated.savedRRR;
+                const isMissing = stored === undefined || stored === null;
+                const valueDiverges =
+                  typeof stored === 'number' &&
+                  Math.abs(stored - calculatedRRR) > 0.01;
+                if (isMissing || valueDiverges) {
+                  updated = { ...updated, savedRRR: calculatedRRR };
+                }
+              }
+            } else if (updated.savedRRR !== undefined) {
+              updated = { ...updated, savedRRR: undefined };
+            }
+          }
+
           // Migration 4: Backfill source + fingerprint for legacy trades.
           // Legacy trades default to 'manual'. Fingerprint is computed once
           // and persisted; never recomputed during deduplication comparison.
