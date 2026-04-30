@@ -5,6 +5,7 @@ import { ScaleInOutModal } from './ScaleInOutModal';
 import { AssignTagsModal } from './AssignTagsModal';
 import { ScreenshotsTab } from './ScreenshotsTab';
 import { TypeableCombobox } from './TypeableCombobox';
+import { CategoryTagField } from './CategoryTagField';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTagsContext } from '@/contexts/TagsContext';
+import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useSymbolTickSize } from '@/contexts/SymbolTickSizeContext';
 import { TradeFormData, TradeEntry, ScaleEntry, TradeScreenshot, calculateTradeMetrics, Trade } from '@/types/trade';
 import { getContractSizeForSymbol } from '@/lib/contractSizeRegistry';
@@ -32,6 +34,7 @@ import { toISO, nowISO, isoToDateTimeLocalInputValue } from '@/lib/datetime';
 import { AppDateTimePicker } from '@/components/ui/AppDateTimePicker';
 import { cn } from '@/lib/utils';
 import { TradeModalErrorBoundary } from './TradeModalErrorBoundary';
+import { useNavigate } from 'react-router-dom';
 
 function roundForPlaceholder(price: number): number {
   const abs = Math.abs(price);
