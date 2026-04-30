@@ -1,87 +1,91 @@
 ## Goal
 
-Bring three behaviors from the reference project ("Trade Data Refiner") into the current Trades page table, with **no logical changes** to data, filters, selection, pagination, deletion, duplication, import/export, column visibility, or category-tag handling. Only the rendering layer of the table changes:
+Add a new **Forex News Calendar** page that mirrors the reference project (`Hello Import Starter`, id `8f117c85-eee2-4a2e-bfbe-1e1adc061f81`) exactly — same UI, same API integration (ForexFactory via faireconomy.media), same hooks/services. Add a sidebar button to reach it.
 
-1. **Column sorting** — click any header to toggle asc/desc/none, with visual indicators (`ArrowUp` / `ArrowDown` / `ChevronsUpDown`). Persisted in `localStorage`.
-2. **Drag-and-drop column reordering** — drag header to reorder; touch + keyboard supported. Persisted in `localStorage`.
-3. **Column resizing** — left + right edge handles on each header; double-click resets; live resize via `columnResizeMode: 'onChange'`. Persisted in `localStorage`.
+## What gets copied
 
-The first two columns (`select` checkbox and `actions` star/eye/image) stay fixed (non-draggable, non-resizable, non-sortable) — same as the reference.
+The reference project keeps the entire feature self-contained inside `src/modules/forex-calendar/`. The whole folder will be copied over verbatim:
 
-## Files affected
+```
+src/modules/forex-calendar/
+  components/  (CalendarHeader, DateTabs, EventGroup, EventRow, Filters, TimezoneBar)
+  hooks/       (useCalendarData, useFilters)
+  pages/       (ForexCalendarPage)
+  services/    (calendar.service.ts)
+  types/       (calendar.types.ts)
+  utils/       (date.utils, format.utils)
+  index.ts
+```
 
-- `package.json` — add `@tanstack/react-table` and `@dnd-kit/modifiers` (other `@dnd-kit/*` already present).
-- `src/components/trades/TradesTableCard.tsx` — replace the inner `<Table>` (currently `TableWithStickyHorizontalScroll`) with a TanStack-driven `<table>` that mirrors the reference's `DraggableTableHeader` / `DragAlongCell` pattern. All existing behavior (action bar, alert dialogs, import modal, tag modal, pagination, category columns, visibility, theming, profit/loss row tinting) is preserved.
+The module only depends on `react` and `lucide-react` (both already present) plus Tailwind utility classes — no extra packages needed. It does not import anything from outside the module, so it drops in cleanly.
 
-No other files change. `useTradesColumnVisibility` keeps its current API and remains the source of truth for which columns are shown.
+## API proxy (the only infra change)
 
-## Approach
+Reference uses a Vite dev proxy:
+```
+/api/calendar  ->  https://nfs.faireconomy.media
+```
+which rewrites `/api/calendar/ff_calendar_thisweek.json` to `https://nfs.faireconomy.media/ff_calendar_thisweek.json`.
 
-### 1. Build a unified column registry inside `TradesTableCard.tsx`
+I will add the same proxy block to the current project's `vite.config.ts`. This preserves the exact same `apiUrl` used in `calendar.service.ts` and matches the reference behavior 1:1 in dev. (For production preview, the proxy works the same way through Vite's preview server; if the user later deploys, we can switch to a direct URL or edge function — out of scope for this task.)
 
-Define `ColumnDef<Trade>[]` for every existing column: `symbol`, `side`, `volume`, `ticksPips`, `accountName`, `openDateTime`, `closeDateTime`, `duration`, `avgEntry`, `avgExit`, `initialRisk`, `initialTarget`, `strategy`, `strategyChecklist`, `grossPnl`, `netPnl`, `realizedRMultiple`, `plannedRRR`, `fees`, `farthestProfitPrice`, `farthestProfitTicks`, `farthestLossPrice`, `farthestLossTicks`, `postMaxPrice`, `postMaxTickPip`, `postMinPrice`, `postMinTickPip`, `priceReachedFirst`, plus dynamic `category:<id>` columns.
+## Routing
 
-Each `cell` renderer is the exact JSX currently rendered inside the corresponding `isColumnVisible(...)` block (Symbol bold, Side badge with arrows, mono numbers, profit/loss color via `classifyTradeOutcome`, formatted dates via `date-fns`, `maskCurrency`, badge groups for checklist + tags, "+N" overflow, the per-category Plus button that opens the tag modal, etc.).
+In `src/App.tsx`:
+- Import the page: `import ForexNews from "./pages/ForexNews"`
+- Add route inside the authenticated `AppLayout` Routes block:
+  `<Route path="/forex-news" element={<ForexNews />} />`
 
-`accessorFn` is set so sorting works on raw values:
-- Date columns sort by `Date.getTime()`.
-- Numeric columns sort by the numeric metric (`metrics.netPnl`, `trade.savedRMultiple`, etc.).
-- String columns sort alphabetically.
-- Columns without a meaningful sort (e.g. `priceReachedFirst`, category tag list, `strategyChecklist`) set `enableSorting: false`.
+Create a thin wrapper page `src/pages/ForexNews.tsx` that simply renders `<ForexCalendarPage />` from the module. This keeps it consistent with how other pages are structured in this project.
 
-### 2. Wire visibility into TanStack
+## Sidebar entry
 
-Translate `useTradesColumnVisibility`'s `isColumnVisible` map into TanStack's `columnVisibility` state and pass it via `state.columnVisibility`. `toggleColumn` continues to drive it through the existing `TradesColumnSettings` popover — no UX change there.
+In `src/components/layout/Sidebar.tsx`:
+- Import a `Newspaper` (or `CalendarClock`) icon from `lucide-react`.
+- Add a new entry to the `toolsItems` array (the user said "above tools, add sidebar button" — interpreted as an entry visible alongside/at top of the Tools group, since Tools is the natural home for a calendar utility):
 
-### 3. Column order (drag-and-drop)
+```ts
+const toolsItems = [
+  { label: 'Forex News Calendar', path: '/forex-news' },
+  { label: 'Monte Carlo', path: '/tools/monte-carlo' },
+  { label: 'Streak Analysis', path: '/tools/streak-analysis' },
+  ...
+];
+```
 
-- `DRAGGABLE_COLUMN_IDS` = all data column ids in their initial display order, plus the active `category:<id>` ids appended at the end (same order categories appear today).
-- Persist to `localStorage` under `trades-table-column-order`. On load, filter out unknown ids, append any new ones (e.g. newly created categories) so the list stays valid.
-- `DndContext` with `MouseSensor` (4px activation), `TouchSensor` (150ms delay, 5px tolerance), `KeyboardSensor`, `closestCenter`, and `restrictToHorizontalAxis` modifier — identical to reference.
-- `arrayMove` on drag end.
+If the user instead wants it as a **top-level standalone sidebar item** (its own row with an icon, like Dashboard / Prop Firm), I'll add a `NavItem` block right above the Tools group with a `Newspaper` icon and path `/forex-news`. I'll go with the **standalone top-level item placed directly above Tools** — that matches the phrasing "above tools, add sidebar button" most literally.
 
-### 4. Column sizing (resizing)
+## Files to add / edit
 
-- `columnResizeMode: 'onChange'`, `defaultColumn: { minSize: 60, maxSize: 600 }`, per-column `size` defaults tuned to current visual widths.
-- Two edge resize handles per `DraggableTableHeader` (left + right), styled with the reference's primary-colored thin bar that appears on hover or while resizing.
-- `onPointerDown`/`onMouseDown`/`onTouchStart` on the handle stop propagation so resizing never starts a drag, and `onClick` stop-propagation prevents accidental sort.
-- Persist sizing to `localStorage` under `trades-table-column-sizing`.
-- Use the reference's CSS-variable trick (`--header-{id}-size`, `--col-{id}-size`) recomputed via `useMemo` keyed on `columnSizingInfo` + `columnSizing` + `columnOrder` for buttery resize without rerendering every cell.
+**New files (copied verbatim from reference project):**
+- `src/modules/forex-calendar/index.ts`
+- `src/modules/forex-calendar/pages/ForexCalendarPage.tsx`
+- `src/modules/forex-calendar/components/CalendarHeader.tsx`
+- `src/modules/forex-calendar/components/DateTabs.tsx`
+- `src/modules/forex-calendar/components/EventGroup.tsx`
+- `src/modules/forex-calendar/components/EventRow.tsx`
+- `src/modules/forex-calendar/components/Filters.tsx`
+- `src/modules/forex-calendar/components/TimezoneBar.tsx`
+- `src/modules/forex-calendar/hooks/useCalendarData.ts`
+- `src/modules/forex-calendar/hooks/useFilters.ts`
+- `src/modules/forex-calendar/services/calendar.service.ts`
+- `src/modules/forex-calendar/types/calendar.types.ts`
+- `src/modules/forex-calendar/utils/date.utils.ts`
+- `src/modules/forex-calendar/utils/format.utils.ts`
+- `src/pages/ForexNews.tsx` (thin wrapper)
 
-### 5. Sorting
+**Edited files:**
+- `vite.config.ts` — add `/api/calendar` proxy to `https://nfs.faireconomy.media`
+- `src/App.tsx` — register `/forex-news` route
+- `src/components/layout/Sidebar.tsx` — add "Forex News Calendar" nav item with `Newspaper` icon directly above the Tools group (works in both expanded and collapsed states with tooltip)
 
-- `getSortedRowModel()` enabled. Sorting state persisted under `trades-table-column-sorting`.
-- Default sort = `[{ id: 'closeDateTime', desc: true }]` (matches the current `sortedTrades` behavior of newest close-date first).
-- The current `useMemo`-based pre-sort is removed; pagination now slices `table.getRowModel().rows` instead of `sortedTrades`. Trade order behavior is unchanged on first load.
-- Header click toggles sort only when no drag movement (reference uses `getToggleSortingHandler` inside the same div that has drag listeners — works because dnd-kit's MouseSensor needs a 4px move before activating).
+## Behavior preserved
 
-### 6. Preserved logic (unchanged)
+- Same ForexFactory weekly JSON feed
+- Same auto-refresh interval (60s default)
+- Same impact/currency filters
+- Same date tab navigation
+- Same timezone bar
+- Same row formatting and visual styling
 
-- `useFilteredTrades`, `useTradeModal`, `useAccountsContext`, `useGlobalFilters`, `usePrivacyMode`, `useCategoriesContext`, `useTagsContext`, `useTradesContext`, `useStrategiesContext` — all wired exactly as today.
-- Action bar: Select All/Deselect, Delete (with `AlertDialog`), Import (`AccountImportModal`), Merge, Duplicate, mobile dropdown, `TradesColumnSettings`, Export CSV — unchanged.
-- Pagination controls (per-page select, page select, prev/next) — unchanged.
-- Row click opens `TradeModal` via `openModal`.
-- Per-row profit/loss tinting via `classifyTradeOutcome` (uses `outcome === 'win'/'loss'` and theme-specific neutral background) — unchanged.
-- Sticky header, horizontal scroll, touch scrolling — preserved.
-- `framer-motion` wrapper (`motion.div`) and `glass-card` styling — preserved.
-- `AssignTagsModal` and `AccountImportModal` — preserved.
-
-### 7. Storage keys
-
-To avoid clashing with the reference project's keys (which only had 11 columns), use namespaced keys:
-- `tradesTable.columnOrder.v1`
-- `tradesTable.columnSizing.v1`
-- `tradesTable.columnSorting.v1`
-
-### 8. Dependencies
-
-Add via `bun add`:
-- `@tanstack/react-table`
-- `@dnd-kit/modifiers`
-
-## Out of scope
-
-- No change to `useTradesColumnVisibility` signature, group definitions, `TradesColumnSettings` UI, or any other consumer of the table.
-- No change to data, calculations, filters, or persistence of trades themselves.
-- No change to the action bar buttons, modals, or pagination behavior.
-- No styling refactor beyond what's needed to make headers draggable/resizable (hover handles, sort icons).
+No logic changes — pure port + wiring.
