@@ -62,6 +62,7 @@ import PropFirmDashboard from "./pages/propfirm/PropFirmDashboard";
 import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
 import PropFirmTransactionsPage from "./pages/propfirm/PropFirmTransactionsPage";
 import PropFirmAccountDetailsPage from "./pages/propfirm/PropFirmAccountDetailsPage";
+import ForexNews from "./pages/ForexNews";
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,7 @@ const AuthenticatedApp = () => {
                                   <Route path="/exit-analyzer" element={<Navigate to="/edge-lab/opportunity-analysis" replace />} />
                                   <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
                                   <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
+                                  <Route path="/forex-news" element={<ForexNews />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>
                                     <Route index element={<PropFirmDashboard />} />
                                     <Route path="accounts" element={<PropFirmAccountsPage />} />

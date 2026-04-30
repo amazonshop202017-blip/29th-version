@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTradeModal } from '@/contexts/TradeModalContext';
@@ -515,6 +515,15 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
         <div className="py-2">
           <Separator className="bg-sidebar-border/50" />
         </div>
+
+        {/* Forex News Calendar (above Tools) */}
+        <NavItem
+          icon={Newspaper}
+          label="Forex News Calendar"
+          path="/forex-news"
+          isCollapsed={isCollapsed}
+          isActive={location.pathname === '/forex-news'}
+        />
 
         {/* Tools */}
         {isCollapsed ? (
