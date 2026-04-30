@@ -150,7 +150,7 @@ interface RowMeta {
     netPnl: number,
     returnPercent: number,
     breakEven?: boolean,
-  ) => 'win' | 'loss' | 'breakEven';
+  ) => string;
   tags: { id: string; name: string; categoryId: string }[];
   categoryColumns: { columnId: string; categoryId: string; name: string }[];
   onOpenTagModal: (trade: Trade) => void;
