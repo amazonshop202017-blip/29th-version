@@ -337,6 +337,11 @@ export const useTrades = () => {
         ...trade,
         ...data,
         source,
+        // accountBalanceSnapshot is a frozen point-in-time value captured at
+        // trade creation. It must NEVER change on edit, even if the form
+        // tries to send a new one. Return % is always anchored to the
+        // original balance.
+        accountBalanceSnapshot: trade.accountBalanceSnapshot,
         // Imported trades keep their stored fingerprint (immutable identity).
         // Manual trades recompute fingerprint from edited values.
         fingerprint:
@@ -357,7 +362,14 @@ export const useTrades = () => {
       const patch = updates.get(trade.id);
       if (!patch) return trade;
       const source = trade.source ?? 'manual';
-      const merged = reconcileSavedFields({ ...trade, ...patch, source, updatedAt: now } as Trade);
+      const merged = reconcileSavedFields({
+        ...trade,
+        ...patch,
+        source,
+        // Frozen snapshot — never overwritten on bulk edit
+        accountBalanceSnapshot: trade.accountBalanceSnapshot,
+        updatedAt: now,
+      } as Trade);
       // Recompute fingerprint only for manual trades; imported keep stored identity
       merged.fingerprint =
         source === 'imported'
