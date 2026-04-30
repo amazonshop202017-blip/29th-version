@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface ChartDataPoint {
   tradeIndex: number;
   tradeId: string;
+  symbol: string;
   actualR: number;
   setForgetR: number;
   potentialR: number | null;
@@ -124,6 +125,7 @@ const TradeManagement = () => {
       return {
         tradeIndex: index + 1,
         tradeId: trade.id,
+        symbol: trade.symbol ?? '',
         actualR: parseFloat(actualR.toFixed(2)),
         setForgetR: parseFloat(setForgetR.toFixed(2)),
         potentialR: potentialR !== null ? parseFloat(potentialR.toFixed(2)) : null,
