@@ -410,8 +410,7 @@ export const GlobalHeader = () => {
         </h1>
       )}
 
-      {/* Mobile/Tablet: Single "Filters" menu button — hidden on /tools/* pages */}
-      {!isToolsRoute && (
+      {/* Mobile/Tablet: Single "Filters" menu button */}
       <div className="lg:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -457,7 +456,6 @@ export const GlobalHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      )}
 
       {/* Mobile/Tablet Sheets for filter panels */}
       {/* Basic Filters Sheet - reuses the same DropdownMenu with open state */}
