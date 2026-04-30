@@ -23,26 +23,14 @@ const TradeManagement = () => {
     // Filter eligible trades: must have entry price, stop loss, take profit, direction, and priceReachedFirst
     const eligibleTrades = filteredTrades.filter(trade => {
       const metrics = calculateTradeMetrics(trade);
-      const reasons: string[] = [];
-      if (metrics.positionStatus !== 'CLOSED') reasons.push('not CLOSED');
-      if (!metrics.avgEntryPrice || metrics.avgEntryPrice <= 0) reasons.push('no avgEntryPrice');
-      if (!trade.stopLoss || trade.stopLoss <= 0) reasons.push('no stopLoss');
-      if (!trade.takeProfit || trade.takeProfit <= 0) reasons.push('no takeProfit');
-      if (!trade.side) reasons.push('no side');
-      if (!trade.priceReachedFirst) reasons.push('no priceReachedFirst');
-      if (trade.savedRMultiple === undefined) reasons.push('no savedRMultiple');
-      if (reasons.length > 0) {
-        console.log('[TradeMgmt eligibility] excluded', trade.id, trade.symbol, reasons, {
-          status: metrics.positionStatus,
-          avgEntryPrice: metrics.avgEntryPrice,
-          stopLoss: trade.stopLoss,
-          takeProfit: trade.takeProfit,
-          side: trade.side,
-          priceReachedFirst: trade.priceReachedFirst,
-          savedRMultiple: trade.savedRMultiple,
-        });
-        return false;
-      }
+      if (metrics.positionStatus !== 'CLOSED') return false;
+      if (!metrics.avgEntryPrice || metrics.avgEntryPrice <= 0) return false;
+      if (!trade.stopLoss || trade.stopLoss <= 0) return false;
+      if (!trade.takeProfit || trade.takeProfit <= 0) return false;
+      if (!trade.side) return false;
+      if (!trade.priceReachedFirst) return false;
+      // savedRMultiple may be missing on legacy trades — fall back to computed rFactor
+      if (trade.savedRMultiple === undefined && (metrics.rFactor === undefined || isNaN(metrics.rFactor))) return false;
       return true;
     });
 
@@ -65,8 +53,8 @@ const TradeManagement = () => {
       const tp = trade.takeProfit!;
       const sl = trade.stopLoss!;
       
-      // Actual R: Use the stored savedRMultiple
-      const actualR = trade.savedRMultiple ?? 0;
+      // Actual R: prefer stored savedRMultiple; fall back to computed rFactor for legacy trades
+      const actualR = trade.savedRMultiple ?? metrics.rFactor ?? 0;
       
       // Set & Forget R: TP/SL only logic (renamed from "Potential")
       let setForgetR = 0;
