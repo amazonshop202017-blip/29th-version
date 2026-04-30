@@ -669,12 +669,11 @@ export const TradeModal = () => {
       postMinPrice: afterExitLowest !== '' ? parseFloat(afterExitLowest) : null,
       priceReachedFirst: priceReachedFirst || undefined,
       breakEven: breakEven ?? undefined,
-      savedReturnPercent: editingTrade && !pnlFieldsChanged 
-        ? editingTrade.savedReturnPercent 
-        : calculatedReturnPercent,
-      savedRMultiple: editingTrade && !rMultipleFieldsChanged
-        ? editingTrade.savedRMultiple
-        : (rMultipleCalculated ?? undefined),
+      // savedReturnPercent / savedRMultiple / savedRRR are reconciled
+      // centrally in useTrades on every add/update — pass current
+      // calculations as a hint; the storage layer is the source of truth.
+      savedReturnPercent: calculatedReturnPercent,
+      savedRMultiple: rMultipleCalculated ?? undefined,
       savedRRR: rrrCalculated ?? undefined,
       accountBalanceSnapshot: editingTrade && !pnlFieldsChanged
         ? editingTrade.accountBalanceSnapshot
