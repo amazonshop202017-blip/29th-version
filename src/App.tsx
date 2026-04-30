@@ -15,7 +15,6 @@ import { StrategiesProvider } from "@/contexts/StrategiesContext";
 import { AccountsProvider } from "@/contexts/AccountsContext";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 import { CurrencyAccountBridge } from "@/components/CurrencyAccountBridge";
-import { CustomStatsProvider } from "@/contexts/CustomStatsContext";
 import { DiaryProvider } from "@/contexts/DiaryContext";
 import { SymbolTickSizeProvider } from "@/contexts/SymbolTickSizeContext";
 import { InterfaceThemeProvider } from "@/contexts/InterfaceThemeContext";
@@ -98,8 +97,7 @@ const AuthenticatedApp = () => {
                 <TransactionsAutoSync />
                 <GlobalFiltersProvider>
                   <CurrencyAccountBridge />
-                  <CustomStatsProvider>
-                    <SymbolTickSizeProvider>
+                  <SymbolTickSizeProvider>
                       <DiaryProvider>
                         <TradeModalProvider>
                           <DashboardEditProvider>
@@ -149,8 +147,7 @@ const AuthenticatedApp = () => {
                           </DashboardEditProvider>
                         </TradeModalProvider>
                       </DiaryProvider>
-                    </SymbolTickSizeProvider>
-                  </CustomStatsProvider>
+                  </SymbolTickSizeProvider>
                 </GlobalFiltersProvider>
                 </TransactionsProvider>
                 </ChallengesProvider>
