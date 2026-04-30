@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface ChartDataPoint {
   tradeIndex: number;
   tradeId: string;
+  symbol: string;
   actualR: number;
   setForgetR: number;
   potentialR: number | null;
@@ -124,6 +125,7 @@ const TradeManagement = () => {
       return {
         tradeIndex: index + 1,
         tradeId: trade.id,
+        symbol: trade.symbol ?? '',
         actualR: parseFloat(actualR.toFixed(2)),
         setForgetR: parseFloat(setForgetR.toFixed(2)),
         potentialR: potentialR !== null ? parseFloat(potentialR.toFixed(2)) : null,
@@ -186,6 +188,57 @@ const TradeManagement = () => {
   };
 
   const { data: chartDataArray, hasPotentialData } = chartData;
+
+  // Build capture-rate rows from the SAME pipeline (no new formulas).
+  // Eligibility: must have MFE-based potentialR (preMfePrice gate already applied upstream).
+  const captureData = useMemo(() => {
+    const eligible = chartDataArray
+      .filter((d) => d.potentialR !== null)
+      .map((d) => {
+        const realizedR = d.actualR;
+        const maxR = d.potentialR as number;
+        const captureRate =
+          maxR <= 0 ? 0 : Math.max(0, Math.min(1, realizedR / maxR));
+        return {
+          tradeIndex: d.tradeIndex,
+          tradeId: d.tradeId,
+          symbol: d.symbol,
+          realizedR,
+          maxR,
+          captureRate,
+        };
+      });
+
+    if (eligible.length === 0) {
+      return {
+        rows: [],
+        avgRealized: 0,
+        avgMax: 0,
+        avgCapture: 0,
+        globalMaxR: 1,
+      };
+    }
+
+    const avgRealized =
+      eligible.reduce((s, r) => s + r.realizedR, 0) / eligible.length;
+    const avgMax = eligible.reduce((s, r) => s + r.maxR, 0) / eligible.length;
+    const avgCapture =
+      eligible.reduce((s, r) => s + r.captureRate, 0) / eligible.length;
+
+    // Show last 12 (within the 10–15 range) in ASC order.
+    const rows = eligible.slice(-12);
+    const globalMaxR = Math.max(1, ...rows.map((r) => Math.max(r.maxR, 0)));
+
+    return { rows, avgRealized, avgMax, avgCapture, globalMaxR };
+  }, [chartDataArray]);
+
+  const formatR = (v: number) => {
+    const sign = v > 0 ? '+' : v < 0 ? '' : '+';
+    // Show whole number for integer-like values (e.g. -1R, +0R), else 2 decimals
+    const abs = Math.abs(v);
+    const text = Number.isInteger(v) || abs < 0.005 ? `${Math.trunc(v)}` : v.toFixed(2);
+    return `${sign}${text}R`;
+  };
 
   return (
     <div className="space-y-6">
@@ -303,6 +356,111 @@ const TradeManagement = () => {
             </Card>
           )}
         </div>
+      )}
+
+      {captureData.rows.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Realized RR vs Max Available RR</CardTitle>
+            <p className="text-xs text-muted-foreground">Trade-level capture efficiency</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {captureData.rows.map((row, idx) => {
+                const maxPct = (row.maxR > 0 ? row.maxR / captureData.globalMaxR : 0) * 100;
+                const filledPct =
+                  row.realizedR > 0 && row.maxR > 0
+                    ? (Math.min(row.realizedR, row.maxR) / captureData.globalMaxR) * 100
+                    : 0;
+                const stripedPct = Math.max(0, maxPct - filledPct);
+                const capturePctText = `${(row.captureRate * 100).toFixed(1)}%`;
+
+                return (
+                  <div
+                    key={row.tradeId}
+                    className="flex items-center gap-3 group"
+                    title={`${row.symbol}\nRealized: ${formatR(row.realizedR)}\nMax: ${formatR(row.maxR)}\nCapture: ${capturePctText}`}
+                  >
+                    <span className="w-5 text-xs text-muted-foreground tabular-nums">
+                      {idx + 1}
+                    </span>
+                    <span className="w-20 text-xs text-muted-foreground truncate">
+                      {row.symbol || '—'}
+                    </span>
+                    <div className="relative flex-1 h-6 rounded bg-muted/60 overflow-hidden">
+                      {filledPct > 0 && (
+                        <div
+                          className="absolute inset-y-0 left-0 bg-green-500"
+                          style={{ width: `${filledPct}%` }}
+                        />
+                      )}
+                      {stripedPct > 0 && (
+                        <div
+                          className="absolute inset-y-0"
+                          style={{
+                            left: `${filledPct}%`,
+                            width: `${stripedPct}%`,
+                            backgroundImage:
+                              'repeating-linear-gradient(45deg, hsl(var(--muted-foreground) / 0.35) 0 4px, transparent 4px 8px)',
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span className="w-16 text-right text-xs text-muted-foreground tabular-nums">
+                      {formatR(row.realizedR)}
+                    </span>
+                    <span
+                      className={`w-14 text-right text-xs font-medium tabular-nums ${
+                        row.captureRate > 0 ? 'text-green-600' : 'text-red-500'
+                      }`}
+                    >
+                      {capturePctText}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-border grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  Avg Realized
+                </p>
+                <p
+                  className={`text-lg font-semibold ${
+                    captureData.avgRealized > 0
+                      ? 'text-green-600'
+                      : captureData.avgRealized < 0
+                      ? 'text-red-500'
+                      : 'text-foreground'
+                  }`}
+                >
+                  {captureData.avgRealized.toFixed(2)}R
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  Avg Max
+                </p>
+                <p className="text-lg font-semibold text-foreground">
+                  {captureData.avgMax.toFixed(2)}R
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  Capture
+                </p>
+                <p
+                  className={`text-lg font-semibold ${
+                    captureData.avgCapture > 0 ? 'text-green-600' : 'text-red-500'
+                  }`}
+                >
+                  {Math.round(captureData.avgCapture * 100)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
