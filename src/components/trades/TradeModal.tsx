@@ -1295,7 +1295,6 @@ export const TradeModal = () => {
                       return (
                       <div key={category.id} className={isLastOdd ? 'sm:col-span-2' : undefined}>
                       <CategoryTagField
-                        key={category.id}
                         category={category}
                         tags={getActiveTags()}
                         selectedTagIds={selectedTags}
