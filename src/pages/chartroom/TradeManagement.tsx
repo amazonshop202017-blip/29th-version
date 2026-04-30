@@ -23,28 +23,26 @@ const TradeManagement = () => {
     // Filter eligible trades: must have entry price, stop loss, take profit, direction, and priceReachedFirst
     const eligibleTrades = filteredTrades.filter(trade => {
       const metrics = calculateTradeMetrics(trade);
-      
-      // Must be closed trade
-      if (metrics.positionStatus !== 'CLOSED') return false;
-      
-      // Must have avg entry price
-      if (!metrics.avgEntryPrice || metrics.avgEntryPrice <= 0) return false;
-      
-      // Must have stop loss
-      if (!trade.stopLoss || trade.stopLoss <= 0) return false;
-      
-      // Must have take profit
-      if (!trade.takeProfit || trade.takeProfit <= 0) return false;
-      
-      // Must have direction (side)
-      if (!trade.side) return false;
-      
-      // Must have priceReachedFirst
-      if (!trade.priceReachedFirst) return false;
-      
-      // Must have savedRMultiple for actual performance
-      if (trade.savedRMultiple === undefined) return false;
-      
+      const reasons: string[] = [];
+      if (metrics.positionStatus !== 'CLOSED') reasons.push('not CLOSED');
+      if (!metrics.avgEntryPrice || metrics.avgEntryPrice <= 0) reasons.push('no avgEntryPrice');
+      if (!trade.stopLoss || trade.stopLoss <= 0) reasons.push('no stopLoss');
+      if (!trade.takeProfit || trade.takeProfit <= 0) reasons.push('no takeProfit');
+      if (!trade.side) reasons.push('no side');
+      if (!trade.priceReachedFirst) reasons.push('no priceReachedFirst');
+      if (trade.savedRMultiple === undefined) reasons.push('no savedRMultiple');
+      if (reasons.length > 0) {
+        console.log('[TradeMgmt eligibility] excluded', trade.id, trade.symbol, reasons, {
+          status: metrics.positionStatus,
+          avgEntryPrice: metrics.avgEntryPrice,
+          stopLoss: trade.stopLoss,
+          takeProfit: trade.takeProfit,
+          side: trade.side,
+          priceReachedFirst: trade.priceReachedFirst,
+          savedRMultiple: trade.savedRMultiple,
+        });
+        return false;
+      }
       return true;
     });
 
