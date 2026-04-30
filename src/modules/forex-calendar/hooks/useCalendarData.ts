@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type {
   CalendarEvent,
   CalendarConfig,
@@ -25,7 +25,10 @@ export function useCalendarData(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+  const mergedConfig = useMemo(
+    () => ({ ...DEFAULT_CONFIG, ...config }),
+    [config]
+  );
 
   const fetchData = useCallback(async () => {
     try {
@@ -46,12 +49,6 @@ export function useCalendarData(
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    if (mergedConfig.refreshIntervalMs <= 0) return;
-    const intervalId = setInterval(fetchData, mergedConfig.refreshIntervalMs);
-    return () => clearInterval(intervalId);
-  }, [fetchData, mergedConfig.refreshIntervalMs]);
 
   return {
     events,
