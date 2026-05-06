@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
+import { useStatsFromTrades } from "@/hooks/useStatsFromTrades";
 import {
   LineChart,
   Line,
@@ -41,16 +43,17 @@ interface InputFieldProps {
   prefix?: string;
   suffix?: string;
   description?: string;
+  disabled?: boolean;
 }
 
-function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix, description }: InputFieldProps) {
+function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix, description, disabled }: InputFieldProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${disabled ? "opacity-70" : ""}`}>
       <div className="flex items-baseline justify-between">
         <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">{label}</label>
         {description && <span className="text-[10px] text-muted-foreground/80">{description}</span>}
       </div>
-      <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+      <div className={`flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden transition-all ${disabled ? "cursor-not-allowed" : "focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20"}`}>
         {prefix && (
           <span className="px-3 py-2 text-sm text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">{prefix}</span>
         )}
@@ -60,6 +63,7 @@ function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix
           min={min}
           max={max}
           step={step}
+          disabled={disabled}
           onChange={e => {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) onChange(v);
@@ -68,7 +72,7 @@ function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix
             const v = parseFloat(e.target.value);
             if (!isNaN(v) && min !== undefined && v < min) onChange(min);
           }}
-          className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
+          className={`flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0 ${disabled ? "cursor-not-allowed" : ""}`}
         />
         {suffix && (
           <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">{suffix}</span>
@@ -171,6 +175,8 @@ export default function MonteCarlo() {
   const [isRunning, setIsRunning] = useState(false);
   const [pathKeys, setPathKeys] = useState<string[]>([]);
   const [iterInput, setIterInput] = useState("100");
+  const [useMyStats, setUseMyStats] = useState(false);
+  const liveStats = useStatsFromTrades();
 
   const setParam = useCallback(<K extends keyof SimulationParams>(key: K, value: SimulationParams[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
@@ -179,6 +185,21 @@ export default function MonteCarlo() {
   const setRiskMode = useCallback((mode: RiskMode) => {
     setParams(prev => ({ ...prev, riskMode: mode }));
   }, []);
+
+  // Sync params from filtered trade stats while toggle is on
+  useEffect(() => {
+    if (!useMyStats || !liveStats.hasData) return;
+    setParams(prev => ({
+      ...prev,
+      riskMode: "dollar",
+      winRate: Number(liveStats.winRate.toFixed(2)),
+      avgWinDollar: Number(liveStats.avgWin.toFixed(2)),
+      avgLossDollar: Number(liveStats.avgLoss.toFixed(2)),
+      riskReward: Number(liveStats.riskReward.toFixed(2)),
+    }));
+  }, [useMyStats, liveStats.hasData, liveStats.winRate, liveStats.avgWin, liveStats.avgLoss, liveStats.riskReward]);
+
+  const locked = useMyStats;
 
   const yDomain: [number, number] | undefined = result
     ? [
@@ -227,27 +248,45 @@ export default function MonteCarlo() {
           <div className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
             <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Strategy Inputs</div>
 
+            {/* Use My Stats toggle */}
+            <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">Use My Stats</span>
+                <Switch checked={useMyStats} onCheckedChange={setUseMyStats} />
+              </div>
+              <span className="text-[10px] text-muted-foreground/80">
+                {useMyStats
+                  ? (liveStats.hasData
+                      ? "Synced from your filtered trades"
+                      : "Not enough trade data — enable filters or add trades")
+                  : "Auto-fill inputs from your filtered trades"}
+              </span>
+            </div>
+
             <InputField
               label="Win Rate"
               value={params.winRate}
               onChange={v => setParam("winRate", Math.min(100, Math.max(0, v)))}
               min={0} max={100} step={0.5}
               suffix="%" description="% of profitable trades"
+              disabled={locked}
             />
 
             {/* Risk Per Trade toggle */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">Risk Per Trade</span>
-                <div className="flex rounded-md overflow-hidden border border-border text-[11px] font-semibold">
+                <div className={`flex rounded-md overflow-hidden border border-border text-[11px] font-semibold ${locked ? "opacity-60 pointer-events-none" : ""}`}>
                   <button
                     onClick={() => setRiskMode("percent")}
+                    disabled={locked}
                     className={`px-2.5 py-1 transition-colors ${params.riskMode === "percent" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     % Risk
                   </button>
                   <button
                     onClick={() => setRiskMode("dollar")}
+                    disabled={locked}
                     className={`px-2.5 py-1 transition-colors border-l border-border ${params.riskMode === "dollar" ? "bg-blue-600 text-white" : "bg-transparent text-muted-foreground hover:text-foreground/70"}`}
                   >
                     $ Win/Loss
@@ -257,11 +296,12 @@ export default function MonteCarlo() {
 
               {params.riskMode === "percent" ? (
                 <>
-                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+                  <div className={`flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden transition-all ${locked ? "opacity-70 cursor-not-allowed" : "focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20"}`}>
                     <input
                       type="number"
                       value={params.riskPerTrade}
                       min={1} max={100} step={1}
+                      disabled={locked}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam("riskPerTrade", v); }}
                       onBlur={e => { const v = parseFloat(e.target.value); setParam("riskPerTrade", isNaN(v) || v < 1 ? 1 : Math.min(100, v)); }}
                       className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
@@ -274,23 +314,26 @@ export default function MonteCarlo() {
                     onChange={v => setParam("riskReward", Math.max(0.1, v))}
                     min={0.1} step={0.1}
                     prefix="1:" description="reward per unit of risk"
+                    disabled={locked}
                   />
                 </>
               ) : (
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 transition-all">
+                <div className={`flex flex-col gap-1.5 ${locked ? "opacity-70" : ""}`}>
+                  <div className={`flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden transition-all ${locked ? "cursor-not-allowed" : "focus-within:border-blue-500/50"}`}>
                     <span className="px-3 py-2 text-xs text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">Avg Win</span>
                     <input
                       type="number" value={params.avgWinDollar} min={0.01} step={10}
+                      disabled={locked}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setParam("avgWinDollar", v); }}
                       className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                     />
                     <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">$</span>
                   </div>
-                  <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 transition-all">
+                  <div className={`flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden transition-all ${locked ? "cursor-not-allowed" : "focus-within:border-blue-500/50"}`}>
                     <span className="px-3 py-2 text-xs text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">Avg Loss</span>
                     <input
                       type="number" value={params.avgLossDollar} min={0.01} step={10}
+                      disabled={locked}
                       onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setParam("avgLossDollar", v); }}
                       className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
                     />
