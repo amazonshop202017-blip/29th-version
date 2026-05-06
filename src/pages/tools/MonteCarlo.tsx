@@ -175,6 +175,8 @@ export default function MonteCarlo() {
   const [isRunning, setIsRunning] = useState(false);
   const [pathKeys, setPathKeys] = useState<string[]>([]);
   const [iterInput, setIterInput] = useState("100");
+  const [useMyStats, setUseMyStats] = useState(false);
+  const liveStats = useStatsFromTrades();
 
   const setParam = useCallback(<K extends keyof SimulationParams>(key: K, value: SimulationParams[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
@@ -183,6 +185,21 @@ export default function MonteCarlo() {
   const setRiskMode = useCallback((mode: RiskMode) => {
     setParams(prev => ({ ...prev, riskMode: mode }));
   }, []);
+
+  // Sync params from filtered trade stats while toggle is on
+  useEffect(() => {
+    if (!useMyStats || !liveStats.hasData) return;
+    setParams(prev => ({
+      ...prev,
+      riskMode: "dollar",
+      winRate: Number(liveStats.winRate.toFixed(2)),
+      avgWinDollar: Number(liveStats.avgWin.toFixed(2)),
+      avgLossDollar: Number(liveStats.avgLoss.toFixed(2)),
+      riskReward: Number(liveStats.riskReward.toFixed(2)),
+    }));
+  }, [useMyStats, liveStats.hasData, liveStats.winRate, liveStats.avgWin, liveStats.avgLoss, liveStats.riskReward]);
+
+  const locked = useMyStats;
 
   const yDomain: [number, number] | undefined = result
     ? [
