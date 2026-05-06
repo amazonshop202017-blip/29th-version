@@ -221,6 +221,8 @@ export default function StreakAnalysis() {
   const [isRunning, setIsRunning] = useState(false);
   const [pathKeys, setPathKeys] = useState<string[]>([]);
   const [iterInput, setIterInput] = useState("1000");
+  const [useMyStats, setUseMyStats] = useState(false);
+  const liveStats = useStatsFromTrades();
 
   // Streak table state
   const [calcMode, setCalcMode] = useState<StreakCalcMode>("mathematical");
@@ -235,6 +237,21 @@ export default function StreakAnalysis() {
   const setRiskMode = useCallback((mode: RiskMode) => {
     setParams(prev => ({ ...prev, riskMode: mode }));
   }, []);
+
+  // Sync from filtered trade stats while toggle is on
+  useEffect(() => {
+    if (!useMyStats || !liveStats.hasData) return;
+    setParams(prev => ({
+      ...prev,
+      riskMode: "dollar",
+      winRate: Number(liveStats.winRate.toFixed(2)),
+      avgWinDollar: Number(liveStats.avgWin.toFixed(2)),
+      avgLossDollar: Number(liveStats.avgLoss.toFixed(2)),
+      riskReward: Number(liveStats.riskReward.toFixed(2)),
+    }));
+  }, [useMyStats, liveStats.hasData, liveStats.winRate, liveStats.avgWin, liveStats.avgLoss, liveStats.riskReward]);
+
+  const locked = useMyStats;
 
   // Streak simulation cache / recompute
   useEffect(() => {
