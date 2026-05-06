@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
+import { useStatsFromTrades } from "@/hooks/useStatsFromTrades";
 import {
   LineChart,
   Line,
@@ -41,16 +43,17 @@ interface InputFieldProps {
   prefix?: string;
   suffix?: string;
   description?: string;
+  disabled?: boolean;
 }
 
-function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix, description }: InputFieldProps) {
+function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix, description, disabled }: InputFieldProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${disabled ? "opacity-70" : ""}`}>
       <div className="flex items-baseline justify-between">
         <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">{label}</label>
         {description && <span className="text-[10px] text-muted-foreground/80">{description}</span>}
       </div>
-      <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+      <div className={`flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden transition-all ${disabled ? "cursor-not-allowed" : "focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20"}`}>
         {prefix && (
           <span className="px-3 py-2 text-sm text-muted-foreground border-r border-border bg-muted/30 select-none shrink-0">{prefix}</span>
         )}
@@ -60,6 +63,7 @@ function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix
           min={min}
           max={max}
           step={step}
+          disabled={disabled}
           onChange={e => {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) onChange(v);
@@ -68,7 +72,7 @@ function InputField({ label, value, onChange, min, max, step = 1, prefix, suffix
             const v = parseFloat(e.target.value);
             if (!isNaN(v) && min !== undefined && v < min) onChange(min);
           }}
-          className="flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0"
+          className={`flex-1 px-3 py-2 text-sm font-medium text-foreground bg-transparent outline-none min-w-0 ${disabled ? "cursor-not-allowed" : ""}`}
         />
         {suffix && (
           <span className="px-3 py-2 text-xs text-muted-foreground border-l border-border bg-muted/30 select-none shrink-0">{suffix}</span>
