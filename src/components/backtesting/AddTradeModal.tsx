@@ -49,7 +49,7 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col">
+      <DialogContent data-trade-modal className="sm:max-w-xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Trade' : 'Add Trade'}</DialogTitle>
           <DialogDescription>Fill in the fields configured for this session.</DialogDescription>
