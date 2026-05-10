@@ -144,6 +144,7 @@ export const GlobalHeader = () => {
     if (path.startsWith('/strategies/')) return 'Setup Detail';
     if (path.startsWith('/reports')) return 'Reports';
     if (path.startsWith('/prop-firm')) return 'Prop Firm';
+    if (path.startsWith('/backtesting')) return 'Backtesting';
     return '';
   }, [location.pathname]);
 
