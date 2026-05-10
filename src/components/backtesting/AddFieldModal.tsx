@@ -1,9 +1,9 @@
-import { Type, Hash, Calendar as CalendarIcon, ListChecks, Plus, X } from 'lucide-react';
+import { Type, Hash, Calendar as CalendarIcon, ListChecks, Plus, Check } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { FIELD_CATALOG_GENERAL, FIELD_CATALOG_ADVANCE, type FieldDef, type FieldType } from '@/lib/backtestStore';
+import { cn } from '@/lib/utils';
 
 interface Props {
   open: boolean;
@@ -20,36 +20,34 @@ const TYPE_META: Record<FieldType, { label: string; icon: any }> = {
   select: { label: 'Select', icon: ListChecks },
 };
 
+const CATEGORIES: { id: string; name: string; color: string; fields: FieldDef[] }[] = [
+  { id: 'general', name: 'General', color: 'hsl(var(--primary))', fields: FIELD_CATALOG_GENERAL },
+  { id: 'advance', name: 'Advance', color: 'hsl(var(--chart-3, 280 70% 60%))', fields: FIELD_CATALOG_ADVANCE },
+];
+
 export const AddFieldModal = ({ open, onOpenChange, fields, onInsert, onRemove }: Props) => {
   const fieldIds = new Set(fields.map(f => f.id));
 
-  const renderField = (f: FieldDef) => {
+  const renderChip = (f: FieldDef) => {
     const active = fieldIds.has(f.id);
     const Icon = TYPE_META[f.type].icon;
     return (
-      <div key={f.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 shrink-0">
-            <Icon className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-medium flex items-center gap-2">
-              {f.label}
-              {f.required && <span className="text-[10px] uppercase tracking-wide text-muted-foreground">recommended</span>}
-            </div>
-            <div className="text-xs text-muted-foreground">{TYPE_META[f.type].label}</div>
-          </div>
-        </div>
-        {active ? (
-          <Button size="sm" variant="outline" className="gap-1.5 text-rose-500 hover:text-rose-600" onClick={() => onRemove(f.id)}>
-            <X className="h-3.5 w-3.5" /> Remove
-          </Button>
-        ) : (
-          <Button size="sm" className="gap-1.5" onClick={() => onInsert(f)}>
-            <Plus className="h-3.5 w-3.5" /> Insert
-          </Button>
+      <button
+        key={f.id}
+        type="button"
+        onClick={() => (active ? onRemove(f.id) : onInsert(f))}
+        className={cn(
+          'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-colors',
+          active
+            ? 'bg-primary/10 border-primary/40 text-foreground hover:bg-primary/15'
+            : 'bg-background border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground',
         )}
-      </div>
+        title={TYPE_META[f.type].label}
+      >
+        <Icon className="h-3 w-3 opacity-70" />
+        <span>{f.label}</span>
+        {active ? <Check className="h-3 w-3 text-primary" /> : <Plus className="h-3 w-3 opacity-60" />}
+      </button>
     );
   };
 
@@ -63,15 +61,18 @@ export const AddFieldModal = ({ open, onOpenChange, fields, onInsert, onRemove }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-1 min-h-0 pr-1 py-1 space-y-5">
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">General</h3>
-            <div className="space-y-2">{FIELD_CATALOG_GENERAL.map(renderField)}</div>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Advance</h3>
-            <div className="space-y-2">{FIELD_CATALOG_ADVANCE.map(renderField)}</div>
-          </section>
+        <div className="overflow-y-auto flex-1 min-h-0 pr-1 py-1 space-y-3">
+          {CATEGORIES.map((cat) => (
+            <div key={cat.id} className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                <span className="text-sm font-medium">{cat.name}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {cat.fields.map(renderChip)}
+              </div>
+            </div>
+          ))}
         </div>
       </DialogContent>
     </Dialog>
