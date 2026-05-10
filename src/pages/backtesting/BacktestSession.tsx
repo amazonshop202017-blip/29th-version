@@ -37,8 +37,7 @@ const BacktestSession = () => {
 
   const stats = useMemo(() => computeStats(rows), [rows]);
 
-  // Fields shown in inline entry form: everything except 'notes'
-  const entryFields = useMemo(() => fields.filter(f => f.id !== 'notes'), [fields]);
+  const entryFields = fields;
 
   if (!account) {
     return (
