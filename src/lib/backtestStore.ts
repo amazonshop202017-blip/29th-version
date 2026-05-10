@@ -21,6 +21,7 @@ const ROWS_KEY = (id: string) => `tv-backtest-trades:${id}`;
 export const DEFAULT_FIELDS: FieldDef[] = [
   { id: 'date', label: 'Entry Date', type: 'date', required: true, builtin: true },
   { id: 'symbol', label: 'Symbol', type: 'text', required: true, builtin: true },
+  { id: 'direction', label: 'Direction', type: 'select', builtin: true, options: ['Long', 'Short'] },
   {
     id: 'outcome',
     label: 'Outcome',
@@ -79,6 +80,132 @@ export function buildCategoryField(
     options: tagNames,
     builtin: false,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Field auto-derivation
+// ---------------------------------------------------------------------------
+
+type Vals = Record<string, string | number | null | undefined>;
+
+const num = (v: any): number | null => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+export interface DerivationRule {
+  derivedId: string;
+  sources: string[];
+  compute: (v: Vals) => string | number | null;
+}
+
+export const DERIVATION_RULES: DerivationRule[] = [
+  // R Multiple — full formula with stop loss
+  {
+    derivedId: 'rr',
+    sources: ['entry_price', 'exit_price', 'stop_loss', 'direction'],
+    compute: (v) => {
+      const e = num(v.entry_price), x = num(v.exit_price), s = num(v.stop_loss);
+      if (e === null || x === null || s === null) return null;
+      const dir = String(v.direction ?? 'Long') === 'Short' ? -1 : 1;
+      const risk = Math.abs(e - s);
+      if (risk === 0) return null;
+      return Number((((x - e) * dir) / risk).toFixed(4));
+    },
+  },
+  // R Multiple — fallback (entry+exit only)
+  {
+    derivedId: 'rr',
+    sources: ['entry_price', 'exit_price'],
+    compute: (v) => {
+      const e = num(v.entry_price), x = num(v.exit_price);
+      if (e === null || x === null) return null;
+      const dir = String(v.direction ?? 'Long') === 'Short' ? -1 : 1;
+      return Number(((x - e) * dir).toFixed(4));
+    },
+  },
+  // Outcome — needs direction to be meaningful
+  {
+    derivedId: 'outcome',
+    sources: ['entry_price', 'exit_price', 'direction'],
+    compute: (v) => {
+      const e = num(v.entry_price), x = num(v.exit_price);
+      if (e === null || x === null) return null;
+      const dir = String(v.direction ?? 'Long') === 'Short' ? -1 : 1;
+      const pnl = (x - e) * dir;
+      if (pnl > 0) return 'Win';
+      if (pnl < 0) return 'Loss';
+      return 'BE';
+    },
+  },
+  // Gross P/L
+  {
+    derivedId: 'gross_pnl',
+    sources: ['entry_price', 'exit_price', 'quantity'],
+    compute: (v) => {
+      const e = num(v.entry_price), x = num(v.exit_price), q = num(v.quantity);
+      if (e === null || x === null || q === null) return null;
+      const dir = String(v.direction ?? 'Long') === 'Short' ? -1 : 1;
+      return Number(((x - e) * q * dir).toFixed(4));
+    },
+  },
+  // Net P/L
+  {
+    derivedId: 'net_pnl',
+    sources: ['entry_price', 'exit_price', 'quantity', 'fees'],
+    compute: (v) => {
+      const e = num(v.entry_price), x = num(v.exit_price), q = num(v.quantity), f = num(v.fees);
+      if (e === null || x === null || q === null || f === null) return null;
+      const dir = String(v.direction ?? 'Long') === 'Short' ? -1 : 1;
+      return Number(((x - e) * q * dir - f).toFixed(4));
+    },
+  },
+];
+
+/**
+ * Returns the set of field ids that are fully covered by derivation rules
+ * given the current field id list. A field is considered derivable if at
+ * least one rule for it has all sources present (and the derived field
+ * itself is not a source of another configured field).
+ */
+export function getDerivedFieldIds(fieldIds: string[]): string[] {
+  const set = new Set(fieldIds);
+  const out = new Set<string>();
+  for (const rule of DERIVATION_RULES) {
+    if (rule.sources.every(s => set.has(s))) {
+      out.add(rule.derivedId);
+    }
+  }
+  // never auto-remove a field that itself is a source for another rule we'd run
+  return Array.from(out);
+}
+
+/**
+ * Fill values with anything derivable from the configured fields. Manual
+ * values already present are left untouched.
+ */
+export function applyDerivations(
+  fieldIds: string[],
+  values: Vals,
+): Vals {
+  const set = new Set(fieldIds);
+  const out: Vals = { ...values };
+  for (const rule of DERIVATION_RULES) {
+    if (!rule.sources.every(s => set.has(s))) continue;
+    // Skip if user explicitly re-added the derived field as an input
+    if (set.has(rule.derivedId)) continue;
+    const existing = out[rule.derivedId];
+    if (existing !== undefined && existing !== null && existing !== '') continue;
+    const v = rule.compute(out);
+    if (v !== null && v !== undefined) out[rule.derivedId] = v;
+  }
+  return out;
+}
+
+export function fieldLabelFromCatalog(id: string): string | null {
+  const found = FIELD_CATALOG.find(f => f.id === id);
+  return found?.label ?? null;
 }
 
 export function loadFields(accountId: string): FieldDef[] {
