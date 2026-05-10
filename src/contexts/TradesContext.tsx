@@ -108,7 +108,10 @@ const dayIndexToFilter: Record<number, DayFilter> = {
 
 // Hook to get filtered trades and stats (must be used inside GlobalFiltersProvider)
 // NOTE: activeAccountIds is passed as a parameter to avoid circular dependency with AccountsContext
-export const useFilteredTradesContext = (activeAccountIds?: string[]) => {
+export const useFilteredTradesContext = (
+  activeAccountIds?: string[],
+  extraTrades: Trade[] = [],
+) => {
   const { trades, addTrade, bulkAddTrades, updateTrade, bulkUpdateTrades, deleteTrade, deleteTrades, deleteTradesByAccountId, getTradeById } = useTradesContext();
   const { 
     dateRange, 
@@ -129,11 +132,20 @@ export const useFilteredTradesContext = (activeAccountIds?: string[]) => {
     classifyTradeOutcome,
   } = useGlobalFilters();
 
-  // Use provided activeAccountIds or default to empty (show all if not provided)
-  const accountIds = activeAccountIds || [];
+  // Use provided activeAccountIds or default to empty (show all if not provided).
+  // Extra trades carry their own (e.g. backtesting) account ids that must be
+  // recognized as "active" so they survive the activeSet filter below.
+  const extraAccountIds = useMemo(
+    () => Array.from(new Set(extraTrades.map(t => t.accountId))),
+    [extraTrades],
+  );
+  const accountIds = useMemo(
+    () => [...(activeAccountIds || []), ...extraAccountIds],
+    [activeAccountIds, extraAccountIds],
+  );
 
   const filteredTrades = useMemo(() => {
-    let filtered = trades;
+    let filtered: Trade[] = extraTrades.length > 0 ? [...trades, ...extraTrades] : trades;
 
     // Archived accounts must NEVER be included in analytics, regardless of selection.
     // If there are zero active accounts, the result is zero trades (not all trades).
