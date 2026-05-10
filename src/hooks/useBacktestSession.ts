@@ -8,7 +8,11 @@ import {
   saveRows,
   clearRows as clearRowsStore,
   clearSession as clearSessionStore,
+  getDerivedFieldIds,
+  applyDerivations,
+  fieldLabelFromCatalog,
 } from '@/lib/backtestStore';
+import { toast } from 'sonner';
 
 export function useBacktestSession(accountId: string | undefined) {
   const [fields, setFields] = useState<FieldDef[]>([]);
@@ -33,7 +37,21 @@ export function useBacktestSession(accountId: string | undefined) {
   }, [accountId]);
 
   const addField = useCallback((field: FieldDef) => {
-    persistFields([...fields, field]);
+    const next = [...fields, field];
+    const ids = next.map(f => f.id);
+    const derived = new Set(getDerivedFieldIds(ids));
+    // Don't auto-remove the field the user just inserted (manual override)
+    derived.delete(field.id);
+    if (derived.size > 0) {
+      const cleaned = next.filter(f => !derived.has(f.id));
+      derived.forEach(id => {
+        const label = fieldLabelFromCatalog(id) ?? id;
+        toast.info(`${label} is now auto-calculated from selected fields.`);
+      });
+      persistFields(cleaned);
+    } else {
+      persistFields(next);
+    }
   }, [fields, persistFields]);
 
   const removeField = useCallback((id: string) => {
@@ -41,17 +59,21 @@ export function useBacktestSession(accountId: string | undefined) {
   }, [fields, persistFields]);
 
   const addRow = useCallback((values: Record<string, string | number | null>) => {
+    const ids = fields.map(f => f.id);
+    const enriched = applyDerivations(ids, values) as Record<string, string | number | null>;
     const row: BacktestRow = {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
-      values,
+      values: enriched,
     };
     persistRows([...rows, row]);
-  }, [rows, persistRows]);
+  }, [fields, rows, persistRows]);
 
   const updateRow = useCallback((id: string, values: Record<string, string | number | null>) => {
-    persistRows(rows.map(r => r.id === id ? { ...r, values } : r));
-  }, [rows, persistRows]);
+    const ids = fields.map(f => f.id);
+    const enriched = applyDerivations(ids, values) as Record<string, string | number | null>;
+    persistRows(rows.map(r => r.id === id ? { ...r, values: enriched } : r));
+  }, [fields, rows, persistRows]);
 
   const deleteRow = useCallback((id: string) => {
     persistRows(rows.filter(r => r.id !== id));

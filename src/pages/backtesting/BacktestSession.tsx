@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Pencil, Eraser, Save } from 'lucide-react';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useBacktestSession } from '@/hooks/useBacktestSession';
-import { computeStats } from '@/lib/backtestStore';
+import { computeStats, fieldLabelFromCatalog } from '@/lib/backtestStore';
 import type { BacktestRow, FieldDef } from '@/lib/backtestStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,21 @@ const BacktestSession = () => {
   const stats = useMemo(() => computeStats(rows), [rows]);
 
   const entryFields = fields;
+
+  // Derived column ids that aren't in `fields` but appear on at least one row.
+  const derivedColumnIds = useMemo(() => {
+    const fieldIds = new Set(fields.map(f => f.id));
+    const found = new Set<string>();
+    for (const r of rows) {
+      for (const k of Object.keys(r.values)) {
+        if (!fieldIds.has(k)) {
+          const v = r.values[k];
+          if (v !== null && v !== undefined && v !== '') found.add(k);
+        }
+      }
+    }
+    return Array.from(found);
+  }, [fields, rows]);
 
   if (!account) {
     return (
@@ -140,13 +155,19 @@ const BacktestSession = () => {
                   {f.label}
                 </th>
               ))}
+              {derivedColumnIds.map((id) => (
+                <th key={id} className="text-left text-xs font-medium text-muted-foreground px-4 py-3 whitespace-nowrap">
+                  {fieldLabelFromCatalog(id) ?? id}
+                  <span className="ml-1 text-[10px] text-muted-foreground/70">(auto)</span>
+                </th>
+              ))}
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={fields.length + 1} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={fields.length + derivedColumnIds.length + 1} className="px-4 py-10 text-center text-sm text-muted-foreground">
                   No trades yet. Fill the fields above and click "Save Trade" to log your first one.
                 </td>
               </tr>
@@ -155,6 +176,9 @@ const BacktestSession = () => {
                 <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                   {fields.map((f) => (
                     <td key={f.id} className="px-4 py-3 whitespace-nowrap">{formatVal(r.values[f.id])}</td>
+                  ))}
+                  {derivedColumnIds.map((id) => (
+                    <td key={id} className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatVal(r.values[id])}</td>
                   ))}
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
