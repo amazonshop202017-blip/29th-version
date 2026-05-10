@@ -369,7 +369,8 @@ export const GlobalHeader = () => {
     }
     if (selectedAccounts.length === 1) {
       const acc = accounts.find(a => a.id === selectedAccounts[0]);
-      return acc?.name ?? 'Unknown Account';
+      if (!acc) return 'Unknown Account';
+      return acc.accountMode === 'backtesting' ? `${acc.name} (backtesting)` : acc.name;
     }
     return `${selectedAccounts.length} accounts`;
   };
