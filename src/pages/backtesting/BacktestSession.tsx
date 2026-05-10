@@ -127,7 +127,7 @@ const BacktestSession = () => {
       </div>
 
       {/* Inline trade entry */}
-      <div className="rounded-xl border border-border bg-card p-4 mb-6">
+      <div data-trade-modal className="rounded-xl border border-border bg-card p-4 mb-6">
         {entryFields.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-6">
             No fields configured. Click "Add Field" to insert fields for trade entry.
