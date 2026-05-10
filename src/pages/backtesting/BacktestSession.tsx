@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppDatePicker } from '@/components/ui/AppDatePicker';
+import { TypeableCombobox } from '@/components/trades/TypeableCombobox';
+import { useTradedSymbols } from '@/hooks/useTradedSymbols';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
 import { AddFieldModal } from '@/components/backtesting/AddFieldModal';
 import { AddTradeModal } from '@/components/backtesting/AddTradeModal';
 import {
@@ -277,13 +280,40 @@ const FieldInput = ({
   onChange: (v: string | number | null) => void;
 }) => {
   const v = value;
+  const symbolOptions = useTradedSymbols();
+  const { strategies, addStrategy } = useStrategiesContext();
+  const setupOptions = strategies.map(s => s.name);
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">
         {field.label}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
       </Label>
       {field.type === 'text' && (
-        <Input value={(v as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+        field.id === 'symbol' ? (
+          <TypeableCombobox
+            value={(v as string) ?? ''}
+            onChange={(val) => onChange(val)}
+            options={symbolOptions}
+            onAddNew={(val) => onChange(val)}
+            placeholder="e.g., EURUSD, AAPL..."
+          />
+        ) : field.id === 'setup' ? (
+          <TypeableCombobox
+            value={(v as string) ?? ''}
+            onChange={(val) => onChange(val)}
+            options={setupOptions}
+            onAddNew={(val) => {
+              const name = val.trim();
+              if (name && !setupOptions.some(o => o.toLowerCase() === name.toLowerCase())) {
+                addStrategy(name, '');
+              }
+              onChange(name);
+            }}
+            placeholder="Select or type setup..."
+          />
+        ) : (
+          <Input value={(v as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+        )
       )}
       {field.type === 'number' && (
         <Input
