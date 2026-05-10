@@ -1,93 +1,157 @@
-## Goal
+## Backtesting — Sidebar entry, sessions as accounts, custom-field trades
 
-Add a "Use My Stats" toggle at the top of the Strategy Inputs panel on both **Monte Carlo** (`/tools/monte-carlo`) and **Streak Analysis** (`/tools/streak-analysis`). When enabled, inputs auto-fill from the user's actual filtered trading stats and become read-only. When disabled, the values stay (no reset) so the user can tweak them.
+A standalone Backtesting section. Each "session" is an Account with `accountMode: 'backtesting'`, kept fully isolated from the rest of the app (Trades page, Dashboard, Reports, filters, etc.). Trades inside a backtesting session are free-form rows with a user-defined field schema, stored in their own localStorage namespace — they never enter the main `TradesContext`.
 
-## Behavior
+### 1. Sidebar
 
-**Toggle ON:**
-- Pulls live values from `useFilteredTradesContext` (respects all global filters: date range, accounts, symbols, etc.)
-- Overwrites and continuously syncs these `SimulationParams`:
-  - `winRate` ← `stats.tradeWinRate`
-  - `avgWinDollar` ← `stats.avgWin`
-  - `avgLossDollar` ← `Math.abs(stats.avgLoss)`
-  - `riskReward` ← `avgWin / |avgLoss|` (computed)
-  - `riskMode` forced to `"dollar"` (since real stats are dollar-based; % risk requires per-trade risk which isn't tracked globally)
-- All affected input fields become **disabled** (greyed out, cursor-not-allowed, no focus ring)
-- Risk mode segmented control (% Risk / $ Win-Loss) is also locked
-- A small hint shows under the toggle: "Synced from your filtered trades"
+`src/components/layout/Sidebar.tsx` — add a new `NavItem` directly under `Dashboard` (above Prop Firm):
 
-**Toggle OFF:**
-- Inputs become editable again
-- Last synced values **remain** in the fields (no reset to defaults) — user can nudge them
+- Icon: `History` from lucide-react
+- Label: `Backtesting`
+- Path: `/backtesting`
 
-**Untouched by the toggle:** `numberOfTrades`, `initialCapital`, `iterations` (always editable — these are pure simulation parameters, not stats).
+### 2. Account mode
 
-**Empty-data guard:** If filtered stats have 0 trades or `avgLoss === 0`, show a subtle warning under the toggle ("Not enough trade data") and keep the toggle ON but leave previous values; do not divide by zero.
+Extend `AccountMode` in `src/contexts/AccountsContext.tsx`:
 
-## UI Spec
-
-At the top of the Strategy Inputs card, above the "Win Rate" field:
-
-```text
-┌─────────────────────────────────────┐
-│  Use My Stats              [ ●——]   │   ← Switch component (shadcn)
-│  Auto-fill from filtered trades     │   ← muted helper text
-└─────────────────────────────────────┘
+```ts
+export type AccountMode = 'normal' | 'propfirm' | 'backtesting';
 ```
 
-- Use existing shadcn `Switch` from `@/components/ui/switch` (same family as the light/dark toggle)
-- Same visual block style as other input rows (rounded border, subtle bg)
-- When ON: switch shows blue/active; helper text becomes "Synced from your filtered trades · Win rate, R:R, Avg Win/Loss locked"
+Backtesting accounts must be hidden everywhere except the Backtesting page. Audit and add a `mode !== 'backtesting'` exclusion in:
 
-## Technical Implementation
+- `getActiveAccountsWithStats` / `getAllAccountsWithStats` callers used for global account selectors and dashboards
+- `MultiAccountSelect`, `SidebarAccountMenu`, `AccountsContext` filter dropdown, Settings → Accounts list, PropFirm pages
+- `useFilteredTrades`, `GlobalFiltersContext` initial selection
+- Any place iterating `accounts` for display
 
-**Files to edit:**
-1. `src/pages/tools/MonteCarlo.tsx`
-2. `src/pages/tools/StreakAnalysis.tsx`
+The cleanest approach: add a helper `getNonBacktestingAccounts()` and update the existing list getters to exclude backtesting by default, with a new `getBacktestingAccounts()` for the new page only.
 
-**Shared logic — extract a small hook** `src/hooks/useStatsFromTrades.ts`:
+### 3. Routing
+
+`src/App.tsx`:
+
+```
+/backtesting              → BacktestingHome     (card grid + "Add Session")
+/backtesting/:accountId   → BacktestSession     (trade entry page)
+```
+
+Both inside the existing `AppLayout`.
+
+### 4. Backtesting Home (`src/pages/backtesting/BacktestingHome.tsx`)
+
+- Page title in global header (per project rule).
+- Top-right `+ Add Session` button styled like PropFirm's "Add Challenge".
+- Card grid (mirror `RealAccountCard` layout) of all accounts where `accountMode === 'backtesting'`. Each card shows:
+  - Session name (bold)
+  - Total Trades, Wins, Losses, Win Rate
+  - Created date (small)
+- Card actions via 3-dot menu (`DropdownMenu`):
+  - **Rename** — inline dialog with name input
+  - **Clear Trades** — confirm `AlertDialog`, deletes all backtest trades+fields rows for this accountId (keeps the session)
+  - **Delete Session** — confirm `AlertDialog` (matches Settings → Accounts delete pattern), deletes the account + its trades + its field schema
+- Click card → navigate to `/backtesting/:accountId`.
+
+### 5. Add Session modal (`AddBacktestSessionModal.tsx`)
+
+- Single field: **Session Name** (required).
+- On Save: `addAccount(name, 0, 'backtesting', undefined, 'USD')` → navigate to the new session.
+- No starting balance, no currency, no other fields.
+
+### 6. Per-session storage (`src/lib/backtestStore.ts`)
+
+Two localStorage keys, both keyed by accountId:
+
 ```ts
-export function useStatsFromTrades() {
-  const { stats } = useFilteredTrades(); // already filter-aware
-  const avgLossAbs = Math.abs(stats.avgLoss);
-  return {
-    hasData: stats.totalTrades > 0 && avgLossAbs > 0,
-    winRate: stats.tradeWinRate,
-    avgWin: stats.avgWin,
-    avgLoss: avgLossAbs,
-    riskReward: avgLossAbs > 0 ? stats.avgWin / avgLossAbs : 0,
-  };
+// tv-backtest-fields:<accountId>  →  FieldDef[]
+// tv-backtest-trades:<accountId>  →  BacktestRow[]
+
+export type FieldType = 'text' | 'number' | 'date' | 'select';
+export interface FieldDef {
+  id: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  options?: string[]; // for 'select'
+  builtin?: boolean;  // required defaults can't be removed
+}
+export interface BacktestRow {
+  id: string;
+  createdAt: string;
+  values: Record<string, string | number | null>;
+  // Convenience: derived 'outcome' for win/loss tally
+  outcome?: 'win' | 'loss' | 'be';
 }
 ```
 
-**Per page:**
-- Add `const [useMyStats, setUseMyStats] = useState(false);`
-- Add `const liveStats = useStatsFromTrades();`
-- `useEffect` that, while `useMyStats && liveStats.hasData`, calls `setParams` to sync the four fields + force `riskMode: "dollar"` whenever filters change
-- Pass a `disabled` prop down to the affected `InputField`s and risk-mode buttons
-- Extend `InputField` to accept `disabled?: boolean` → applies `disabled` on the `<input>`, `opacity-60`, `cursor-not-allowed`, and removes focus ring classes
+Defaults inserted on first session open (built-in, removable except `outcome`):
 
-**InputField disable styling** (added to existing component, both pages share their own copy currently — apply to both):
-```tsx
-<input ... disabled={disabled} className={`... ${disabled ? "cursor-not-allowed opacity-70" : ""}`} />
-```
+| id        | label      | type   | required |
+|-----------|-----------|--------|----------|
+| date      | Date      | date   | true     |
+| symbol    | Symbol    | text   | true     |
+| outcome   | Outcome   | select (Win/Loss/BE) | true |
+| rr        | R Multiple| number | false    |
+| notes     | Notes     | text   | false    |
 
-**Disabled fields when toggle ON:**
-- Win Rate
-- Risk-mode segmented control (% Risk / $ Win-Loss)
-- Avg Win, Avg Loss inputs
-- Risk Reward Ratio (hidden anyway in dollar mode, but locked if visible)
+A small React hook `useBacktestSession(accountId)` exposes `{fields, rows, addField, removeField, addRow, updateRow, deleteRow, clearRows}` and persists to localStorage on every change.
 
-**NOT disabled:** Number of Trades, Initial Capital, Simulations.
+### 7. Session page (`src/pages/backtesting/BacktestSession.tsx`)
 
-## Edge Cases
+Layout, top to bottom:
 
-- Filters change while toggle is ON → effect re-runs, params re-sync silently
-- User toggles OFF → no `setParams` call, current values persist (already true since we just stop the sync effect)
-- 0 trades after filter → toggle stays in its visual state but a warning appears; params keep their previous values
-- Switching between % Risk / $ Win-Loss is blocked while ON; on toggle OFF it stays in `dollar` mode (user can switch back)
+1. **Header strip**: Back button → `/backtesting`. Editable session name. Right side: `Clear Trades`, `Delete Session` buttons (same dialogs as home).
+2. **Stats bar** (read-only): Total Trades, Wins, Losses, Win Rate, Avg R, Total R. Computed from current `rows`.
+3. **Toolbar**:
+   - `+ Add Field` (opens AddFieldModal)
+   - `+ Add Trade` (opens AddTradeModal — only fields the user defined; required fields validated)
+4. **Trades table**: columns = current `fields` order. Each row shows values; row-level Edit / Delete actions.
 
-## Out of Scope
+### 8. Add Field modal (`AddFieldModal.tsx`)
 
-- Saving the toggle state to user preferences (session-only is fine)
-- Adding a "Use My Stats" toggle to other tool pages (only Monte Carlo + Streak Analysis as requested)
+Mirrors the "Add Widget" popup pattern from the dashboard (centered modal, big button per choice):
+
+- Step 1: pick **Field Type** — Text / Number / Date / Select (4 cards).
+- Step 2: enter **Label**, mark **Required** (toggle), and for Select type list comma-separated options.
+- Save → appends to the session's `fields[]` and immediately becomes available in Add Trade.
+- Built-in fields cannot be deleted; user-added fields show a small `×` in the table column header.
+
+### 9. Add Trade modal (`AddTradeModal.tsx`)
+
+- Renders inputs dynamically from `fields[]`:
+  - text → `Input`
+  - number → `Input type=number`
+  - date → `AppDatePicker`
+  - select → `Select`
+- Required fields show `*` and block submit when empty.
+- Save → appends a `BacktestRow` to the session's `rows[]`.
+
+### 10. Stat math
+
+Win/Loss/Win-rate uses the `outcome` built-in field. If user removes `outcome`, the stats bar shows `—` for these (table still works). Avg R / Total R use the `rr` built-in if present.
+
+### 11. Files to create / edit
+
+Create:
+- `src/pages/backtesting/BacktestingHome.tsx`
+- `src/pages/backtesting/BacktestSession.tsx`
+- `src/components/backtesting/BacktestSessionCard.tsx`
+- `src/components/backtesting/AddBacktestSessionModal.tsx`
+- `src/components/backtesting/AddFieldModal.tsx`
+- `src/components/backtesting/AddTradeModal.tsx`
+- `src/components/backtesting/BacktestTradesTable.tsx`
+- `src/lib/backtestStore.ts`
+- `src/hooks/useBacktestSession.ts`
+
+Edit:
+- `src/contexts/AccountsContext.tsx` — add `'backtesting'` to `AccountMode`; add helpers `getBacktestingAccounts()` and exclusion of backtesting from existing list getters.
+- `src/components/layout/Sidebar.tsx` — add Backtesting nav item.
+- `src/App.tsx` — register two new routes.
+- Any account-selector component that surfaces accounts globally — confirm backtesting accounts are filtered out (`SidebarAccountMenu`, `MultiAccountSelect`, Settings Accounts list, GlobalFilters initial selection). Touch only what's needed to keep them hidden outside Backtesting.
+
+### Out of scope
+
+- Linking backtest trades to real Strategies / Setups
+- Importing CSV
+- Cross-session comparison
+- Cloud sync (localStorage only — matches current app)
