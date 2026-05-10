@@ -19,7 +19,7 @@ const FIELDS_KEY = (id: string) => `tv-backtest-fields:${id}`;
 const ROWS_KEY = (id: string) => `tv-backtest-trades:${id}`;
 
 export const DEFAULT_FIELDS: FieldDef[] = [
-  { id: 'date', label: 'Date', type: 'date', required: true, builtin: true },
+  { id: 'date', label: 'Entry Date', type: 'date', required: true, builtin: true },
   { id: 'symbol', label: 'Symbol', type: 'text', required: true, builtin: true },
   {
     id: 'outcome',
@@ -30,7 +30,31 @@ export const DEFAULT_FIELDS: FieldDef[] = [
     options: ['Win', 'Loss', 'BE'],
   },
   { id: 'rr', label: 'R Multiple', type: 'number', builtin: true },
-  { id: 'notes', label: 'Notes', type: 'text', builtin: true },
+];
+
+// All fields available in the Add Field library — mirrors the global "+ Add Trade" modal.
+export const FIELD_CATALOG: FieldDef[] = [
+  { id: 'date', label: 'Entry Date', type: 'date', required: true, builtin: true },
+  { id: 'symbol', label: 'Symbol', type: 'text', required: true, builtin: true },
+  { id: 'outcome', label: 'Outcome', type: 'select', required: true, builtin: true, options: ['Win', 'Loss', 'BE'] },
+  { id: 'rr', label: 'R Multiple', type: 'number', builtin: true },
+  { id: 'setup', label: 'Setup', type: 'text', builtin: true },
+  { id: 'direction', label: 'Direction', type: 'select', builtin: true, options: ['Long', 'Short'] },
+  { id: 'entry_price', label: 'Entry Price', type: 'number', builtin: true },
+  { id: 'exit_price', label: 'Exit Price', type: 'number', builtin: true },
+  { id: 'exit_date', label: 'Exit Date', type: 'date', builtin: true },
+  { id: 'quantity', label: 'Quantity', type: 'number', builtin: true },
+  { id: 'stop_loss', label: 'Stop Loss', type: 'number', builtin: true },
+  { id: 'take_profit', label: 'Take Profit', type: 'number', builtin: true },
+  { id: 'gross_pnl', label: 'Gross P/L', type: 'number', builtin: true },
+  { id: 'net_pnl', label: 'Net P/L', type: 'number', builtin: true },
+  { id: 'fees', label: 'Fees', type: 'number', builtin: true },
+  { id: 'mfe', label: 'MFE', type: 'number', builtin: true },
+  { id: 'mae', label: 'MAE', type: 'number', builtin: true },
+  { id: 'highest_price', label: 'Highest Price', type: 'number', builtin: true },
+  { id: 'lowest_price', label: 'Lowest Price', type: 'number', builtin: true },
+  { id: 'break_even', label: 'Break Even', type: 'select', builtin: true, options: ['Yes', 'No'] },
+  { id: 'tags', label: 'Tags', type: 'text', builtin: true },
 ];
 
 export function loadFields(accountId: string): FieldDef[] {
