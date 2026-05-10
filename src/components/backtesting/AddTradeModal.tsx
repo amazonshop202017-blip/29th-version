@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppDatePicker } from '@/components/ui/AppDatePicker';
 import type { FieldDef } from '@/lib/backtestStore';
+import { TypeableCombobox } from '@/components/trades/TypeableCombobox';
+import { useTradedSymbols } from '@/hooks/useTradedSymbols';
+import { useStrategiesContext } from '@/contexts/StrategiesContext';
 
 interface Props {
   open: boolean;
@@ -21,6 +24,9 @@ interface Props {
 
 export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSave, isEditing }: Props) => {
   const [values, setValues] = useState<Record<string, string | number | null>>({});
+  const symbolOptions = useTradedSymbols();
+  const { strategies, addStrategy } = useStrategiesContext();
+  const setupOptions = strategies.map(s => s.name);
 
   useEffect(() => {
     if (open) setValues(initialValues ?? {});
@@ -58,7 +64,31 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
                   {f.label}{f.required && <span className="text-rose-500 ml-0.5">*</span>}
                 </Label>
                 {f.type === 'text' && (
-                  <Input value={(v as string) ?? ''} onChange={(e) => setVal(f.id, e.target.value)} />
+                  f.id === 'symbol' ? (
+                    <TypeableCombobox
+                      value={(v as string) ?? ''}
+                      onChange={(val) => setVal(f.id, val)}
+                      options={symbolOptions}
+                      onAddNew={(val) => setVal(f.id, val)}
+                      placeholder="e.g., EURUSD, AAPL..."
+                    />
+                  ) : f.id === 'setup' ? (
+                    <TypeableCombobox
+                      value={(v as string) ?? ''}
+                      onChange={(val) => setVal(f.id, val)}
+                      options={setupOptions}
+                      onAddNew={(val) => {
+                        const name = val.trim();
+                        if (name && !setupOptions.some(o => o.toLowerCase() === name.toLowerCase())) {
+                          addStrategy(name, '');
+                        }
+                        setVal(f.id, name);
+                      }}
+                      placeholder="Select or type setup..."
+                    />
+                  ) : (
+                    <Input value={(v as string) ?? ''} onChange={(e) => setVal(f.id, e.target.value)} />
+                  )
                 )}
                 {f.type === 'number' && (
                   <Input
