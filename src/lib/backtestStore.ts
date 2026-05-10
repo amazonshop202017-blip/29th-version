@@ -33,7 +33,7 @@ export const DEFAULT_FIELDS: FieldDef[] = [
 ];
 
 // All fields available in the Add Field library — mirrors the global "+ Add Trade" modal.
-export const FIELD_CATALOG: FieldDef[] = [
+export const FIELD_CATALOG_GENERAL: FieldDef[] = [
   { id: 'date', label: 'Entry Date', type: 'date', required: true, builtin: true },
   { id: 'symbol', label: 'Symbol', type: 'text', required: true, builtin: true },
   { id: 'outcome', label: 'Outcome', type: 'select', required: true, builtin: true, options: ['Win', 'Loss', 'BE'] },
@@ -46,6 +46,9 @@ export const FIELD_CATALOG: FieldDef[] = [
   { id: 'quantity', label: 'Quantity', type: 'number', builtin: true },
   { id: 'stop_loss', label: 'Stop Loss', type: 'number', builtin: true },
   { id: 'take_profit', label: 'Take Profit', type: 'number', builtin: true },
+];
+
+export const FIELD_CATALOG_ADVANCE: FieldDef[] = [
   { id: 'gross_pnl', label: 'Gross P/L', type: 'number', builtin: true },
   { id: 'net_pnl', label: 'Net P/L', type: 'number', builtin: true },
   { id: 'fees', label: 'Fees', type: 'number', builtin: true },
@@ -54,8 +57,9 @@ export const FIELD_CATALOG: FieldDef[] = [
   { id: 'highest_price', label: 'Highest Price', type: 'number', builtin: true },
   { id: 'lowest_price', label: 'Lowest Price', type: 'number', builtin: true },
   { id: 'break_even', label: 'Break Even', type: 'select', builtin: true, options: ['Yes', 'No'] },
-  { id: 'tags', label: 'Tags', type: 'text', builtin: true },
 ];
+
+export const FIELD_CATALOG: FieldDef[] = [...FIELD_CATALOG_GENERAL, ...FIELD_CATALOG_ADVANCE];
 
 export function loadFields(accountId: string): FieldDef[] {
   try {
