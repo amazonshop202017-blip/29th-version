@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Pencil, Eraser, Save } from 'lucide-react';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useBacktestSession } from '@/hooks/useBacktestSession';
-import { computeStats, fieldLabelFromCatalog } from '@/lib/backtestStore';
+import { computeStats, fieldLabelFromCatalog, sortFieldIds } from '@/lib/backtestStore';
 import type { BacktestRow, FieldDef } from '@/lib/backtestStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +51,7 @@ const BacktestSession = () => {
         }
       }
     }
-    return Array.from(found);
+    return sortFieldIds(Array.from(found), (id) => fieldLabelFromCatalog(id) ?? undefined);
   }, [fields, rows]);
 
   if (!account) {
