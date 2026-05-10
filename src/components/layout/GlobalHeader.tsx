@@ -249,6 +249,21 @@ export const GlobalHeader = () => {
   };
 
   const handleAccountToggle = (accountId: string) => {
+    // If the currently selected account is a backtesting account (single selection
+    // via Deeper Analysis), switch to the newly selected account instead of
+    // adding it to a multi-selection. Backtesting accounts can never be combined.
+    if (selectedAccounts.length === 1) {
+      const current = accounts.find(a => a.id === selectedAccounts[0]);
+      const next = accounts.find(a => a.id === accountId);
+      if (current?.accountMode === 'backtesting' || next?.accountMode === 'backtesting') {
+        if (selectedAccounts[0] === accountId) {
+          setSelectedAccounts([]);
+        } else {
+          setSelectedAccounts([accountId]);
+        }
+        return;
+      }
+    }
     if (selectedAccounts.includes(accountId)) {
       setSelectedAccounts(selectedAccounts.filter(a => a !== accountId));
     } else {
