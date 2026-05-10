@@ -11,6 +11,7 @@ import {
   getDerivedFieldIds,
   applyDerivations,
   fieldLabelFromCatalog,
+  sortFields,
 } from '@/lib/backtestStore';
 import { toast } from 'sonner';
 
@@ -20,14 +21,15 @@ export function useBacktestSession(accountId: string | undefined) {
 
   useEffect(() => {
     if (!accountId) return;
-    setFields(loadFields(accountId));
+    setFields(sortFields(loadFields(accountId)));
     setRows(loadRows(accountId));
   }, [accountId]);
 
   const persistFields = useCallback((next: FieldDef[]) => {
     if (!accountId) return;
-    saveFields(accountId, next);
-    setFields(next);
+    const sorted = sortFields(next);
+    saveFields(accountId, sorted);
+    setFields(sorted);
   }, [accountId]);
 
   const persistRows = useCallback((next: BacktestRow[]) => {
