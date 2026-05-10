@@ -65,6 +65,8 @@ import ForexNews from "./pages/ForexNews";
 import CoachingLayout from "./pages/coaching/CoachingLayout";
 import MentorMode from "./pages/coaching/MentorMode";
 import StudentMode from "./pages/coaching/StudentMode";
+import BacktestingHome from "./pages/backtesting/BacktestingHome";
+import BacktestSession from "./pages/backtesting/BacktestSession";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +147,8 @@ const AuthenticatedApp = () => {
                                     <Route path="mentor" element={<MentorMode />} />
                                     <Route path="student" element={<StudentMode />} />
                                   </Route>
+                                  <Route path="/backtesting" element={<BacktestingHome />} />
+                                  <Route path="/backtesting/:accountId" element={<BacktestSession />} />
                                   <Route path="/entering" element={<Navigate to="/" replace />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>

@@ -5,7 +5,7 @@ import { calculateTradeMetrics } from '@/types/trade';
 import { toISO, nowISO, auditISOValues, type ISODateString } from '@/lib/datetime';
 import type { CurrencyCode } from './GlobalFiltersContext';
 
-export type AccountMode = 'normal' | 'propfirm';
+export type AccountMode = 'normal' | 'propfirm' | 'backtesting';
 export type PropFirmPhase = 'evaluation' | 'funded';
 export type PropFirmStatus = 'active' | 'completed' | 'breached' | 'funded';
 export type PropFirmStepType = '1' | '2' | 'funded';
@@ -57,6 +57,7 @@ interface AccountsContextType {
   getAllAccountsWithStats: () => AccountWithStats[];
   getActiveAccountsWithStats: () => AccountWithStats[];
   getArchivedAccountsWithStats: () => AccountWithStats[];
+  getBacktestingAccounts: () => Account[];
   archiveAccount: (id: string) => void;
   unarchiveAccount: (id: string) => void;
   deleteAccountPermanently: (id: string) => void;
@@ -295,23 +296,29 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
   }, [accounts, calculateAccountStats]);
 
   const getAllAccountsWithStats = useCallback((): AccountWithStats[] => {
-    return accounts.map(account => calculateAccountStats(account));
+    return accounts
+      .filter(a => a.accountMode !== 'backtesting')
+      .map(account => calculateAccountStats(account));
   }, [accounts, calculateAccountStats]);
 
   const getActiveAccountsWithStats = useCallback((): AccountWithStats[] => {
     return accounts
-      .filter(a => !a.isArchived)
+      .filter(a => !a.isArchived && a.accountMode !== 'backtesting')
       .map(account => calculateAccountStats(account));
   }, [accounts, calculateAccountStats]);
 
   const getArchivedAccountsWithStats = useCallback((): AccountWithStats[] => {
     return accounts
-      .filter(a => a.isArchived)
+      .filter(a => a.isArchived && a.accountMode !== 'backtesting')
       .map(account => calculateAccountStats(account));
   }, [accounts, calculateAccountStats]);
 
+  const getBacktestingAccounts = useCallback((): Account[] => {
+    return accounts.filter(a => a.accountMode === 'backtesting');
+  }, [accounts]);
+
   const getActiveAccountIds = useCallback((): string[] => {
-    return accounts.filter(a => !a.isArchived).map(a => a.id);
+    return accounts.filter(a => !a.isArchived && a.accountMode !== 'backtesting').map(a => a.id);
   }, [accounts]);
 
   // Get account balance BEFORE any trade P/L is applied
@@ -348,6 +355,7 @@ export const AccountsProvider = ({ children }: { children: ReactNode }) => {
       getAllAccountsWithStats,
       getActiveAccountsWithStats,
       getArchivedAccountsWithStats,
+      getBacktestingAccounts,
       archiveAccount,
       unarchiveAccount,
       deleteAccountPermanently,
