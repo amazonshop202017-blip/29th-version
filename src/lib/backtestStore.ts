@@ -61,6 +61,26 @@ export const FIELD_CATALOG_ADVANCE: FieldDef[] = [
 
 export const FIELD_CATALOG: FieldDef[] = [...FIELD_CATALOG_GENERAL, ...FIELD_CATALOG_ADVANCE];
 
+// Category-backed tag fields use a stable id prefix so we can detect them.
+export const CATEGORY_FIELD_PREFIX = 'cat:';
+
+export function categoryFieldId(categoryId: string) {
+  return `${CATEGORY_FIELD_PREFIX}${categoryId}`;
+}
+
+export function buildCategoryField(
+  category: { id: string; name: string },
+  tagNames: string[],
+): FieldDef {
+  return {
+    id: categoryFieldId(category.id),
+    label: category.name,
+    type: 'select',
+    options: tagNames,
+    builtin: false,
+  };
+}
+
 export function loadFields(accountId: string): FieldDef[] {
   try {
     const raw = localStorage.getItem(FIELDS_KEY(accountId));
