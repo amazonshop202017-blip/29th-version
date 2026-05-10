@@ -87,12 +87,13 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
                       placeholder="Select or type setup..."
                     />
                   ) : (
-                    <Input value={(v as string) ?? ''} onChange={(e) => setVal(f.id, e.target.value)} />
+                    <Input className="h-10 bg-input border-border" value={(v as string) ?? ''} onChange={(e) => setVal(f.id, e.target.value)} />
                   )
                 )}
                 {f.type === 'number' && (
                   <Input
                     type="number"
+                    className="h-10 bg-input border-border"
                     value={v === null || v === undefined ? '' : String(v)}
                     onChange={(e) => setVal(f.id, e.target.value === '' ? null : Number(e.target.value))}
                   />
@@ -101,11 +102,12 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
                   <AppDatePicker
                     value={(v as string) ?? ''}
                     onChange={(s) => setVal(f.id, s)}
+                    className="h-10 bg-input border-border"
                   />
                 )}
                 {f.type === 'select' && (
                   <Select value={(v as string) ?? ''} onValueChange={(val) => setVal(f.id, val)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 bg-input border-border">
                       <SelectValue placeholder="Select..." />
                     </SelectTrigger>
                     <SelectContent>
