@@ -1,68 +1,56 @@
-## Canonical field ordering for Backtesting session
+## Goal
 
-### Goal
-Fields (and their table columns) always render in a consistent, logical order regardless of the order the user adds them. Related fields stay adjacent: dates together, prices together, risk/target together, P/L stack together, etc.
+Add a "Deeper Analysis" CTA on the Backtest Session page that pivots the user into the rest of the app with this single backtesting account active in the global account filter. Outside of this explicit action, backtesting accounts must remain invisible/excluded everywhere accounts are picked.
 
-### Canonical order
-A single source-of-truth list lives in `src/lib/backtestStore.ts` as `FIELD_SORT_ORDER`. Any field id not in the list sorts after the listed ones, in insertion order. Category/tag fields (`cat:*`) always go last, sorted alphabetically by label.
+## Changes
 
-```text
-1.  date              (Entry Date)
-2.  exit_date         (Exit Date)
-3.  symbol
-4.  direction
-5.  setup
-6.  quantity
-7.  entry_price
-8.  exit_price
-9.  stop_loss
-10. take_profit
-11. highest_price
-12. lowest_price
-13. mfe
-14. mae
-15. outcome
-16. rr                (R Multiple)
-17. gross_pnl
-18. fees
-19. net_pnl
-20. break_even
---- category/tag fields (alphabetical) ---
---- any unknown ids (insertion order) ---
+### 1. "Deeper Analysis" button — `src/pages/backtesting/BacktestSession.tsx`
+
+- In the header action row, place a new golden button immediately to the **left** of `Clear Trades`.
+- Style: solid amber/gold background using semantic-friendly Tailwind (e.g. `bg-amber-500 hover:bg-amber-600 text-black`), `Sparkles` (or `LineChart`) icon from lucide-react, label `Deeper Analysis`.
+- On click:
+  1. Call `setSelectedAccounts([accountId])` from `useGlobalFilters` to scope global filters to only this backtesting account.
+  2. Show a `toast.success` like "Analyzing <session name> across the app".
+  3. Navigate to `/dashboard`.
+
+### 2. Backtesting account opt-in for the global filter
+
+The existing global account filter UI (sidebar account menu / filter bar) already lists accounts. We need:
+
+- **Default behavior (unchanged for the user):** backtesting accounts are hidden from the account picker AND excluded from "All Accounts" results.
+- **Single exception:** when the user clicks Deeper Analysis, that specific backtesting account ID is placed in `selectedAccounts`. The system must respect that selection even though the account is otherwise hidden.
+
+Concretely:
+- Locate the account picker component (`SidebarAccountMenu` and any account multi-select used in filter bars/modals). Filter the listed options with `a.accountMode !== 'backtesting'` so backtesting accounts never appear as selectable items.
+- Where "All Accounts" expands to a list of IDs (e.g. `useAccountScopedFilteredTrades`, account loops in dashboards), continue to use `getActiveAccountsWithStats` / `getActiveAccountIds`, which already exclude backtesting — no change needed there.
+- The trade-filtering pipeline matches on `selectedAccounts` array equality, so a backtesting ID placed there by Deeper Analysis will correctly limit results to that one session's trades.
+- When the user changes account selection back to "All Accounts" (clears selection), backtesting is naturally dropped again — matches the requirement that this is a one-shot scope.
+
+### 3. Trades coming from a backtest session
+
+The Backtest Session page stores rows in its own `backtestStore`, not in `TradesContext`. For Deeper Analysis to actually drive the rest of the app's analytics, backtest rows must surface as trades scoped to this account.
+
+Approach: add a read-only bridge in `TradesContext` that, when `selectedAccounts` contains a backtesting account ID, augments the trade list with trades synthesized from that session's rows (mapped via the field catalog: symbol, direction, entry/exit dates, P/L, R, etc.). Synthesized trades are tagged with `accountId = <backtesting account id>` and a `source: 'backtest'` marker so they never leak into normal "All Accounts" views.
+
+### 4. Add Trade popup — hide backtesting accounts
+
+In the main Add/Edit Trade modal (`src/components/trades/TradeModal.tsx`), the Account dropdown must filter out backtesting accounts:
+
+```ts
+const selectableAccounts = accounts.filter(a => a.accountMode !== 'backtesting');
 ```
 
-### Files to change
+Apply the same filter to any other account pickers that currently show all accounts (Import flows, Diary link-trade, Compare groups). Backtesting accounts are managed only from the Backtesting page.
 
-**`src/lib/backtestStore.ts`**
-- Export `FIELD_SORT_ORDER: string[]` with the list above.
-- Export `sortFields(fields: FieldDef[]): FieldDef[]` that returns a new array sorted by:
-  1. index in `FIELD_SORT_ORDER` (lower first)
-  2. category fields (`cat:` prefix) grouped after, alphabetical by `label`
-  3. anything else, original relative order preserved (stable sort)
+## Technical notes
 
-**`src/hooks/useBacktestSession.ts`**
-- After `loadFields`, run `sortFields` on the result before setting state.
-- In `addField`, sort the merged list before persisting.
-- In `removeField`, sort is preserved automatically (filter keeps order).
-- `persistFields` itself doesn't need to sort (callers handle it), but adding a sort there is a safe belt-and-suspenders move.
+- `selectedAccounts` already drives currency, filters, and trade scoping globally — no schema changes needed.
+- The bridge in step 3 is the only place where backtest data leaves its store; it activates strictly when a backtesting account is the sole selected account.
+- Golden styling stays inside the component; no new design tokens needed unless you want a reusable `--gold` token (optional follow-up).
 
-**`src/pages/backtesting/BacktestSession.tsx`**
-- `entryFields` already comes from `fields`; no change needed once the hook sorts.
-- `derivedColumnIds` already runs through `fieldLabelFromCatalog`; sort it with the same comparator so auto columns also follow canonical order.
-- The trades table renders configured fields followed by derived columns — keep that split (configured first, auto columns after), each block individually sorted.
+## Files to edit
 
-**`src/components/backtesting/AddTradeModal.tsx`**
-- No change. It receives `fields` already in the sorted order from the parent.
-
-**`src/components/backtesting/AddFieldModal.tsx`**
-- No change. The Add Field library is grouped by General / Advance / Tags using existing catalog arrays, which are already in a sensible order.
-
-### Behavior on enable/disable
-- When a field is auto-removed by derivation, the remaining fields keep canonical order (filtering is stable).
-- When the user re-adds an auto-removed field, it slots back into its canonical position — never appended at the end.
-- When the user adds any new field via Add Field, it slots into its canonical position immediately.
-
-### Out of scope
-- No changes to the global Add Trade modal or any non-backtesting page.
-- No user-facing custom reordering / drag-to-reorder. (Can be a future enhancement.)
-- Existing saved sessions: their `fields` array gets re-sorted on next load, which only affects display order, not data.
+- `src/pages/backtesting/BacktestSession.tsx` — add Deeper Analysis button + handler.
+- `src/contexts/TradesContext.tsx` — bridge backtest rows as trades when a backtesting account is selected.
+- `src/components/trades/TradeModal.tsx` — filter out backtesting accounts from account dropdown.
+- Any other account selectors that currently show all accounts (audit: `SidebarAccountMenu`, `MultiAccountSelect`, `LinkTradeModal`, import modals) — apply `accountMode !== 'backtesting'` filter.
