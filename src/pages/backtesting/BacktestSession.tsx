@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Pencil, X, Eraser } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Pencil, Eraser, Save } from 'lucide-react';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useBacktestSession } from '@/hooks/useBacktestSession';
 import { computeStats } from '@/lib/backtestStore';
-import type { BacktestRow } from '@/lib/backtestStore';
+import type { BacktestRow, FieldDef } from '@/lib/backtestStore';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AppDatePicker } from '@/components/ui/AppDatePicker';
 import { AddFieldModal } from '@/components/backtesting/AddFieldModal';
 import { AddTradeModal } from '@/components/backtesting/AddTradeModal';
 import {
@@ -24,12 +28,17 @@ const BacktestSession = () => {
     useBacktestSession(accountId);
 
   const [fieldModalOpen, setFieldModalOpen] = useState(false);
-  const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<BacktestRow | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Inline form state — keyed by field id
+  const [form, setForm] = useState<Record<string, string | number | null>>({});
+
   const stats = useMemo(() => computeStats(rows), [rows]);
+
+  // Fields shown in inline entry form: everything except 'notes'
+  const entryFields = useMemo(() => fields.filter(f => f.id !== 'notes'), [fields]);
 
   if (!account) {
     return (
@@ -45,6 +54,22 @@ const BacktestSession = () => {
   const formatVal = (v: any) => {
     if (v === null || v === undefined || v === '') return '—';
     return String(v);
+  };
+
+  const setVal = (id: string, v: string | number | null) =>
+    setForm(prev => ({ ...prev, [id]: v }));
+
+  const isFormValid = entryFields.every(f => {
+    if (!f.required) return true;
+    const v = form[f.id];
+    return v !== undefined && v !== null && String(v).trim() !== '';
+  });
+
+  const handleSaveTrade = () => {
+    if (!isFormValid) return;
+    addRow(form);
+    setForm({});
+    toast.success('Trade saved');
   };
 
   return (
@@ -77,14 +102,33 @@ const BacktestSession = () => {
         <Stat label="Total R" value={stats.totalR ? stats.totalR.toFixed(2) : '—'} />
       </div>
 
-      {/* Toolbar */}
+      {/* Add Field button */}
       <div className="flex items-center gap-2 mb-3">
         <Button variant="outline" onClick={() => setFieldModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" /> Add Field
         </Button>
-        <Button onClick={() => { setEditingRow(null); setTradeModalOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" /> Add Trade
-        </Button>
+      </div>
+
+      {/* Inline trade entry */}
+      <div className="rounded-xl border border-border bg-card p-4 mb-6">
+        {entryFields.length === 0 ? (
+          <div className="text-center text-sm text-muted-foreground py-6">
+            No fields configured. Click "Add Field" to insert fields for trade entry.
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {entryFields.map((f) => (
+                <FieldInput key={f.id} field={f} value={form[f.id]} onChange={(v) => setVal(f.id, v)} />
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={handleSaveTrade} disabled={!isFormValid} className="gap-2">
+                <Plus className="h-4 w-4" /> Save Trade
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Trades table */}
@@ -94,18 +138,7 @@ const BacktestSession = () => {
             <tr className="border-b border-border">
               {fields.map((f) => (
                 <th key={f.id} className="text-left text-xs font-medium text-muted-foreground px-4 py-3 whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1">
-                    {f.label}
-                    {!f.builtin && (
-                      <button
-                        onClick={() => removeField(f.id)}
-                        className="rounded p-0.5 hover:bg-muted text-muted-foreground"
-                        title="Remove field"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </span>
+                  {f.label}
                 </th>
               ))}
               <th className="px-4 py-3" />
@@ -115,7 +148,7 @@ const BacktestSession = () => {
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={fields.length + 1} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  No trades yet. Click "Add Trade" to log your first one.
+                  No trades yet. Fill the fields above and click "Save Trade" to log your first one.
                 </td>
               </tr>
             ) : (
@@ -126,7 +159,7 @@ const BacktestSession = () => {
                   ))}
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
-                      onClick={() => { setEditingRow(r); setTradeModalOpen(true); }}
+                      onClick={() => setEditingRow(r)}
                       className="p-1.5 rounded-md hover:bg-muted text-muted-foreground mr-1"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -148,19 +181,20 @@ const BacktestSession = () => {
       <AddFieldModal
         open={fieldModalOpen}
         onOpenChange={setFieldModalOpen}
-        onAdd={addField}
-        existingIds={fields.map(f => f.id)}
+        fields={fields}
+        onInsert={addField}
+        onRemove={removeField}
       />
 
+      {/* Edit-trade modal (only used when editing an existing row) */}
       <AddTradeModal
-        open={tradeModalOpen}
-        onOpenChange={(v) => { setTradeModalOpen(v); if (!v) setEditingRow(null); }}
+        open={!!editingRow}
+        onOpenChange={(v) => { if (!v) setEditingRow(null); }}
         fields={fields}
         initialValues={editingRow?.values}
-        isEditing={!!editingRow}
+        isEditing={true}
         onSave={(values) => {
           if (editingRow) updateRow(editingRow.id, values);
-          else addRow(values);
         }}
       />
 
@@ -208,6 +242,48 @@ const BacktestSession = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+};
+
+const FieldInput = ({
+  field, value, onChange,
+}: {
+  field: FieldDef;
+  value: string | number | null | undefined;
+  onChange: (v: string | number | null) => void;
+}) => {
+  const v = value;
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">
+        {field.label}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
+      </Label>
+      {field.type === 'text' && (
+        <Input value={(v as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      )}
+      {field.type === 'number' && (
+        <Input
+          type="number"
+          value={v === null || v === undefined ? '' : String(v)}
+          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        />
+      )}
+      {field.type === 'date' && (
+        <AppDatePicker value={(v as string) ?? ''} onChange={(s) => onChange(s)} />
+      )}
+      {field.type === 'select' && (
+        <Select value={(v as string) ?? ''} onValueChange={(val) => onChange(val)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent>
+            {(field.options ?? []).map(opt => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 };
