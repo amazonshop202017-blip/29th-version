@@ -208,6 +208,73 @@ export function fieldLabelFromCatalog(id: string): string | null {
   return found?.label ?? null;
 }
 
+// ---------------------------------------------------------------------------
+// Canonical field ordering — keeps related fields adjacent regardless of
+// the order they were added.
+// ---------------------------------------------------------------------------
+
+export const FIELD_SORT_ORDER: string[] = [
+  'date',
+  'exit_date',
+  'symbol',
+  'direction',
+  'setup',
+  'quantity',
+  'entry_price',
+  'exit_price',
+  'stop_loss',
+  'take_profit',
+  'highest_price',
+  'lowest_price',
+  'mfe',
+  'mae',
+  'outcome',
+  'rr',
+  'gross_pnl',
+  'fees',
+  'net_pnl',
+  'break_even',
+];
+
+const sortBucket = (id: string): 0 | 1 | 2 => {
+  if (FIELD_SORT_ORDER.indexOf(id) !== -1) return 0;
+  if (id.startsWith(CATEGORY_FIELD_PREFIX)) return 1;
+  return 2;
+};
+
+export function compareFieldIds(aId: string, bId: string, aLabel?: string, bLabel?: string): number {
+  const ba = sortBucket(aId);
+  const bb = sortBucket(bId);
+  if (ba !== bb) return ba - bb;
+  if (ba === 0) {
+    return FIELD_SORT_ORDER.indexOf(aId) - FIELD_SORT_ORDER.indexOf(bId);
+  }
+  if (ba === 1) {
+    return (aLabel ?? aId).localeCompare(bLabel ?? bId);
+  }
+  return 0; // stable for unknowns
+}
+
+export function sortFields(fields: FieldDef[]): FieldDef[] {
+  return [...fields]
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => {
+      const c = compareFieldIds(a.f.id, b.f.id, a.f.label, b.f.label);
+      return c !== 0 ? c : a.i - b.i;
+    })
+    .map(x => x.f);
+}
+
+export function sortFieldIds(ids: string[], labelFor?: (id: string) => string | undefined): string[] {
+  return [...ids]
+    .map((id, i) => ({ id, i }))
+    .sort((a, b) => {
+      const c = compareFieldIds(a.id, b.id, labelFor?.(a.id), labelFor?.(b.id));
+      return c !== 0 ? c : a.i - b.i;
+    })
+    .map(x => x.id);
+}
+
 export function loadFields(accountId: string): FieldDef[] {
   try {
     const raw = localStorage.getItem(FIELDS_KEY(accountId));

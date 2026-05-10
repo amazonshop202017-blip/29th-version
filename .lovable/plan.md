@@ -1,49 +1,68 @@
-## Auto-derivation of fields in Backtesting session
+## Canonical field ordering for Backtesting session
 
-### Goals
-1. `Direction` is part of the default fields (on by default for new sessions).
-2. When a field can be computed from other selected fields, it is removed (deselected) from the session's configured fields, and its value is auto-calculated and stored on each saved trade. The user can re-add the field via Add Field if they want to enter it manually again.
+### Goal
+Fields (and their table columns) always render in a consistent, logical order regardless of the order the user adds them. Related fields stay adjacent: dates together, prices together, risk/target together, P/L stack together, etc.
 
-### Derivation rules
-The system applies these rules in order whenever fields change or a row is saved:
+### Canonical order
+A single source-of-truth list lives in `src/lib/backtestStore.ts` as `FIELD_SORT_ORDER`. Any field id not in the list sorts after the listed ones, in insertion order. Category/tag fields (`cat:*`) always go last, sorted alphabetically by label.
 
-| Derived field | Required source fields | Formula |
-|---|---|---|
-| `rr` (R Multiple) | `entry_price`, `exit_price`, `stop_loss`, `direction` | `(exit - entry) * dirSign / abs(entry - stop)` |
-| `rr` (fallback) | `entry_price`, `exit_price` | `exit - entry` (signed, long-assumed) |
-| `outcome` | `entry_price`, `exit_price`, `direction` | sign of `(exit - entry) * dirSign` → `Win` / `Loss` / `BE` |
-| `gross_pnl` | `entry_price`, `exit_price`, `quantity` (+ optional `direction`) | `(exit - entry) * qty * dirSign` |
-| `net_pnl` | `gross_pnl` (or sources for it) + `fees` | `gross_pnl - fees` |
-
-`dirSign = direction === 'Short' ? -1 : 1`. If `direction` not configured, assumed `Long`.
+```text
+1.  date              (Entry Date)
+2.  exit_date         (Exit Date)
+3.  symbol
+4.  direction
+5.  setup
+6.  quantity
+7.  entry_price
+8.  exit_price
+9.  stop_loss
+10. take_profit
+11. highest_price
+12. lowest_price
+13. mfe
+14. mae
+15. outcome
+16. rr                (R Multiple)
+17. gross_pnl
+18. fees
+19. net_pnl
+20. break_even
+--- category/tag fields (alphabetical) ---
+--- any unknown ids (insertion order) ---
+```
 
 ### Files to change
 
 **`src/lib/backtestStore.ts`**
-- Add `direction` to `DEFAULT_FIELDS` (after `symbol`, before `outcome`).
-- Add `DERIVATION_RULES`: array of `{ derivedId, sources: string[], compute(values) => value }`.
-- Export helpers:
-  - `getDerivedFieldIds(fieldIds: string[]): string[]` — returns ids that should be auto-removed because all their sources are present in `fieldIds`.
-  - `applyDerivations(fieldIds: string[], values: Record<string, any>): Record<string, any>` — returns values with derived entries filled in.
+- Export `FIELD_SORT_ORDER: string[]` with the list above.
+- Export `sortFields(fields: FieldDef[]): FieldDef[]` that returns a new array sorted by:
+  1. index in `FIELD_SORT_ORDER` (lower first)
+  2. category fields (`cat:` prefix) grouped after, alphabetical by `label`
+  3. anything else, original relative order preserved (stable sort)
 
 **`src/hooks/useBacktestSession.ts`**
-- After `addField`, run `getDerivedFieldIds` against the new field list and strip any fields that are now derivable; persist the cleaned list.
-- In `addRow` and `updateRow`, run `applyDerivations` so derived values are stored on the row even when the field isn't in `fields`.
+- After `loadFields`, run `sortFields` on the result before setting state.
+- In `addField`, sort the merged list before persisting.
+- In `removeField`, sort is preserved automatically (filter keeps order).
+- `persistFields` itself doesn't need to sort (callers handle it), but adding a sort there is a safe belt-and-suspenders move.
 
 **`src/pages/backtesting/BacktestSession.tsx`**
-- Inline form: render only `fields` (already does). Derived fields are not shown because they were removed from the list.
-- Trades table: include columns for any derived ids that have stored values on at least one row, in addition to the configured `fields`. Header label comes from `FIELD_CATALOG`. This way the user can see auto-calculated `rr`/`outcome`/etc. even though the input is hidden.
-- `formatVal` unchanged.
+- `entryFields` already comes from `fields`; no change needed once the hook sorts.
+- `derivedColumnIds` already runs through `fieldLabelFromCatalog`; sort it with the same comparator so auto columns also follow canonical order.
+- The trades table renders configured fields followed by derived columns — keep that split (configured first, auto columns after), each block individually sorted.
 
-**`src/components/backtesting/AddTradeModal.tsx`** (edit-trade modal)
-- After save, also run `applyDerivations` on the submitted values so edits keep derived columns up to date.
+**`src/components/backtesting/AddTradeModal.tsx`**
+- No change. It receives `fields` already in the sorted order from the parent.
 
-### UX details
-- A field that gets auto-removed shows a brief toast: `"R Multiple is now auto-calculated from Entry/Exit Price."`
-- In `AddFieldModal`, fields whose sources are already selected appear as normal "Insert" chips. If the user re-inserts a derived field (e.g. `rr`), it goes back into `fields` and the auto-calc step skips it (manual entry takes precedence). Re-adding is the user's escape hatch, exactly as requested.
-- If the user later removes a source field (e.g. removes `exit_price`), nothing is force-restored; the derived field can be re-added manually.
+**`src/components/backtesting/AddFieldModal.tsx`**
+- No change. The Add Field library is grouped by General / Advance / Tags using existing catalog arrays, which are already in a sensible order.
+
+### Behavior on enable/disable
+- When a field is auto-removed by derivation, the remaining fields keep canonical order (filtering is stable).
+- When the user re-adds an auto-removed field, it slots back into its canonical position — never appended at the end.
+- When the user adds any new field via Add Field, it slots into its canonical position immediately.
 
 ### Out of scope
 - No changes to the global Add Trade modal or any non-backtesting page.
-- No new derivation rules beyond the table above.
-- No retro-fill of derivations on existing rows when fields change (only on save/edit going forward).
+- No user-facing custom reordering / drag-to-reorder. (Can be a future enhancement.)
+- Existing saved sessions: their `fields` array gets re-sorted on next load, which only affects display order, not data.
