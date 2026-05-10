@@ -312,22 +312,23 @@ const FieldInput = ({
             placeholder="Select or type setup..."
           />
         ) : (
-          <Input value={(v as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+          <Input className="h-10 bg-input border-border" value={(v as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
         )
       )}
       {field.type === 'number' && (
         <Input
           type="number"
+          className="h-10 bg-input border-border"
           value={v === null || v === undefined ? '' : String(v)}
           onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
         />
       )}
       {field.type === 'date' && (
-        <AppDatePicker value={(v as string) ?? ''} onChange={(s) => onChange(s)} />
+        <AppDatePicker value={(v as string) ?? ''} onChange={(s) => onChange(s)} className="h-10 bg-input border-border" />
       )}
       {field.type === 'select' && (
         <Select value={(v as string) ?? ''} onValueChange={(val) => onChange(val)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-10 bg-input border-border">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
