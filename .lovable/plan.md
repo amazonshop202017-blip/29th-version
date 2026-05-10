@@ -1,157 +1,54 @@
-## Backtesting — Sidebar entry, sessions as accounts, custom-field trades
+## Backtesting session page — inline trade form + field picker
 
-A standalone Backtesting section. Each "session" is an Account with `accountMode: 'backtesting'`, kept fully isolated from the rest of the app (Trades page, Dashboard, Reports, filters, etc.). Trades inside a backtesting session are free-form rows with a user-defined field schema, stored in their own localStorage namespace — they never enter the main `TradesContext`.
+Rework the session page so trade entry is inline (no Add Trade modal), and the "Add Field" modal becomes a library-style picker where users insert/remove fields (including built-ins) — with their selection persisted per session in localStorage.
 
-### 1. Sidebar
+### 1. Session page layout (`src/pages/backtesting/BacktestSession.tsx`)
 
-`src/components/layout/Sidebar.tsx` — add a new `NavItem` directly under `Dashboard` (above Prop Firm):
+Top → bottom:
 
-- Icon: `History` from lucide-react
-- Label: `Backtesting`
-- Path: `/backtesting`
+1. Header strip (unchanged): back, editable name, Clear / Delete buttons.
+2. Stats bar (unchanged).
+3. **Toolbar**: only `+ Add Field` button. Remove the `+ Add Trade` button entirely.
+4. **Inline trade form** (new): renders directly under the toolbar.
+   - Renders an input for every field currently in `fields[]` **except `notes`** (notes stays available in the picker but is hidden from the inline form to keep it compact — matches user's instruction).
+   - Same input mapping as before: text → Input, number → number Input, date → AppDatePicker, select → Select.
+   - Required fields show `*` and block save when empty.
+   - **`+ Save Trade`** button below the fields. On click → appends a `BacktestRow` with the entered values, then resets the form to empty.
+5. **Trades table**: unchanged — still lists saved trades with edit/delete row actions. Edit still uses a modal (keeps row-edit UX simple, no scope creep).
 
-### 2. Account mode
+Delete `AddTradeModal` from "Add Trade" use; keep it only for the row-edit case (rename usage to edit-only). Or simpler: keep it as-is for editing existing rows; just stop using it for "add".
 
-Extend `AccountMode` in `src/contexts/AccountsContext.tsx`:
+### 2. Add Field modal becomes a Field Library (`src/components/backtesting/AddFieldModal.tsx`)
 
-```ts
-export type AccountMode = 'normal' | 'propfirm' | 'backtesting';
-```
+Rebuild it to mirror the Dashboard "Add Widget" / Metrics Library popup pattern:
 
-Backtesting accounts must be hidden everywhere except the Backtesting page. Audit and add a `mode !== 'backtesting'` exclusion in:
+- Title: **Fields Library**.
+- Two sections:
+  - **Default fields** (built-ins from `DEFAULT_FIELDS`: Date, Symbol, Outcome, R Multiple, Notes). Each row: icon + label + type badge + Insert/Remove button.
+    - If the field is currently in `fields[]` → show **Remove** (red).
+    - If not → show **Insert** (primary).
+    - Mandatory built-ins (`required: true`) can still be removed — per user's instruction, with a subtle "removing this hides win/loss insights" hint under Outcome and date-related ones.
+  - **Custom fields** — list of user-added fields with Remove. Below the list: a small `+ Create custom field` button that opens the existing Step-1/Step-2 type picker (Text/Number/Date/Select + label/options/required) we already have, so the create flow stays.
+- Selection is persisted via the same `useBacktestSession.persistFields` — `fields[]` is the source of truth and is already saved to `tv-backtest-fields:<accountId>`.
 
-- `getActiveAccountsWithStats` / `getAllAccountsWithStats` callers used for global account selectors and dashboards
-- `MultiAccountSelect`, `SidebarAccountMenu`, `AccountsContext` filter dropdown, Settings → Accounts list, PropFirm pages
-- `useFilteredTrades`, `GlobalFiltersContext` initial selection
-- Any place iterating `accounts` for display
+### 3. Built-in re-insertion
 
-The cleanest approach: add a helper `getNonBacktestingAccounts()` and update the existing list getters to exclude backtesting by default, with a new `getBacktestingAccounts()` for the new page only.
+When a built-in is removed and later re-inserted, restore the original `FieldDef` from `DEFAULT_FIELDS` (so type/options stay correct). Maintain a stable display order: built-ins keep their canonical order, custom fields appended after.
 
-### 3. Routing
+### 4. Notes handling
 
-`src/App.tsx`:
+`notes` stays a built-in field and remains insertable/removable in the Field Library, but the **inline trade form filters it out** so the entry row stays compact. The trades table still shows the Notes column when present, and Edit-row modal still includes it.
 
-```
-/backtesting              → BacktestingHome     (card grid + "Add Session")
-/backtesting/:accountId   → BacktestSession     (trade entry page)
-```
-
-Both inside the existing `AppLayout`.
-
-### 4. Backtesting Home (`src/pages/backtesting/BacktestingHome.tsx`)
-
-- Page title in global header (per project rule).
-- Top-right `+ Add Session` button styled like PropFirm's "Add Challenge".
-- Card grid (mirror `RealAccountCard` layout) of all accounts where `accountMode === 'backtesting'`. Each card shows:
-  - Session name (bold)
-  - Total Trades, Wins, Losses, Win Rate
-  - Created date (small)
-- Card actions via 3-dot menu (`DropdownMenu`):
-  - **Rename** — inline dialog with name input
-  - **Clear Trades** — confirm `AlertDialog`, deletes all backtest trades+fields rows for this accountId (keeps the session)
-  - **Delete Session** — confirm `AlertDialog` (matches Settings → Accounts delete pattern), deletes the account + its trades + its field schema
-- Click card → navigate to `/backtesting/:accountId`.
-
-### 5. Add Session modal (`AddBacktestSessionModal.tsx`)
-
-- Single field: **Session Name** (required).
-- On Save: `addAccount(name, 0, 'backtesting', undefined, 'USD')` → navigate to the new session.
-- No starting balance, no currency, no other fields.
-
-### 6. Per-session storage (`src/lib/backtestStore.ts`)
-
-Two localStorage keys, both keyed by accountId:
-
-```ts
-// tv-backtest-fields:<accountId>  →  FieldDef[]
-// tv-backtest-trades:<accountId>  →  BacktestRow[]
-
-export type FieldType = 'text' | 'number' | 'date' | 'select';
-export interface FieldDef {
-  id: string;
-  label: string;
-  type: FieldType;
-  required?: boolean;
-  options?: string[]; // for 'select'
-  builtin?: boolean;  // required defaults can't be removed
-}
-export interface BacktestRow {
-  id: string;
-  createdAt: string;
-  values: Record<string, string | number | null>;
-  // Convenience: derived 'outcome' for win/loss tally
-  outcome?: 'win' | 'loss' | 'be';
-}
-```
-
-Defaults inserted on first session open (built-in, removable except `outcome`):
-
-| id        | label      | type   | required |
-|-----------|-----------|--------|----------|
-| date      | Date      | date   | true     |
-| symbol    | Symbol    | text   | true     |
-| outcome   | Outcome   | select (Win/Loss/BE) | true |
-| rr        | R Multiple| number | false    |
-| notes     | Notes     | text   | false    |
-
-A small React hook `useBacktestSession(accountId)` exposes `{fields, rows, addField, removeField, addRow, updateRow, deleteRow, clearRows}` and persists to localStorage on every change.
-
-### 7. Session page (`src/pages/backtesting/BacktestSession.tsx`)
-
-Layout, top to bottom:
-
-1. **Header strip**: Back button → `/backtesting`. Editable session name. Right side: `Clear Trades`, `Delete Session` buttons (same dialogs as home).
-2. **Stats bar** (read-only): Total Trades, Wins, Losses, Win Rate, Avg R, Total R. Computed from current `rows`.
-3. **Toolbar**:
-   - `+ Add Field` (opens AddFieldModal)
-   - `+ Add Trade` (opens AddTradeModal — only fields the user defined; required fields validated)
-4. **Trades table**: columns = current `fields` order. Each row shows values; row-level Edit / Delete actions.
-
-### 8. Add Field modal (`AddFieldModal.tsx`)
-
-Mirrors the "Add Widget" popup pattern from the dashboard (centered modal, big button per choice):
-
-- Step 1: pick **Field Type** — Text / Number / Date / Select (4 cards).
-- Step 2: enter **Label**, mark **Required** (toggle), and for Select type list comma-separated options.
-- Save → appends to the session's `fields[]` and immediately becomes available in Add Trade.
-- Built-in fields cannot be deleted; user-added fields show a small `×` in the table column header.
-
-### 9. Add Trade modal (`AddTradeModal.tsx`)
-
-- Renders inputs dynamically from `fields[]`:
-  - text → `Input`
-  - number → `Input type=number`
-  - date → `AppDatePicker`
-  - select → `Select`
-- Required fields show `*` and block submit when empty.
-- Save → appends a `BacktestRow` to the session's `rows[]`.
-
-### 10. Stat math
-
-Win/Loss/Win-rate uses the `outcome` built-in field. If user removes `outcome`, the stats bar shows `—` for these (table still works). Avg R / Total R use the `rr` built-in if present.
-
-### 11. Files to create / edit
-
-Create:
-- `src/pages/backtesting/BacktestingHome.tsx`
-- `src/pages/backtesting/BacktestSession.tsx`
-- `src/components/backtesting/BacktestSessionCard.tsx`
-- `src/components/backtesting/AddBacktestSessionModal.tsx`
-- `src/components/backtesting/AddFieldModal.tsx`
-- `src/components/backtesting/AddTradeModal.tsx`
-- `src/components/backtesting/BacktestTradesTable.tsx`
-- `src/lib/backtestStore.ts`
-- `src/hooks/useBacktestSession.ts`
+### 5. Files
 
 Edit:
-- `src/contexts/AccountsContext.tsx` — add `'backtesting'` to `AccountMode`; add helpers `getBacktestingAccounts()` and exclusion of backtesting from existing list getters.
-- `src/components/layout/Sidebar.tsx` — add Backtesting nav item.
-- `src/App.tsx` — register two new routes.
-- Any account-selector component that surfaces accounts globally — confirm backtesting accounts are filtered out (`SidebarAccountMenu`, `MultiAccountSelect`, Settings Accounts list, GlobalFilters initial selection). Touch only what's needed to keep them hidden outside Backtesting.
+- `src/pages/backtesting/BacktestSession.tsx` — remove Add Trade button, add inline form + Save Trade button, filter `notes` from inline form, keep Edit modal for row edits only.
+- `src/components/backtesting/AddFieldModal.tsx` — replace current 2-step flow with Library view (Default + Custom sections, Insert/Remove), nested into a "Create custom field" sub-flow that reuses the existing 2-step picker.
+
+No changes to `backtestStore.ts`, `useBacktestSession.ts`, routing, sidebar, or AccountsContext.
 
 ### Out of scope
 
-- Linking backtest trades to real Strategies / Setups
-- Importing CSV
-- Cross-session comparison
-- Cloud sync (localStorage only — matches current app)
+- Replacing the row-edit modal with inline edit.
+- Reordering fields by drag.
+- Conditional/required-field rule changes beyond the existing `required` flag.
