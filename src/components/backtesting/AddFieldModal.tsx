@@ -2,7 +2,16 @@ import { Type, Hash, Calendar as CalendarIcon, ListChecks, Plus, Check } from 'l
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
-import { FIELD_CATALOG_GENERAL, FIELD_CATALOG_ADVANCE, type FieldDef, type FieldType } from '@/lib/backtestStore';
+import {
+  FIELD_CATALOG_GENERAL,
+  FIELD_CATALOG_ADVANCE,
+  buildCategoryField,
+  categoryFieldId,
+  type FieldDef,
+  type FieldType,
+} from '@/lib/backtestStore';
+import { useCategoriesContext } from '@/contexts/CategoriesContext';
+import { useTagsContext } from '@/contexts/TagsContext';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -27,6 +36,8 @@ const CATEGORIES: { id: string; name: string; color: string; fields: FieldDef[] 
 
 export const AddFieldModal = ({ open, onOpenChange, fields, onInsert, onRemove }: Props) => {
   const fieldIds = new Set(fields.map(f => f.id));
+  const { categories } = useCategoriesContext();
+  const { tags } = useTagsContext();
 
   const renderChip = (f: FieldDef) => {
     const active = fieldIds.has(f.id);
@@ -46,6 +57,37 @@ export const AddFieldModal = ({ open, onOpenChange, fields, onInsert, onRemove }
       >
         <Icon className="h-3 w-3 opacity-70" />
         <span>{f.label}</span>
+        {active ? <Check className="h-3 w-3 text-primary" /> : <Plus className="h-3 w-3 opacity-60" />}
+      </button>
+    );
+  };
+
+  const renderCategoryChip = (cat: { id: string; name: string; color: string }) => {
+    const fid = categoryFieldId(cat.id);
+    const active = fieldIds.has(fid);
+    return (
+      <button
+        key={cat.id}
+        type="button"
+        onClick={() => {
+          if (active) {
+            onRemove(fid);
+          } else {
+            const tagNames = tags
+              .filter(t => t.categoryId === cat.id && !t.archived)
+              .map(t => t.name);
+            onInsert(buildCategoryField(cat, tagNames));
+          }
+        }}
+        className={cn(
+          'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-colors',
+          active
+            ? 'bg-primary/10 border-primary/40 text-foreground hover:bg-primary/15'
+            : 'bg-background border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+        )}
+      >
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+        <span>{cat.name}</span>
         {active ? <Check className="h-3 w-3 text-primary" /> : <Plus className="h-3 w-3 opacity-60" />}
       </button>
     );
@@ -73,6 +115,25 @@ export const AddFieldModal = ({ open, onOpenChange, fields, onInsert, onRemove }
               </div>
             </div>
           ))}
+
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full shrink-0"
+                style={{ backgroundColor: 'hsl(var(--chart-4, 30 90% 55%))' }}
+              />
+              <span className="text-sm font-medium">Tags</span>
+            </div>
+            {categories.length === 0 ? (
+              <div className="text-xs text-muted-foreground">
+                No categories yet. Create them in Settings → Tags.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map(renderCategoryChip)}
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
