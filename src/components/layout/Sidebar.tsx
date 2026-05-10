@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical, Newspaper, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, ListOrdered, FileText, Target, Plus, ChevronLeft, ChevronRight, BarChart3, ChevronDown, Crosshair, Building2, Wrench, FlaskConical, Newspaper, GraduationCap, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTradeModal } from '@/contexts/TradeModalContext';
@@ -248,6 +248,15 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
           path={dashboardItem.path}
           isCollapsed={isCollapsed}
           isActive={location.pathname === dashboardItem.path}
+        />
+
+        {/* Backtesting */}
+        <NavItem
+          icon={History}
+          label="Backtesting"
+          path="/backtesting"
+          isCollapsed={isCollapsed}
+          isActive={location.pathname.startsWith('/backtesting')}
         />
 
         {/* Prop Firm */}
