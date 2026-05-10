@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Pencil, Eraser, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Pencil, Eraser, Save, Sparkles } from 'lucide-react';
 import { useAccountsContext } from '@/contexts/AccountsContext';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useBacktestSession } from '@/hooks/useBacktestSession';
 import { computeStats, fieldLabelFromCatalog, sortFieldIds } from '@/lib/backtestStore';
 import type { BacktestRow, FieldDef } from '@/lib/backtestStore';
@@ -25,6 +26,7 @@ const BacktestSession = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const navigate = useNavigate();
   const { accounts, removeAccount } = useAccountsContext();
+  const { setSelectedAccounts } = useGlobalFilters();
   const account = accounts.find(a => a.id === accountId && a.accountMode === 'backtesting');
 
   const { fields, rows, addField, removeField, addRow, updateRow, deleteRow, clearRows, clearAll } =
@@ -100,6 +102,18 @@ const BacktestSession = () => {
           <h2 className="text-xl font-semibold truncate">{account.name}</h2>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!accountId) return;
+              setSelectedAccounts([accountId]);
+              toast.success(`Analyzing "${account.name}" across the app`);
+              navigate('/dashboard');
+            }}
+            className="gap-2 bg-amber-500 hover:bg-amber-600 text-black border-0 shadow-[0_0_0_1px_rgba(180,140,0,0.4)]"
+          >
+            <Sparkles className="h-4 w-4" /> Deeper Analysis
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setClearOpen(true)} className="gap-2">
             <Eraser className="h-4 w-4" /> Clear Trades
           </Button>
