@@ -80,7 +80,7 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
                       onAddNew={(val) => {
                         const name = val.trim();
                         if (name && !setupOptions.some(o => o.toLowerCase() === name.toLowerCase())) {
-                          addStrategy({ name, description: '', checklist: [] });
+                          addStrategy(name, '');
                         }
                         setVal(f.id, name);
                       }}
