@@ -930,7 +930,7 @@ export const TradeModal = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none" disabled>Select account...</SelectItem>
-                      {accounts.map((account) => (
+                      {accounts.filter(a => a.accountMode !== 'backtesting').map((account) => (
                         <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
                       ))}
                     </SelectContent>
