@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, Check, X, Target, ChevronRight, MoreVertical, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Target, ChevronRight, MoreVertical, ClipboardList, LayoutList, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,7 @@ const Strategies = () => {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [checklistEditorOpen, setChecklistEditorOpen] = useState(false);
   const [editingChecklistStrategy, setEditingChecklistStrategy] = useState<{ id: string; name: string; items: string[] } | null>(null);
 
@@ -89,7 +90,24 @@ const Strategies = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div className="flex-1" />
+        <div className="flex-1 flex items-center">
+          <div className="flex items-center gap-1 border border-border rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('card')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'card' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+              aria-label="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'table' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+              aria-label="Table view"
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
         <Button onClick={() => setShowAddForm(true)} className="gap-2">
           <Plus className="w-4 h-4" />
           Add Setup
@@ -139,7 +157,8 @@ const Strategies = () => {
         )}
       </AnimatePresence>
 
-      {/* Strategies Table / Cards */}
+      {/* Strategies Table */}
+      {viewMode === 'table' && (
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-border">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -383,9 +402,10 @@ const Strategies = () => {
           </>
         )}
       </div>
+      )}
 
-      {/* Checklist Editor Modal */}
-      {strategiesWithStats.length > 0 && (
+      {/* Setup Overview Cards */}
+      {viewMode === 'card' && strategiesWithStats.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg sm:text-xl font-semibold">Setup Overview</h2>
