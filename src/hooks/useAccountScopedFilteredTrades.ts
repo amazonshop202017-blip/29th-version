@@ -40,14 +40,19 @@ const matchesTimeIntervals = (minutesOfDay: number, intervals: TimeInterval[]): 
     return isNaN(h) || isNaN(m) ? null : h * 60 + m;
   };
   const valid = intervals
-    .map(i => ({ min: toMin(i.min), max: toMin(i.max) }))
-    .filter((i): i is { min: number; max: number } => i.min !== null && i.max !== null);
+    .map(i => {
+      const mn = toMin(i.min);
+      const mx = toMin(i.max);
+      if (mn === null && mx === null) return null;
+      return { min: mn ?? 0, max: mx ?? 23 * 60 + 59 };
+    })
+    .filter((i): i is { min: number; max: number } => i !== null);
   if (valid.length === 0) return true;
   return valid.some(({ min, max }) =>
     min <= max ? minutesOfDay >= min && minutesOfDay <= max : minutesOfDay >= min || minutesOfDay <= max
   );
 };
-const hasActiveIntervals = (intervals: TimeInterval[]) => intervals.some(i => i.min && i.max);
+const hasActiveIntervals = (intervals: TimeInterval[]) => intervals.some(i => i.min || i.max);
 
 /**
  * Returns trades scoped to a single account, with all global filters applied
