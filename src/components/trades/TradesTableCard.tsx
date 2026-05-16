@@ -1482,6 +1482,66 @@ export const TradesTableCard = ({
           entryDate={calculateTradeMetrics(tagModalTrade).openDate}
         />
       )}
+
+      <Dialog open={!!screenshotsModalTrade} onOpenChange={(open) => !open && setScreenshotsModalTrade(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {screenshotsModalTrade ? `Screenshots — ${screenshotsModalTrade.symbol}` : 'Screenshots'}
+            </DialogTitle>
+          </DialogHeader>
+          {screenshotsModalTrade && (
+            (screenshotsModalTrade.screenshots && screenshotsModalTrade.screenshots.length > 0) ? (
+              <div className="space-y-4 pt-2">
+                {screenshotsModalTrade.screenshots.map((s) => {
+                  const tag = screenshotTags.find((t) => t.id === s.tagId);
+                  return (
+                    <div key={s.id} className="space-y-2 rounded-lg border border-border overflow-hidden">
+                      <div className="relative">
+                        <img src={s.imageData} alt="Trade screenshot" className="w-full object-contain max-h-[55vh] bg-muted" />
+                        {tag && (
+                          <div
+                            className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs font-medium text-white"
+                            style={{ backgroundColor: tag.color }}
+                          >
+                            {tag.name}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30">
+                        <span className="text-xs text-muted-foreground">Tag</span>
+                        <Select
+                          value={s.tagId || 'none'}
+                          onValueChange={(val) => updateScreenshotTag(s.id, val === 'none' ? '' : val)}
+                        >
+                          <SelectTrigger className="h-8 w-[180px] text-xs">
+                            <SelectValue placeholder="No tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No tag</SelectItem>
+                            {screenshotTags.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                                  {t.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                No screenshots attached to this trade.
+              </div>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
