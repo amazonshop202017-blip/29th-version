@@ -71,6 +71,7 @@ function FilterRow({ label, icon, active, expanded, onToggle, children }: Filter
         onClick={onToggle}
       >
         <Checkbox
+          className="rounded-none"
           checked={active}
           onClick={(e) => e.stopPropagation()}
           onCheckedChange={onToggle}
