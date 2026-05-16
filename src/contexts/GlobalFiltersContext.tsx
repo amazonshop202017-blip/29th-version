@@ -349,6 +349,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     exitComments: [],
   });
 
+  // Applied-filter freeze. When non-null, analytics consumers read these
+  // snapshotted values instead of the live popup-editable ones.
+  const [appliedSnapshot, setAppliedSnapshot] = useState<PopupFilterFields | null>(null);
+
   // Persist currency to localStorage
   const setCurrency = useCallback((newCurrency: CurrencyCode) => {
     setCurrencyState(newCurrency);
