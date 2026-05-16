@@ -6,6 +6,7 @@ import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { usePrivacyMode, PRIVACY_MASK } from '@/hooks/usePrivacyMode';
 import { calculateTradeMetrics } from '@/types/trade';
 import { cn } from '@/lib/utils';
+import { MonthDetailsModal } from './MonthDetailsModal';
 
 const MONTH_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const currentYearConst = new Date().getFullYear();
@@ -64,6 +65,7 @@ export const YearlyCalendarWidget = () => {
   const { formatCurrency } = useGlobalFilters();
   const { isPrivacyMode } = usePrivacyMode();
   const [year, setYear] = useState(new Date().getFullYear());
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState<number | null>(null);
   const now = new Date();
   const currentMonthIdx = now.getMonth();
   const currentYear = now.getFullYear();
@@ -106,6 +108,16 @@ export const YearlyCalendarWidget = () => {
   };
 
   const fmtR = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}R`;
+
+  const selectedMonthTrades = useMemo(() => {
+    if (selectedMonthIdx === null) return [];
+    return filteredTrades.filter((trade) => {
+      const m = calculateTradeMetrics(trade);
+      if (!m.closeDate) return false;
+      const d = new Date(m.closeDate);
+      return d.getFullYear() === year && d.getMonth() === selectedMonthIdx;
+    });
+  }, [filteredTrades, year, selectedMonthIdx]);
 
   return (
     <motion.div
@@ -183,11 +195,13 @@ export const YearlyCalendarWidget = () => {
               }
             : {};
           return (
-            <div
+            <button
+              type="button"
               key={name}
+              onClick={() => setSelectedMonthIdx(idx)}
               style={tintStyle}
               className={cn(
-                'rounded-lg border border-border/60 p-3 transition-colors',
+                'text-left rounded-lg border border-border/60 p-3 transition-colors cursor-pointer hover:ring-1 hover:ring-primary/40',
                 !s.hasData && 'bg-card/40',
                 isCurrent && 'ring-1 ring-primary/40 bg-accent/30'
               )}
@@ -233,10 +247,17 @@ export const YearlyCalendarWidget = () => {
                   <span className="text-muted-foreground/60">No trades</span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      <MonthDetailsModal
+        isOpen={selectedMonthIdx !== null}
+        onClose={() => setSelectedMonthIdx(null)}
+        date={new Date(year, selectedMonthIdx ?? 0, 1)}
+        trades={selectedMonthTrades}
+      />
     </motion.div>
   );
 };
