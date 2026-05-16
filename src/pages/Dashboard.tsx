@@ -26,6 +26,7 @@ import { NetDailyPnLChart } from '@/components/dashboard/NetDailyPnLChart';
 import { TradeTimePerformanceChart } from '@/components/dashboard/TradeTimePerformanceChart';
 import { TradeDurationPerformanceChart } from '@/components/dashboard/TradeDurationPerformanceChart';
 import { MonthlyPerformanceCalendar } from '@/components/dashboard/MonthlyPerformanceCalendar';
+import { YearlyCalendarWidget } from '@/components/dashboard/YearlyCalendarWidget';
 import { SymbolAnalysisChart } from '@/components/dashboard/InstrumentAnalysisChart';
 import { LongShortAnalysisChart } from '@/components/dashboard/LongShortAnalysisChart';
 import { ExternalLinksWidget } from '@/components/dashboard/ExternalLinksWidget';
@@ -53,6 +54,7 @@ const DEFAULT_CHART_ORDER = [
   'tradeDuration',
   'symbolAnalysis',
   'longShortAnalysis',
+  'yearlyCalendar',
 ];
 
 const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
@@ -67,6 +69,7 @@ const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   externalLinks: { component: ExternalLinksWidget, colSpan: 1, rowSpan: 1 },
   instrumentDistribution: { component: InstrumentTradeDistribution, colSpan: 2, rowSpan: 1 },
   directionSplit: { component: DirectionSplit, colSpan: 2, rowSpan: 1 },
+  yearlyCalendar: { component: YearlyCalendarWidget, colSpan: 2, rowSpan: 1 },
 };
 
 const Dashboard = () => {
