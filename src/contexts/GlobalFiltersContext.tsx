@@ -113,6 +113,10 @@ interface GlobalFiltersContextType {
   setPositionSizeMax: (v: number | null) => void;
   holdingPeriodFilter: HoldingPeriodFilter;
   setHoldingPeriodFilter: (v: HoldingPeriodFilter) => void;
+  durationMinutesMin: number | null;
+  setDurationMinutesMin: (v: number | null) => void;
+  durationMinutesMax: number | null;
+  setDurationMinutesMax: (v: number | null) => void;
   
   // Year Filter
   selectedYear: YearFilter;
@@ -242,6 +246,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [positionSizeMin, setPositionSizeMin] = useState<number | null>(null);
   const [positionSizeMax, setPositionSizeMax] = useState<number | null>(null);
   const [holdingPeriodFilter, setHoldingPeriodFilter] = useState<HoldingPeriodFilter>('all');
+  const [durationMinutesMin, setDurationMinutesMin] = useState<number | null>(null);
+  const [durationMinutesMax, setDurationMinutesMax] = useState<number | null>(null);
   
   // Year Filter
   const [selectedYear, setSelectedYear] = useState<YearFilter>(null);
@@ -517,6 +523,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setPositionSizeMax,
     holdingPeriodFilter,
     setHoldingPeriodFilter,
+    durationMinutesMin,
+    setDurationMinutesMin,
+    durationMinutesMax,
+    setDurationMinutesMax,
     // Year Filter
     selectedYear,
     setSelectedYear,
@@ -570,6 +580,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     positionSizeMax,
     holdingPeriodFilter,
     selectedYear,
+    durationMinutesMin,
+    durationMinutesMax,
     selectedChecklistItems,
     hasActiveChecklistFilter,
     excludedChecklistItems,
