@@ -488,6 +488,65 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedTradeComments.tradeManagements.length > 0 ||
     selectedTradeComments.exitComments.length > 0;
 
+  // ------------------------------------------------------------------
+  // Applied-filter freeze helpers + computed applied* values
+  // ------------------------------------------------------------------
+  const livePopupFieldsRef = useRef<PopupFilterFields>({
+    selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups,
+    selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges,
+    rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax,
+    holdingPeriodFilter, durationMinutesMin, durationMinutesMax,
+    entryTimeIntervals, exitTimeIntervals, starredFilter, selectedYear,
+    selectedChecklistItems, excludedChecklistItems,
+    selectedTagsByCategory, selectedTradeComments,
+  });
+  livePopupFieldsRef.current = {
+    selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups,
+    selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges,
+    rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax,
+    holdingPeriodFilter, durationMinutesMin, durationMinutesMax,
+    entryTimeIntervals, exitTimeIntervals, starredFilter, selectedYear,
+    selectedChecklistItems, excludedChecklistItems,
+    selectedTagsByCategory, selectedTradeComments,
+  };
+
+  const freezeAppliedFilters = useCallback(() => {
+    setAppliedSnapshot({ ...livePopupFieldsRef.current });
+  }, []);
+  const commitAppliedFilters = useCallback(() => {
+    // Live values become the new applied baseline.
+    setAppliedSnapshot(null);
+  }, []);
+  const unfreezeAppliedFilters = useCallback(() => {
+    setAppliedSnapshot(null);
+  }, []);
+
+  const a = appliedSnapshot;
+  const appliedSelectedSymbols = a ? a.selectedSymbols : selectedSymbols;
+  const appliedSelectedOutcomes = a ? a.selectedOutcomes : selectedOutcomes;
+  const appliedSelectedHours = a ? a.selectedHours : selectedHours;
+  const appliedSelectedSetups = a ? a.selectedSetups : selectedSetups;
+  const appliedExcludedSetups = a ? a.excludedSetups : excludedSetups;
+  const appliedSelectedDays = a ? a.selectedDays : selectedDays;
+  const appliedLastTradesFilter = a ? a.lastTradesFilter : lastTradesFilter;
+  const appliedSelectedDirections = a ? a.selectedDirections : selectedDirections;
+  const appliedSelectedReturnRanges = a ? a.selectedReturnRanges : selectedReturnRanges;
+  const appliedRMultipleMin = a ? a.rMultipleMin : rMultipleMin;
+  const appliedRMultipleMax = a ? a.rMultipleMax : rMultipleMax;
+  const appliedPositionSizeMin = a ? a.positionSizeMin : positionSizeMin;
+  const appliedPositionSizeMax = a ? a.positionSizeMax : positionSizeMax;
+  const appliedHoldingPeriodFilter = a ? a.holdingPeriodFilter : holdingPeriodFilter;
+  const appliedDurationMinutesMin = a ? a.durationMinutesMin : durationMinutesMin;
+  const appliedDurationMinutesMax = a ? a.durationMinutesMax : durationMinutesMax;
+  const appliedEntryTimeIntervals = a ? a.entryTimeIntervals : entryTimeIntervals;
+  const appliedExitTimeIntervals = a ? a.exitTimeIntervals : exitTimeIntervals;
+  const appliedStarredFilter = a ? a.starredFilter : starredFilter;
+  const appliedSelectedYear = a ? a.selectedYear : selectedYear;
+  const appliedSelectedChecklistItems = a ? a.selectedChecklistItems : selectedChecklistItems;
+  const appliedExcludedChecklistItems = a ? a.excludedChecklistItems : excludedChecklistItems;
+  const appliedSelectedTagsByCategory = a ? a.selectedTagsByCategory : selectedTagsByCategory;
+  const appliedSelectedTradeComments = a ? a.selectedTradeComments : selectedTradeComments;
+
   // Effective currency: use single-account's own currency when exactly one account is filtered,
   // otherwise fall back to the global setting.
   const effectiveCurrency: CurrencyCode = (() => {
