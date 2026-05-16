@@ -457,6 +457,14 @@ const Strategies = () => {
           onSave={handleSaveChecklist}
         />
       )}
+
+      <StrategyChecklistEditor
+        isOpen={newSetupChecklistOpen}
+        onClose={() => setNewSetupChecklistOpen(false)}
+        strategyName={newName.trim() || 'New Setup'}
+        checklistItems={pendingChecklist}
+        onSave={(items) => setPendingChecklist(items)}
+      />
     </div>
   );
 };
