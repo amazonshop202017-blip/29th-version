@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, Check, X, Target, ChevronRight, MoreVertical, ClipboardList, LayoutList, LayoutGrid } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Target, ChevronRight, MoreVertical, ClipboardList, LayoutList, LayoutGrid, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +33,8 @@ const Strategies = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [checklistEditorOpen, setChecklistEditorOpen] = useState(false);
   const [editingChecklistStrategy, setEditingChecklistStrategy] = useState<{ id: string; name: string; items: string[] } | null>(null);
+  const [pendingChecklist, setPendingChecklist] = useState<string[]>([]);
+  const [newSetupChecklistOpen, setNewSetupChecklistOpen] = useState(false);
 
   const formatPercent = (value: number) => {
     return `${Math.round(value)}%`;
@@ -48,9 +50,13 @@ const Strategies = () => {
 
   const handleAddStrategy = () => {
     if (newName.trim()) {
-      addStrategy(newName.trim(), newDescription.trim());
+      const created = addStrategy(newName.trim(), newDescription.trim());
+      if (pendingChecklist.length > 0) {
+        updateStrategyChecklist(created.id, pendingChecklist);
+      }
       setNewName('');
       setNewDescription('');
+      setPendingChecklist([]);
       setShowAddForm(false);
     }
   };
@@ -145,7 +151,17 @@ const Strategies = () => {
                 />
               </div>
               <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setNewSetupChecklistOpen(true)}
+                  className="gap-2 mr-auto"
+                >
+                  <ListChecks className="w-4 h-4" />
+                  {pendingChecklist.length > 0
+                    ? `Checklist (${pendingChecklist.length}) — Optional`
+                    : 'Add Checklist (Optional)'}
+                </Button>
+                <Button variant="outline" onClick={() => { setShowAddForm(false); setPendingChecklist([]); }}>
                   Cancel
                 </Button>
                 <Button onClick={handleAddStrategy} disabled={!newName.trim()}>
@@ -441,6 +457,14 @@ const Strategies = () => {
           onSave={handleSaveChecklist}
         />
       )}
+
+      <StrategyChecklistEditor
+        isOpen={newSetupChecklistOpen}
+        onClose={() => setNewSetupChecklistOpen(false)}
+        strategyName={newName.trim() || 'New Setup'}
+        checklistItems={pendingChecklist}
+        onSave={(items) => setPendingChecklist(items)}
+      />
     </div>
   );
 };
