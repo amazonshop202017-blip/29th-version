@@ -101,6 +101,18 @@ export const muiPopperSx = {
     borderColor: "hsl(var(--primary))",
   },
   "& .MuiButtonBase-root": { color: "hsl(var(--foreground))" },
+  "& .MuiMultiSectionDigitalClockSection-root": {
+    padding: 0,
+    width: "auto",
+    minWidth: 56,
+    scrollbarWidth: "thin",
+  },
+  "& .MuiMultiSectionDigitalClockSection-item": {
+    margin: "2px 4px",
+    padding: "4px 10px",
+    minWidth: "auto",
+  },
+  "& .MuiMultiSectionDigitalClock-root": { padding: 0 },
 } as const;
 
 export const muiDialogSx = {
