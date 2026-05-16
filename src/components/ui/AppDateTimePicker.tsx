@@ -44,6 +44,7 @@ export const AppDateTimePicker: React.FC<AppDateTimePickerProps> = ({
       onChange={(d) => onChange(formatNaive(d as Dayjs | null))}
       disabled={disabled}
       ampm={ampm}
+      timeSteps={{ minutes: 1 }}
       slotProps={{
         textField: {
           fullWidth: true,
