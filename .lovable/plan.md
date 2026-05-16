@@ -1,40 +1,19 @@
 ## Goal
+Make the MUI date/time picker resolve to 1-minute precision (currently defaults to 5-minute steps) everywhere it's used.
 
-Match the Time Input Delight reference exactly: use MUI X `TimePicker` (responsive — `DesktopTimePicker` on desktop, `MobileTimePicker` on mobile) for both Min and Max duration inputs. The picker shows HH:mm; we convert to total minutes for filtering.
+## Where it's used
+All date+time inputs in the app go through a single shared wrapper: `src/components/ui/AppDateTimePicker.tsx`, which renders either `MobileDateTimePicker` or `DesktopDateTimePicker`. It is consumed by:
+- `src/components/trades/TradeModal.tsx` (entry & exit datetime)
+- `src/components/backtesting/AddTradeModal.tsx` (entry/exit datetime fields)
+- `src/pages/backtesting/BacktestSession.tsx` (inline datetime field)
 
-## Behavior
+Because everything funnels through `AppDateTimePicker`, a single edit covers all call sites.
 
-- Two responsive TimePicker inputs labeled **Min** and **Max** in the Duration row of `AdvancedDayTimeSection`.
-- Desktop (≥768px) → `DesktopTimePicker` (popover with draggable clock / fields).
-- Mobile (<768px) → `MobileTimePicker` (full-screen clock dialog).
-- Value stored as a `Dayjs` time; on change we compute `hours * 60 + minutes` and write to `durationMinutesMin` / `durationMinutesMax` in `GlobalFiltersContext` (already wired).
-- Clearing a picker (null) sets the corresponding bound to `null`.
-- Filtering logic in `TradesContext` stays unchanged — it already filters closed trades by `durationMinutes` inclusive of both bounds.
+## Change
+In `src/components/ui/AppDateTimePicker.tsx`, pass `timeSteps={{ minutes: 1 }}` to the rendered `Picker` (both `MobileDateTimePicker` and `DesktopDateTimePicker` accept it).
 
-## Changes
-
-### 1. `src/components/layout/AdvancedDayTimeSection.tsx`
-- Remove the two MUI `TextField` number inputs in the Duration FilterRow.
-- Add imports: `DesktopTimePicker`, `MobileTimePicker` from `@mui/x-date-pickers`, `LocalizationProvider`, `AdapterDayjs`, `dayjs`, and reuse `useIsMobile` from `@/hooks/use-mobile`.
-- Render `<LocalizationProvider dateAdapter={AdapterDayjs}>` wrapping a flex row with two pickers (Min, Max).
-- Pick component = `isMobile ? MobileTimePicker : DesktopTimePicker`.
-- Each picker's `value` derived from current context number: `min == null ? null : dayjs().startOf('day').add(min, 'minute')`.
-- `onChange` → if null, set null; else `(d.hour() * 60 + d.minute())`.
-- Apply the same `muiTextFieldSx` / `muiPopperSx` / `muiDialogSx` styling used in `src/components/ui/AppDateTimePicker.tsx` so the picker matches the app theme.
-- Use `ampm={false}` for clarity (24-hour HH:mm = duration).
-- Pass `slotProps={{ textField: { size: 'small', label: 'Min'/'Max', sx: muiTextFieldSx }, popper: { sx: muiPopperSx }, dialog: { sx: muiDialogSx } }}`.
-
-### 2. `package.json` (deps)
-- Ensure `@mui/x-date-pickers` and `dayjs` are installed (already used by `AppDateTimePicker`, so likely present — verify, install only if missing).
-
-## No changes needed
-
-- `GlobalFiltersContext.tsx` (state already typed `number | null` = total minutes).
-- `TradesContext.tsx` (filter already uses `durationMinutes` against min/max).
-- `SelectedFiltersBar.tsx` (chip already shows `Duration: min–max min`; we can optionally format as `HH:mm`, but out of scope unless requested).
+That's the entire change — no API surface or call-site updates needed.
 
 ## Out of scope
-
-- Changing the chip format in `SelectedFiltersBar`.
-- Changing any other filter inputs.
-- Adding a separate seconds field.
+- The Duration (min/max) `TimePicker` inputs in `AdvancedDayTimeSection` (separate component, not part of this request — can be done in a follow-up if desired).
+- Any visual/style changes.
