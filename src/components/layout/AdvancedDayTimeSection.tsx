@@ -152,7 +152,6 @@ function TimeIntervalList({ intervals, onChange }: TimeIntervalListProps) {
           )}
         </div>
       ))}
-      {idx => null}
       <Button
         type="button"
         variant="ghost"
