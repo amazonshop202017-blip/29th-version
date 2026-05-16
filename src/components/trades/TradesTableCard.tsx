@@ -1364,8 +1364,16 @@ export const TradesTableCard = ({
                                   <Eye className="w-3.5 h-3.5" />
                                 )}
                               </button>
-                              <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setScreenshotsModalTrade(trade); }}
+                                aria-label={`View screenshots for ${trade.symbol}`}
+                                className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground relative"
+                              >
                                 <ImageIcon className="w-3.5 h-3.5" />
+                                {trade.screenshots && trade.screenshots.length > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                                )}
                               </button>
                             </div>
                           </td>
