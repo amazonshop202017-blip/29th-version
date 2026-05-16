@@ -15,6 +15,7 @@ import {
   Menu,
   Star,
   Eye,
+  EyeOff,
   Image as ImageIcon,
   Plus,
   ArrowUp,
@@ -236,7 +237,7 @@ function DraggableTableHeader({
   );
 }
 
-function DragAlongCell({ cell }: { cell: Cell<Trade, unknown> }) {
+function DragAlongCell({ cell, hidden }: { cell: Cell<Trade, unknown>; hidden?: boolean }) {
   const { isDragging, setNodeRef, transform } = useSortable({
     id: cell.column.id,
   });
@@ -257,7 +258,11 @@ function DragAlongCell({ cell }: { cell: Cell<Trade, unknown> }) {
       className="px-2 py-1 align-middle overflow-hidden"
       onClick={(cell.column.columnDef.meta as { stopRowClick?: boolean } | undefined)?.stopRowClick ? (e) => e.stopPropagation() : undefined}
     >
-      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      {hidden ? (
+        <span className="text-muted-foreground select-none tracking-widest">***</span>
+      ) : (
+        flexRender(cell.column.columnDef.cell, cell.getContext())
+      )}
     </td>
   );
 }
