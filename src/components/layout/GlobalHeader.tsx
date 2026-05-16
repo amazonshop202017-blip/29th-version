@@ -485,7 +485,7 @@ export const GlobalHeader = () => {
             </Button>
           </SheetHeader>
           <div className="p-0">
-            <AdvancedFiltersPanel />
+            <AdvancedFiltersPanel onClose={() => setMobileAdvancedSheetOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
