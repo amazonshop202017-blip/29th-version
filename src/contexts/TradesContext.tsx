@@ -71,6 +71,7 @@ interface TradesContextType {
   deleteTrades: (ids: string[]) => void;
   deleteTradesByAccountId: (accountId: string) => void;
   getTradeById: (id: string) => Trade | undefined;
+  toggleStarred: (id: string) => void;
 }
 
 const TradesContext = createContext<TradesContextType | undefined>(undefined);
