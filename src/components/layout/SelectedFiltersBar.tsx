@@ -52,6 +52,7 @@ export const SelectedFiltersBar = () => {
     holdingPeriodFilter, setHoldingPeriodFilter,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
+    excludedChecklistItems, setExcludedChecklistItems,
     selectedTagsByCategory, setSelectedTagsByCategory,
     selectedTradeComments, setSelectedTradeComments,
     selectedAccounts, setSelectedAccounts,
@@ -111,6 +112,14 @@ export const SelectedFiltersBar = () => {
       result.push({
         id: `checklist-${item}`, label: 'Checklist', value: item,
         onRemove: () => setSelectedChecklistItems(selectedChecklistItems.filter(i => i !== item)),
+      });
+    });
+
+    // Excluded Checklist items
+    excludedChecklistItems.forEach(item => {
+      result.push({
+        id: `checklist-excl-${item}`, label: 'Excluding Checklist', value: item,
+        onRemove: () => setExcludedChecklistItems(excludedChecklistItems.filter(i => i !== item)),
       });
     });
 
@@ -239,7 +248,7 @@ export const SelectedFiltersBar = () => {
 
     return result;
   }, [
-    datePreset, selectedAccounts, selectedSymbols, selectedSetups, excludedSetups, selectedChecklistItems,
+    datePreset, selectedAccounts, selectedSymbols, selectedSetups, excludedSetups, selectedChecklistItems, excludedChecklistItems,
     selectedOutcomes, selectedDirections, selectedYear, selectedDays, selectedHours,
     lastTradesFilter, selectedReturnRanges, rMultipleMin, rMultipleMax,
     positionSizeMin, positionSizeMax,
@@ -266,6 +275,7 @@ export const SelectedFiltersBar = () => {
     setHoldingPeriodFilter('all');
     setSelectedYear(null);
     setSelectedChecklistItems([]);
+    setExcludedChecklistItems([]);
     setSelectedTagsByCategory({});
     setSelectedTradeComments({ entryComments: [], tradeManagements: [], exitComments: [] });
   };
