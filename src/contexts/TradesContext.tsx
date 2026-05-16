@@ -118,6 +118,8 @@ export const useFilteredTradesContext = (
     positionSizeMin,
     positionSizeMax,
     selectedYear,
+    durationMinutesMin,
+    durationMinutesMax,
     selectedChecklistItems,
     excludedChecklistItems,
     selectedTagsByCategory,
@@ -277,6 +279,18 @@ export const useFilteredTradesContext = (
       });
     }
 
+    // Filter by Duration (minutes) min/max
+    if (durationMinutesMin !== null || durationMinutesMax !== null) {
+      filtered = filtered.filter(trade => {
+        const metrics = calculateTradeMetrics(trade);
+        if (metrics.positionStatus !== 'CLOSED' || !metrics.durationMinutes) return false;
+        const d = metrics.durationMinutes;
+        if (durationMinutesMin !== null && d < durationMinutesMin) return false;
+        if (durationMinutesMax !== null && d > durationMinutesMax) return false;
+        return true;
+      });
+    }
+
     // Filter by Year
     if (selectedYear !== null) {
       filtered = filtered.filter(trade => {
@@ -356,7 +370,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, durationMinutesMin, durationMinutesMax, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)

@@ -50,6 +50,8 @@ export const SelectedFiltersBar = () => {
     positionSizeMin, setPositionSizeMin,
     positionSizeMax, setPositionSizeMax,
     holdingPeriodFilter, setHoldingPeriodFilter,
+    durationMinutesMin, setDurationMinutesMin,
+    durationMinutesMax, setDurationMinutesMax,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
     excludedChecklistItems, setExcludedChecklistItems,
@@ -210,6 +212,17 @@ export const SelectedFiltersBar = () => {
       });
     }
 
+    // Duration (minutes) Min/Max
+    if (durationMinutesMin !== null || durationMinutesMax !== null) {
+      const minLabel = durationMinutesMin === null ? '−∞' : `${durationMinutesMin}`;
+      const maxLabel = durationMinutesMax === null ? '+∞' : `${durationMinutesMax}`;
+      result.push({
+        id: 'duration-range', label: 'Duration',
+        value: `${minLabel} to ${maxLabel} min`,
+        onRemove: () => { setDurationMinutesMin(null); setDurationMinutesMax(null); },
+      });
+    }
+
     // Tags by category
     Object.entries(selectedTagsByCategory).forEach(([categoryId, tagIds]) => {
       const categoryName = categories.find(c => c.id === categoryId)?.name || 'Tag';
@@ -253,6 +266,7 @@ export const SelectedFiltersBar = () => {
     lastTradesFilter, selectedReturnRanges, rMultipleMin, rMultipleMax,
     positionSizeMin, positionSizeMax,
     holdingPeriodFilter,
+    durationMinutesMin, durationMinutesMax,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
 
@@ -273,6 +287,8 @@ export const SelectedFiltersBar = () => {
     setPositionSizeMin(null);
     setPositionSizeMax(null);
     setHoldingPeriodFilter('all');
+    setDurationMinutesMin(null);
+    setDurationMinutesMax(null);
     setSelectedYear(null);
     setSelectedChecklistItems([]);
     setExcludedChecklistItems([]);

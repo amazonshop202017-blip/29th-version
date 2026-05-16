@@ -1,5 +1,6 @@
 import { useState, ReactNode, useMemo } from 'react';
-import { ChevronDown, Clock, Calendar as CalendarIcon2, CalendarDays } from 'lucide-react';
+import { ChevronDown, Clock, Calendar as CalendarIcon2, CalendarDays, Timer } from 'lucide-react';
+import TextField from '@mui/material/TextField';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -114,6 +115,8 @@ export function AdvancedDayTimeSection() {
     selectedHours, setSelectedHours,
     selectedYear, setSelectedYear,
     holdingPeriodFilter, setHoldingPeriodFilter,
+    durationMinutesMin, setDurationMinutesMin,
+    durationMinutesMax, setDurationMinutesMax,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -159,6 +162,46 @@ export function AdvancedDayTimeSection() {
 
   return (
     <div className="space-y-1">
+      {/* Duration (minutes) */}
+      <FilterRow
+        label="Duration, minutes"
+        icon={<Timer className="w-3.5 h-3.5" />}
+        active={durationMinutesMin !== null || durationMinutesMax !== null}
+        expanded={isExpanded('duration', durationMinutesMin !== null || durationMinutesMax !== null)}
+        onToggle={() => toggleManual(
+          'duration',
+          durationMinutesMin !== null || durationMinutesMax !== null,
+          () => { setDurationMinutesMin(null); setDurationMinutesMax(null); }
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <TextField
+            size="small"
+            type="number"
+            label="Min"
+            value={durationMinutesMin ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDurationMinutesMin(v === '' ? null : Math.max(0, Number(v)));
+            }}
+            slotProps={{ htmlInput: { min: 0 } }}
+            sx={{ flex: 1 }}
+          />
+          <TextField
+            size="small"
+            type="number"
+            label="Max"
+            value={durationMinutesMax ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDurationMinutesMax(v === '' ? null : Math.max(0, Number(v)));
+            }}
+            slotProps={{ htmlInput: { min: 0 } }}
+            sx={{ flex: 1 }}
+          />
+        </div>
+      </FilterRow>
+
       {/* Year */}
       <FilterRow
         label="Year"
