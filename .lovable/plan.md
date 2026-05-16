@@ -1,52 +1,42 @@
-# Add Setup "Excluding" Filter
+## Plan: Add Setup Cards Below Setups Table
 
-Mirror the existing Setup (include) multi-select with a second "Excluding" multi-select directly beneath it. Trades whose `strategyId` matches any excluded setup are removed from results.
+Add a card grid below the existing "Your Setups" table on the Strategies page (`src/pages/Strategies.tsx`). The existing table, mobile cards, add/edit flows, and routing remain untouched.
 
-## Scope
+### What each card shows (matching reference image)
+- **Header row**: lightning-bolt icon (in rounded square tile), setup name (uppercase), small "LIVE" pill badge, and a `MoreVertical` (•••) button on the right
+- **Sub-header**: setup type/description in muted small caps, e.g. `INTRADAY · LAST EXECUTION: <date>`
+- **Two metric rows** (3 columns each):
+  - Row 1: `WIN RATE`, `PF` (profit factor), `MONTHLY` (current month return %)
+  - Row 2: `HISTORY` (total trades), `AVG R` (avg R multiple), `DD` (max drawdown %)
+- **Mini line chart**: a smooth cumulative P&L line with a soft gradient fill underneath, full-width at the bottom of the card
 
-- Applies to the global Strategy filter only (Setup). Checklist items are unchanged for now.
-- "Include" semantics unchanged: if non-empty, only trades with one of those setups pass.
-- "Exclude" semantics: if non-empty, trades with any of those setups are removed (applied after include).
+Colors follow existing semantic tokens (`text-profit`, `text-loss`, `text-muted-foreground`, `glass-card`, `border-border`). Card uses the same `glass-card rounded-2xl` styling as the rest of the page so it visually matches the site.
 
-## Files to change
+### Layout
+- New section below the existing table card, titled "Setup Overview"
+- Responsive grid: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`
+- Clicking a card navigates to `/strategies/:id` (same as table row)
+- `•••` menu mirrors the table's dropdown (View Details, Edit, Edit Checklist, Delete)
 
-### 1. `src/contexts/GlobalFiltersContext.tsx`
+### Data
+- Reuse `strategiesWithStats` already computed in the page
+- Extend `calculateStrategyStats` (in `src/lib/strategyStats.ts`) to also return:
+  - `monthlyReturnPct` — current calendar month net P&L as % of starting account balance (or simple sum % if balance unavailable; fall back to 0)
+  - `avgR` — average R-multiple across closed trades (uses existing trade metrics)
+  - `maxDrawdownPct` — running max drawdown over cumulative P&L
+  - `cumulativeSeries: { x: number; y: number }[]` — cumulative net P&L points for the mini chart
+  - `lastExecutionDate` — most recent trade exit date (ISO)
+- All additions are additive; existing fields and consumers stay intact
 
-- Add state `excludedSetups: string[]` + `setExcludedSetups`.
-- Add to context type, provider value, `useMemo` deps, and `resetAllFilters`.
+### Chart
+- Use `recharts` `AreaChart` (already used elsewhere) with a single `Area` + linear gradient defs (`hsl(var(--profit))` / `hsl(var(--loss))` depending on final P&L sign)
+- No axes, no grid, no tooltip — purely decorative, ~80px tall
 
-### 2. `src/contexts/TradesContext.tsx`
+### Files to change
+- `src/pages/Strategies.tsx` — append a new "Setup Overview" section with the card grid; add a small inline `SetupCard` component (or extract to `src/components/strategy/SetupCard.tsx` for cleanliness)
+- `src/lib/strategyStats.ts` — extend `StrategyStats` interface and `calculateStrategyStats` with the new fields listed above
+- New file: `src/components/strategy/SetupCard.tsx` — the card component
 
-- After the existing `selectedSetups` include filter, add:
-  ```
-  if (excludedSetups.length > 0) {
-    filtered = filtered.filter(t => !t.strategyId || !excludedSetups.includes(t.strategyId));
-  }
-  ```
-- Add to `useMemo` deps.
-
-### 3. `src/hooks/useAccountScopedFilteredTrades.ts`
-
-- Same exclude filter as above; add to deps array.
-
-### 4. `src/components/layout/AdvancedStrategySection.tsx`
-
-- Pull `excludedSetups`, `setExcludedSetups` from context.
-- Under the existing Setup `FilterRow`, when Setup row is expanded/active, render a second labeled block "Excluding" with a `CheckboxMultiSelect` bound to `excludedSetups`. Match the reference screenshot styling (small label above the dropdown, placeholder "Exclude").
-- Treat the row as `active` if either include or exclude has selections; toggling off clears both.
-
-### 5. `src/components/layout/GlobalHeader.tsx`
-
-- Add `excludedSetups`/`setExcludedSetups` to the header filter popover (same place Setup currently lives), as a second select labeled "Excluding".
-- Include in `useMemo`/`useEffect` deps.
-
-### 6. `src/components/layout/SelectedFiltersBar.tsx`
-
-- Add an "Excluding setups: N" chip when `excludedSetups.length > 0`, with `onRemove` clearing `excludedSetups`. Include in `clearAll`.
-
-## Notes
-
-- No backend / schema changes.
-- Pure frontend, follows the established R-Multiple / Position Size pattern.
-
-make sure to match the design, as it have similar menu tree line like we have in tools menu in sidebar
+### Not changing
+- Existing desktop table grid, mobile card layout, add-form, edit-flow, checklist editor, routing
+- Any other page or context

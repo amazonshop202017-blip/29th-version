@@ -11,6 +11,7 @@ import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useNavigate } from 'react-router-dom';
 import { calculateStrategyStats } from '@/lib/strategyStats';
 import { StrategyChecklistEditor } from '@/components/strategy/StrategyChecklistEditor';
+import { SetupCard } from '@/components/strategy/SetupCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -384,6 +385,30 @@ const Strategies = () => {
       </div>
 
       {/* Checklist Editor Modal */}
+      {strategiesWithStats.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-semibold">Setup Overview</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">At-a-glance performance per setup</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {strategiesWithStats.map((s) => (
+              <SetupCard
+                key={s.id}
+                id={s.id}
+                name={s.name}
+                description={s.description}
+                stats={s.stats}
+                onOpen={() => navigate(`/strategies/${s.id}`)}
+                onEdit={() => startEditing(s.id, s.name, s.description)}
+                onEditChecklist={() => openChecklistEditor(s.id, s.name, s.checklistItems || [])}
+                onDelete={() => removeStrategy(s.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {editingChecklistStrategy && (
         <StrategyChecklistEditor
           isOpen={checklistEditorOpen}

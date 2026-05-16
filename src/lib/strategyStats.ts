@@ -9,6 +9,11 @@ export interface StrategyStats {
   avgLoser: number;
   expectancy: number;
   sharedStrategies: string;
+  monthlyReturnPct: number;
+  avgR: number;
+  maxDrawdownPct: number;
+  cumulativeSeries: { x: number; y: number }[];
+  lastExecutionDate: string | null;
 }
 
 export function calculateStrategyStats(strategyId: string, trades: Trade[]): StrategyStats {
@@ -25,6 +30,11 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
       avgLoser: 0,
       expectancy: 0,
       sharedStrategies: '-',
+      monthlyReturnPct: 0,
+      avgR: 0,
+      maxDrawdownPct: 0,
+      cumulativeSeries: [],
+      lastExecutionDate: null,
     };
   }
   
@@ -63,7 +73,41 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
   // Expectancy = (Win Rate × Avg. Win) – (Loss Rate × Avg. Loss)
   // Note: avgLoser is negative, so we use Math.abs
   const expectancy = ((winRate / 100) * avgWinner) - ((lossRate / 100) * Math.abs(avgLoser));
-  
+
+  // Build a chronological cumulative series for the mini chart.
+  const chrono = [...tradesWithMetrics]
+    .filter(t => !!t.metrics.closeDate)
+    .sort((a, b) => new Date(a.metrics.closeDate).getTime() - new Date(b.metrics.closeDate).getTime());
+  let running = 0;
+  const cumulativeSeries = chrono.map((t, i) => {
+    running += t.metrics.netPnl;
+    return { x: i, y: running };
+  });
+
+  // Max drawdown (% from peak) on the cumulative curve.
+  let peak = 0;
+  let maxDdPct = 0;
+  for (const pt of cumulativeSeries) {
+    if (pt.y > peak) peak = pt.y;
+    if (peak > 0) {
+      const dd = ((peak - pt.y) / peak) * 100;
+      if (dd > maxDdPct) maxDdPct = dd;
+    }
+  }
+
+  // Monthly: current calendar month net P&L as % of total net (proxy).
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const monthNet = tradesWithMetrics
+    .filter(t => t.metrics.closeDate && new Date(t.metrics.closeDate).getTime() >= monthStart)
+    .reduce((s, t) => s + t.metrics.netPnl, 0);
+  const monthlyReturnPct = Math.abs(totalNetPnL) > 0 ? (monthNet / Math.abs(totalNetPnL)) * 100 : 0;
+
+  // Avg R (proxy): avg winner / |avg loser|.
+  const avgR = Math.abs(avgLoser) > 0 ? avgWinner / Math.abs(avgLoser) : 0;
+
+  const lastExecutionDate = chrono.length > 0 ? chrono[chrono.length - 1].metrics.closeDate : null;
+
   return {
     totalTrades: strategyTrades.length,
     totalNetPnL,
@@ -72,7 +116,11 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
     avgWinner,
     avgLoser,
     expectancy,
-    
     sharedStrategies: '-', // Placeholder - for future multi-strategy feature
+    monthlyReturnPct,
+    avgR,
+    maxDrawdownPct: maxDdPct,
+    cumulativeSeries,
+    lastExecutionDate,
   };
 }
