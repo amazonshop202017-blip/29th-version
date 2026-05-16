@@ -111,7 +111,8 @@ export const useFilteredTradesContext = (
     lastTradesFilter,
     selectedDirections,
     selectedReturnRanges,
-    selectedRMultipleRanges,
+    rMultipleMin,
+    rMultipleMax,
     holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
@@ -228,12 +229,14 @@ export const useFilteredTradesContext = (
       });
     }
 
-    // Filter by R-Multiple ranges
-    if (selectedRMultipleRanges.length > 0) {
+    // Filter by R-Multiple Min/Max (inclusive bounds)
+    if (rMultipleMin !== null || rMultipleMax !== null) {
       filtered = filtered.filter(trade => {
-        const rMultiple = trade.savedRMultiple;
-        // Match if trade falls within ANY of the selected ranges (OR logic)
-        return selectedRMultipleRanges.some(range => matchesRMultipleRange(rMultiple, range));
+        const r = trade.savedRMultiple;
+        if (r === undefined || r === null) return false;
+        if (rMultipleMin !== null && r < rMultipleMin) return false;
+        if (rMultipleMax !== null && r > rMultipleMax) return false;
+        return true;
       });
     }
 
@@ -323,7 +326,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
