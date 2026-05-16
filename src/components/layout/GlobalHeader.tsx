@@ -589,7 +589,8 @@ export const GlobalHeader = () => {
 
       {/* Grouped filter bar with shared border and vertical dividers */}
       <div className="hidden lg:flex items-center border border-border rounded-md bg-background h-[2.125rem] overflow-visible">
-        {/* Basic Filters Dropdown */}
+        {/* Basic Filters Dropdown - hidden (replaced by Advanced Filters) */}
+        <div className="hidden">
         <DropdownMenu open={basicFiltersOpen} onOpenChange={setBasicFiltersOpen}>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded-l-[calc(0.375rem-1px)]">
@@ -1204,9 +1205,10 @@ export const GlobalHeader = () => {
           </div>
         </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-border" />
+        {/* Divider - hidden along with Basic Filters */}
+        <div className="w-px h-5 bg-border hidden" />
 
         {/* Advanced Filters Dropdown */}
         <Popover open={advancedFiltersOpen} onOpenChange={setAdvancedFiltersOpen}>
