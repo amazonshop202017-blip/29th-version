@@ -157,7 +157,8 @@ const Strategies = () => {
         )}
       </AnimatePresence>
 
-      {/* Strategies Table / Cards */}
+      {/* Strategies Table */}
+      {viewMode === 'table' && (
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-border">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/20 flex items-center justify-center">
