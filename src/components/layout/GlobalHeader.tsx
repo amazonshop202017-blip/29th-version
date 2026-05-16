@@ -1224,7 +1224,7 @@ export const GlobalHeader = () => {
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-0 bg-popover border-border z-50">
+          <PopoverContent align="start" collisionPadding={24} className="w-auto p-0 bg-popover border-border z-50">
             <AdvancedFiltersPanel />
           </PopoverContent>
         </Popover>
