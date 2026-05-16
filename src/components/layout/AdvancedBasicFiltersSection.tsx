@@ -67,7 +67,7 @@ function FilterRow({ label, icon, active, expanded, onToggle, children }: Filter
   return (
     <div className="space-y-2">
       <div
-        className="flex items-center gap-2 cursor-pointer select-none py-1"
+        className="flex items-center gap-3 cursor-pointer select-none py-1.5"
         onClick={onToggle}
       >
         <Checkbox
@@ -119,10 +119,10 @@ function CheckboxMultiSelect<T extends string | number>({
           ) : options.map((opt) => (
             <div
               key={String(opt.value)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              className="flex items-center gap-3 px-2 py-2 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
               onClick={() => toggle(opt.value)}
             >
-              <Checkbox checked={selected.includes(opt.value)} />
+              <Checkbox className="rounded-none" checked={selected.includes(opt.value)} />
               <span className="text-sm truncate">{opt.label}</span>
             </div>
           ))}
