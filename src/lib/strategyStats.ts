@@ -76,7 +76,7 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
 
   // Build a chronological cumulative series for the mini chart.
   const chrono = [...tradesWithMetrics]
-    .filter(t => !!t.trade.closeDate)
+    .filter(t => !!t.metrics.closeDate)
     .sort((a, b) => new Date(a.trade.closeDate).getTime() - new Date(b.trade.closeDate).getTime());
   let running = 0;
   const cumulativeSeries = chrono.map((t, i) => {
@@ -99,7 +99,7 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const monthNet = tradesWithMetrics
-    .filter(t => t.trade.closeDate && new Date(t.trade.closeDate).getTime() >= monthStart)
+    .filter(t => t.metrics.closeDate && new Date(t.metrics.closeDate).getTime() >= monthStart)
     .reduce((s, t) => s + t.metrics.netPnl, 0);
   const monthlyReturnPct = Math.abs(totalNetPnL) > 0 ? (monthNet / Math.abs(totalNetPnL)) * 100 : 0;
 
