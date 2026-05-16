@@ -1,38 +1,40 @@
 ## Goal
-Add a new "Yearly Calendar" widget to the dashboard. Spans 2 columns × 1 row in the chart grid. Shows months Jan–Jun on row 1 and Jul–Dec on row 2 with per-month P&L, trade count, and R. Year is navigable via left/right arrows and a clickable year dropdown (same pattern as the Monthly Calendar widget).
+Clicking any month in the Yearly Calendar widget opens a Day-Details–style popup, but aggregated for the whole month. The popup's "View Details" button closes the popup and sets the global date-range filter to that month (1st → last day), with preset = "custom". No route navigation.
 
 ## New component
-Create `src/components/dashboard/YearlyCalendarWidget.tsx`:
+Create `src/components/dashboard/MonthDetailsModal.tsx` — visually identical to `DayDetailsModal` but with month semantics:
 
-- Wrapper: `glass-card rounded-xl p-3 md:p-6 h-full` + framer-motion fade/slide (matches `MonthlyPerformanceCalendar`).
-- Header row:
-  - Left: ChevronLeft button → previous year, then a `YearDropdown` (reusing the pattern from `src/components/reports/YearlyCalendar.tsx` — clickable year text with chevron, opens a popover of ±10 years), then ChevronRight button.
-  - Right: compact summary chips (label muted, value bold) for the selected year:
-    - `P&L` (profit-text / loss-text via existing classes, formatted with `useGlobalFilters().formatCurrency` and privacy-masked)
-    - `Trades` (uses pluralized "trades" label per project memory)
-    - `R` (positive → profit-text, negative → loss-text)
-- Body: a single `grid grid-cols-6 gap-2` (no nested 2 rows needed — 12 items, 6 cols = 2 rows). On mobile collapse to `grid-cols-3` then `sm:grid-cols-6`.
-- Each month tile:
-  - `rounded-lg border border-border/60 p-3 cursor-pointer transition-colors hover:bg-accent/40` (no aggressive heatmap — keep sober, the P&L value carries the color).
-  - Top: month short name uppercase (`text-[11px] tracking-wider text-muted-foreground`), e.g. "JAN".
-  - Middle: P&L value `text-xl md:text-2xl font-bold font-mono` colored `profit-text` / `loss-text`. If no trades → render an em dash `—` in `text-muted-foreground`.
-  - Bottom row (one line): `{n} trades` (muted) · separator · `{r}R` (profit/loss colored). Same typography conventions as the Monthly Calendar tiles. If no data → "No trades" muted.
-  - Current month gets a subtle `ring-1 ring-primary/30` highlight.
-  - Click handler: no modal in v1 (out of scope — image doesn't show one). Keeps it a pure KPI tile. Hover only.
+- Props: `{ isOpen, onClose, date: Date /* any date in the month */, trades: Trade[] /* already filtered to that month */ }`.
+- Header title: `format(date, 'MMMM yyyy')` (e.g. "March 2026") + Net P&L pill (same `text-profit` / `text-loss` treatment, privacy-masked via `useGlobalFilters().formatCurrency` + `usePrivacyMode().maskCurrency`).
+- Header actions (right):
+  - Mobile: `Plus` icon-button → "Add Trade" (calls `openModalWithDate` with the 1st of the month at current local time, same pattern as `DayDetailsModal.handleAddTrade`).
+  - `FileText` icon-button → "Add Note" (creates a diary note linked to the 1st of the month, title `Month Note: <MMM yyyy>`).
+  - Desktop: same actions as full buttons.
+- Body metrics grid (identical fields and styling to `DayDetailsModal`):
+  - Total Trades, Gross P&L, Winners / Losers, Commissions, Win Rate, Volume, Profit Factor, Avg Duration.
+  - Computed from the passed `trades` via `calculateTradeMetrics` — same reducer as `DayDetailsModal.dayStats`.
+- Chart slot (left of the metrics, where `IntradayPnLChart` lives in DayDetailsModal):
+  - Replace with a compact cumulative daily P&L line for the month using `recharts` `AreaChart` (same minimal styling already used in `DashboardMetrics` microChart: profit/loss-colored gradient, no axes, no tooltip). Group trades by day-of-close, build cumulative series. Same `300×140` footprint on desktop.
+- Trades table: reuse `DayTradesTable` as-is (it just lists trades from the passed array).
+- Footer: `Cancel` + `View Details`. `View Details` handler:
+  ```ts
+  setDatePreset('custom');
+  setDateRange({ from: startOfMonth(date), to: endOfMonth(date) });
+  onClose();
+  ```
+  No `navigate(...)` call — user explicitly wants to stay on the dashboard with the filter applied.
 
-## Data
-Use `useFilteredTrades()` + `calculateTradeMetrics(trade)` (same as Monthly Calendar). Build a memoized map keyed by `YYYY-MM` for trades whose `closeDate` falls in the selected year, accumulating `netPnl`, `tradeCount`, and `rMultiple` (using `trade.savedRMultiple` when finite — mirrors Monthly Calendar's logic). Year totals for the header chips are computed from the same map.
+## Wire into YearlyCalendarWidget
+In `src/components/dashboard/YearlyCalendarWidget.tsx`:
+1. Add state: `const [selectedMonthIdx, setSelectedMonthIdx] = useState<number | null>(null);`.
+2. Each month tile becomes `cursor-pointer hover:ring-1 hover:ring-primary/40` and gets an `onClick={() => setSelectedMonthIdx(idx)}`. Tiles with `!s.hasData` still open the modal (it gracefully shows the "No trades on this day"-equivalent state — we'll change that copy to "No trades this month").
+3. Compute `selectedMonthDate` = `new Date(year, selectedMonthIdx, 1)` and `selectedMonthTrades` by filtering `filteredTrades` to those whose `calculateTradeMetrics(t).closeDate` falls in the selected `year`/`monthIdx`.
+4. Render `<MonthDetailsModal isOpen={selectedMonthIdx !== null} onClose={() => setSelectedMonthIdx(null)} date={selectedMonthDate} trades={selectedMonthTrades} />`.
 
-## Dashboard wiring
-In `src/pages/Dashboard.tsx`:
-- Import the new component.
-- Add `yearlyCalendar: { component: YearlyCalendarWidget, colSpan: 2, rowSpan: 1 }` to `CHART_CONFIGS`.
-- Append `'yearlyCalendar'` to `DEFAULT_CHART_ORDER` so existing users see it after the current widgets (their saved preference order won't include it; they can add from the library).
-
-In `src/components/dashboard/ChartLibraryModal.tsx`:
-- Add `{ id: 'yearlyCalendar', name: 'Yearly Calendar', description: '12-month overview with P&L, trades and R per month' }` to `WIDGET_LIST`.
+## Empty-state copy
+In `MonthDetailsModal`, where DayDetailsModal shows "No trades on this day", show "No trades this month".
 
 ## Out of scope
-- No month-click drill-down modal (reference image doesn't imply one).
-- No heatmap background coloring of tiles (kept sober per existing dashboard typography rules).
-- No changes to the existing `reports/YearlyCalendar.tsx`.
+- No changes to `DayDetailsModal` or the global filter contract.
+- No new routes.
+- Yearly widget tiles for other dashboard widgets are untouched.
