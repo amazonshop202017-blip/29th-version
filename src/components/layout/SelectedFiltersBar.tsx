@@ -3,7 +3,7 @@ import { X, Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useGlobalFilters, DayFilter, OutcomeFilter, DirectionFilter, ReturnPercentRange, RMultipleRange } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, DayFilter, OutcomeFilter, DirectionFilter, ReturnPercentRange } from '@/contexts/GlobalFiltersContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
 import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
@@ -32,10 +32,6 @@ const RETURN_LABELS: Record<ReturnPercentRange, string> = {
   '<0': '< 0%', '0-1': '0–1%', '1-2': '1–2%', '3-5': '3–5%', '5-10': '5–10%', '>10': '> 10%',
 };
 
-const R_MULTIPLE_LABELS: Record<RMultipleRange, string> = {
-  '<-2': '< -2R', '-2-0': '-2R to 0R', '0-1': '0R to 1R', '1-2': '1R to 2R', '2-4': '2R to 4R', '>4': '> 4R',
-};
-
 export const SelectedFiltersBar = () => {
   const location = useLocation();
   const isToolsRoute = location.pathname.startsWith('/tools');
@@ -48,7 +44,8 @@ export const SelectedFiltersBar = () => {
     lastTradesFilter, setLastTradesFilter,
     selectedDirections, setSelectedDirections,
     selectedReturnRanges, setSelectedReturnRanges,
-    selectedRMultipleRanges, setSelectedRMultipleRanges,
+    rMultipleMin, setRMultipleMin,
+    rMultipleMax, setRMultipleMax,
     holdingPeriodFilter, setHoldingPeriodFilter,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
@@ -161,13 +158,16 @@ export const SelectedFiltersBar = () => {
       });
     });
 
-    // R-Multiple
-    selectedRMultipleRanges.forEach(r => {
+    // R-Multiple (Min/Max)
+    if (rMultipleMin !== null || rMultipleMax !== null) {
+      const minLabel = rMultipleMin === null ? '−∞' : `${rMultipleMin}`;
+      const maxLabel = rMultipleMax === null ? '+∞' : `${rMultipleMax}`;
       result.push({
-        id: `rmultiple-${r}`, label: 'R-Multiple', value: R_MULTIPLE_LABELS[r],
-        onRemove: () => setSelectedRMultipleRanges(selectedRMultipleRanges.filter(x => x !== r)),
+        id: 'rmultiple-range', label: 'R-Multiple',
+        value: `${minLabel} to ${maxLabel} R`,
+        onRemove: () => { setRMultipleMin(null); setRMultipleMax(null); },
       });
-    });
+    }
 
     // Holding period
     if (holdingPeriodFilter !== 'all') {
@@ -218,7 +218,7 @@ export const SelectedFiltersBar = () => {
   }, [
     datePreset, selectedAccounts, selectedSymbols, selectedSetups, selectedChecklistItems,
     selectedOutcomes, selectedDirections, selectedYear, selectedDays, selectedHours,
-    lastTradesFilter, selectedReturnRanges, selectedRMultipleRanges,
+    lastTradesFilter, selectedReturnRanges, rMultipleMin, rMultipleMax,
     holdingPeriodFilter,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
@@ -234,7 +234,8 @@ export const SelectedFiltersBar = () => {
     setLastTradesFilter(null);
     setSelectedDirections([]);
     setSelectedReturnRanges([]);
-    setSelectedRMultipleRanges([]);
+    setRMultipleMin(null);
+    setRMultipleMax(null);
     setHoldingPeriodFilter('all');
     setSelectedYear(null);
     setSelectedChecklistItems([]);
