@@ -1,56 +1,71 @@
 ## Goal
 
-Add a "Deeper Analysis" CTA on the Backtest Session page that pivots the user into the rest of the app with this single backtesting account active in the global account filter. Outside of this explicit action, backtesting accounts must remain invisible/excluded everywhere accounts are picked.
+Inside the Advanced Filters popover, add a new left-menu entry **Basic Filters**. The right pane lists every basic filter as a checkbox row. Checking a row reveals that filter's input control (the same multi-select / picker already used in the current Basic Filters dropdown). Unchecking clears its value and hides the input. Visual language matches the existing General / Tags sections.
 
-## Changes
+The current Basic Filters dropdown button in the header stays in place. We will remove it only after you confirm the replication works.
 
-### 1. "Deeper Analysis" button — `src/pages/backtesting/BacktestSession.tsx`
+## Where
 
-- In the header action row, place a new golden button immediately to the **left** of `Clear Trades`.
-- Style: solid amber/gold background using semantic-friendly Tailwind (e.g. `bg-amber-500 hover:bg-amber-600 text-black`), `Sparkles` (or `LineChart`) icon from lucide-react, label `Deeper Analysis`.
-- On click:
-  1. Call `setSelectedAccounts([accountId])` from `useGlobalFilters` to scope global filters to only this backtesting account.
-  2. Show a `toast.success` like "Analyzing <session name> across the app".
-  3. Navigate to `/dashboard`.
+Single file: `src/components/layout/AdvancedFiltersPanel.tsx`
 
-### 2. Backtesting account opt-in for the global filter
+No changes to `GlobalFiltersContext` (all state already exists), no changes to `GlobalHeader.tsx` other than implicitly through the panel it renders.
 
-The existing global account filter UI (sidebar account menu / filter bar) already lists accounts. We need:
+## Left menu — new entry
 
-- **Default behavior (unchanged for the user):** backtesting accounts are hidden from the account picker AND excluded from "All Accounts" results.
-- **Single exception:** when the user clicks Deeper Analysis, that specific backtesting account ID is placed in `selectedAccounts`. The system must respect that selection even though the account is otherwise hidden.
+Add to the `menuItems` array (above Tags):
 
-Concretely:
-- Locate the account picker component (`SidebarAccountMenu` and any account multi-select used in filter bars/modals). Filter the listed options with `a.accountMode !== 'backtesting'` so backtesting accounts never appear as selectable items.
-- Where "All Accounts" expands to a list of IDs (e.g. `useAccountScopedFilteredTrades`, account loops in dashboards), continue to use `getActiveAccountsWithStats` / `getActiveAccountIds`, which already exclude backtesting — no change needed there.
-- The trade-filtering pipeline matches on `selectedAccounts` array equality, so a backtesting ID placed there by Deeper Analysis will correctly limit results to that one session's trades.
-- When the user changes account selection back to "All Accounts" (clears selection), backtesting is naturally dropped again — matches the requirement that this is a one-shot scope.
-
-### 3. Trades coming from a backtest session
-
-The Backtest Session page stores rows in its own `backtestStore`, not in `TradesContext`. For Deeper Analysis to actually drive the rest of the app's analytics, backtest rows must surface as trades scoped to this account.
-
-Approach: add a read-only bridge in `TradesContext` that, when `selectedAccounts` contains a backtesting account ID, augments the trade list with trades synthesized from that session's rows (mapped via the field catalog: symbol, direction, entry/exit dates, P/L, R, etc.). Synthesized trades are tagged with `accountId = <backtesting account id>` and a `source: 'backtest'` marker so they never leak into normal "All Accounts" views.
-
-### 4. Add Trade popup — hide backtesting accounts
-
-In the main Add/Edit Trade modal (`src/components/trades/TradeModal.tsx`), the Account dropdown must filter out backtesting accounts:
-
-```ts
-const selectableAccounts = accounts.filter(a => a.accountMode !== 'backtesting');
+```
+{ key: 'basic', label: 'Basic Filters', icon: <Filter className="w-4 h-4" /> }
 ```
 
-Apply the same filter to any other account pickers that currently show all accounts (Import flows, Diary link-trade, Compare groups). Backtesting accounts are managed only from the Backtesting page.
+`MenuSection` type extended to `'basic' | 'general' | 'tags'`. Default `activeSection` becomes `'basic'`.
 
-## Technical notes
+## Right pane — "Basic Filters" section
 
-- `selectedAccounts` already drives currency, filters, and trade scoping globally — no schema changes needed.
-- The bridge in step 3 is the only place where backtest data leaves its store; it activates strictly when a backtesting account is the sole selected account.
-- Golden styling stays inside the component; no new design tokens needed unless you want a reusable `--gold` token (optional follow-up).
+A vertical list of rows. Each row has a checkbox + label; when checked, an indented input control renders below it (matching the `ml-6` indent already used for tag selectors).
 
-## Files to edit
+Rows and the input they reveal:
 
-- `src/pages/backtesting/BacktestSession.tsx` — add Deeper Analysis button + handler.
-- `src/contexts/TradesContext.tsx` — bridge backtest rows as trades when a backtesting account is selected.
-- `src/components/trades/TradeModal.tsx` — filter out backtesting accounts from account dropdown.
-- Any other account selectors that currently show all accounts (audit: `SidebarAccountMenu`, `MultiAccountSelect`, `LinkTradeModal`, import modals) — apply `accountMode !== 'backtesting'` filter.
+| Filter | Checked when | Input shown on expand |
+|---|---|---|
+| Symbol | `selectedSymbols.length > 0` | Combobox popover with search + multi-select of `availableSymbols` |
+| Setup | `selectedSetups.length > 0` | Combobox popover with multi-select of strategies |
+| Checklist of Setup | `selectedChecklistItems.length > 0` | Combobox popover of checklist items (disabled until Setup chosen) |
+| Outcome | `selectedOutcomes.length > 0` | Combobox multi-select of OUTCOME_OPTIONS |
+| Direction | `selectedDirections.length > 0` | Combobox multi-select of DIRECTION_OPTIONS |
+| Day of Week | `selectedDays.length > 0` | Combobox multi-select of DAY_OPTIONS |
+| Hour | `selectedHours.length > 0` | Combobox multi-select of 0–23 |
+| Last Trades | `lastTradesFilter !== null` | Single-select dropdown of LAST_TRADES_OPTIONS |
+| Year | `selectedYear !== null` | Year picker (same grid used today) |
+| Return % | `selectedReturnRanges.length > 0` | Combobox multi-select of ReturnPercentRange |
+| R-Multiple | `selectedRMultipleRanges.length > 0` | Combobox multi-select of RMultipleRange |
+
+Behavior rules (mirroring existing Tags/Comments rows):
+
+- Clicking the checkbox or label toggles the row.
+- Checking a row that is currently empty just expands it (no auto-select-all, since most of these have no natural "all" preset).
+- Unchecking clears that filter's state via its existing setter (`setSelectedSymbols([])`, etc.) and collapses the row.
+- A row whose state is non-empty is always rendered expanded (treat non-empty state as implicit "checked + expanded"), matching how Tags behaves.
+
+Pull state and setters from `useGlobalFilters()` — already exposed.
+
+## Visual / styling
+
+- Reuse existing classes from this panel: `space-y-2` between rows, `ml-6` indent for the revealed input, `bg-background border-border h-9 text-sm` for combobox triggers.
+- Use the same `Popover + Command + CommandInput + CommandList + CommandGroup + CommandItem` pattern already in the file for the Tags/Comments multi-selects, with a small checkbox glyph on each item.
+- Single-value pickers (Last Trades, Year) use a plain `Popover` with simple options list, no `Command` search.
+- Icons next to each label (`Globe`, `BarChart2`, `ListFilter`, `TrendingUp`, `Clock`, `Hash`, `CalendarIcon2`, `Percent`) for parity with the header dropdown.
+
+## What we keep / don't touch
+
+- Legacy Basic Filters dropdown button + its big grid popover in `GlobalHeader.tsx` — untouched.
+- `activeBasicFiltersCount` / `hasActiveTagFilters` counters — untouched.
+- Mobile sheet wiring — untouched.
+
+## Out of scope (this round)
+
+- Removing the legacy Basic Filters button.
+- Moving Date Range / Account into the panel.
+- Refactoring the giant grid popover in `GlobalHeader.tsx`.
+
+Once you confirm the new section behaves correctly, follow-up step will delete the legacy basic-filters trigger + grid and route mobile "Basic Filters" sheet to open the Advanced panel on the new section.
