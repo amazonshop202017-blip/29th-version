@@ -1,6 +1,6 @@
 import { useState, ReactNode, useMemo } from 'react';
 import {
-  ChevronDown, Globe, BarChart2, ListFilter, TrendingUp,
+  ChevronDown, Globe, TrendingUp,
   Hash, Percent, Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,6 @@ import {
   DirectionFilter, ReturnPercentRange, RMultipleRange,
 } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
-import { useStrategiesContext } from '@/contexts/StrategiesContext';
 
 const OUTCOME_OPTIONS: { value: OutcomeFilter; label: string }[] = [
   { value: 'win', label: 'Win' },
@@ -144,8 +143,6 @@ function CheckboxMultiSelect<T extends string | number>({
 export function AdvancedBasicFiltersSection() {
   const {
     selectedSymbols, setSelectedSymbols,
-    selectedSetups, setSelectedSetups,
-    selectedChecklistItems, setSelectedChecklistItems,
     selectedOutcomes, setSelectedOutcomes,
     selectedDirections, setSelectedDirections,
     lastTradesFilter, setLastTradesFilter,
@@ -154,24 +151,13 @@ export function AdvancedBasicFiltersSection() {
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
-  const { strategies } = useStrategiesContext();
 
   const availableSymbols = useMemo(() => {
     const s = new Set(trades.map(t => t.symbol));
     return Array.from(s).filter(Boolean).sort();
   }, [trades]);
 
-  const availableChecklistItems = useMemo(() => {
-    if (selectedSetups.length === 0) return [];
-    const items = new Set<string>();
-    strategies
-      .filter(s => selectedSetups.includes(s.id))
-      .forEach(s => s.checklistItems?.forEach(i => items.add(i)));
-    return Array.from(items);
-  }, [strategies, selectedSetups]);
-
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
-  const [checklistOpen, setChecklistOpen] = useState(false);
 
   const toggleManual = (key: string, currentlyActive: boolean, clearFn: () => void) => {
     if (currentlyActive) {
@@ -187,14 +173,6 @@ export function AdvancedBasicFiltersSection() {
     }
   };
   const isExpanded = (key: string, active: boolean) => active || manualExpanded.has(key);
-
-  const handleChecklistToggle = (item: string) => {
-    if (selectedChecklistItems.includes(item)) {
-      setSelectedChecklistItems(selectedChecklistItems.filter(i => i !== item));
-    } else {
-      setSelectedChecklistItems([...selectedChecklistItems, item]);
-    }
-  };
 
   return (
     <div className="space-y-1">
@@ -212,82 +190,6 @@ export function AdvancedBasicFiltersSection() {
           onChange={setSelectedSymbols}
           emptyText="No symbols found"
         />
-      </FilterRow>
-
-      {/* Setup */}
-      <FilterRow
-        label="Setup"
-        icon={<BarChart2 className="w-3.5 h-3.5" />}
-        active={selectedSetups.length > 0}
-        expanded={isExpanded('setup', selectedSetups.length > 0)}
-        onToggle={() => toggleManual('setup', selectedSetups.length > 0, () => setSelectedSetups([]))}
-      >
-        <CheckboxMultiSelect
-          options={strategies.map(s => ({ value: s.id, label: s.name }))}
-          selected={selectedSetups}
-          onChange={setSelectedSetups}
-          emptyText="No setups found"
-        />
-      </FilterRow>
-
-      {/* Checklist of Setup */}
-      <FilterRow
-        label="Checklist of Setup"
-        icon={<ListFilter className="w-3.5 h-3.5" />}
-        active={selectedChecklistItems.length > 0}
-        expanded={isExpanded('checklist', selectedChecklistItems.length > 0)}
-        onToggle={() => toggleManual('checklist', selectedChecklistItems.length > 0, () => setSelectedChecklistItems([]))}
-      >
-        <Popover open={checklistOpen} onOpenChange={setChecklistOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full h-9 justify-between text-sm font-normal bg-background border-border"
-              disabled={selectedSetups.length === 0}
-            >
-              {selectedSetups.length === 0
-                ? 'Select setup first'
-                : selectedChecklistItems.length === 0
-                  ? 'All'
-                  : `${selectedChecklistItems.length} selected`}
-              <ChevronDown className="w-3 h-3 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-2 bg-popover border-border z-[120]" align="start">
-            {selectedSetups.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-3 text-center">
-                Please select a setup to choose checklist items.
-              </div>
-            ) : availableChecklistItems.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-3 text-center">
-                No checklist items for selected setups.
-              </div>
-            ) : (
-              <>
-                <div className="space-y-1 max-h-48 overflow-auto">
-                  {availableChecklistItems.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                      onClick={() => handleChecklistToggle(item)}
-                    >
-                      <Checkbox checked={selectedChecklistItems.includes(item)} />
-                      <span className="text-sm truncate">{item}</span>
-                    </div>
-                  ))}
-                </div>
-                {selectedChecklistItems.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator className="my-2" />
-                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setSelectedChecklistItems([])}>
-                      Clear selection
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
-          </PopoverContent>
-        </Popover>
       </FilterRow>
 
       {/* Outcome */}
