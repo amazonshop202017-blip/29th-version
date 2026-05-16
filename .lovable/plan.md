@@ -1,40 +1,43 @@
 ## Goal
-Clicking any month in the Yearly Calendar widget opens a Day-Details–style popup, but aggregated for the whole month. The popup's "View Details" button closes the popup and sets the global date-range filter to that month (1st → last day), with preset = "custom". No route navigation.
 
-## New component
-Create `src/components/dashboard/MonthDetailsModal.tsx` — visually identical to `DayDetailsModal` but with month semantics:
+Add a new **Duration (in minutes)** filter at the top of the Day & Time section in the Advanced Filters panel. It uses MUI's `TextField` (number input) for Min and Max values — the same library (`@mui/material`) used in the [Time Input Delight](/projects/5a0a73cc-48c5-4a3e-ab86-0bcbf337e5b3) reference project. Trades whose duration (in minutes) falls outside `[min, max]` are filtered out.
 
-- Props: `{ isOpen, onClose, date: Date /* any date in the month */, trades: Trade[] /* already filtered to that month */ }`.
-- Header title: `format(date, 'MMMM yyyy')` (e.g. "March 2026") + Net P&L pill (same `text-profit` / `text-loss` treatment, privacy-masked via `useGlobalFilters().formatCurrency` + `usePrivacyMode().maskCurrency`).
-- Header actions (right):
-  - Mobile: `Plus` icon-button → "Add Trade" (calls `openModalWithDate` with the 1st of the month at current local time, same pattern as `DayDetailsModal.handleAddTrade`).
-  - `FileText` icon-button → "Add Note" (creates a diary note linked to the 1st of the month, title `Month Note: <MMM yyyy>`).
-  - Desktop: same actions as full buttons.
-- Body metrics grid (identical fields and styling to `DayDetailsModal`):
-  - Total Trades, Gross P&L, Winners / Losers, Commissions, Win Rate, Volume, Profit Factor, Avg Duration.
-  - Computed from the passed `trades` via `calculateTradeMetrics` — same reducer as `DayDetailsModal.dayStats`.
-- Chart slot (left of the metrics, where `IntradayPnLChart` lives in DayDetailsModal):
-  - Replace with a compact cumulative daily P&L line for the month using `recharts` `AreaChart` (same minimal styling already used in `DashboardMetrics` microChart: profit/loss-colored gradient, no axes, no tooltip). Group trades by day-of-close, build cumulative series. Same `300×140` footprint on desktop.
-- Trades table: reuse `DayTradesTable` as-is (it just lists trades from the passed array).
-- Footer: `Cancel` + `View Details`. `View Details` handler:
-  ```ts
-  setDatePreset('custom');
-  setDateRange({ from: startOfMonth(date), to: endOfMonth(date) });
-  onClose();
-  ```
-  No `navigate(...)` call — user explicitly wants to stay on the dashboard with the filter applied.
+## Behavior
 
-## Wire into YearlyCalendarWidget
-In `src/components/dashboard/YearlyCalendarWidget.tsx`:
-1. Add state: `const [selectedMonthIdx, setSelectedMonthIdx] = useState<number | null>(null);`.
-2. Each month tile becomes `cursor-pointer hover:ring-1 hover:ring-primary/40` and gets an `onClick={() => setSelectedMonthIdx(idx)}`. Tiles with `!s.hasData` still open the modal (it gracefully shows the "No trades on this day"-equivalent state — we'll change that copy to "No trades this month").
-3. Compute `selectedMonthDate` = `new Date(year, selectedMonthIdx, 1)` and `selectedMonthTrades` by filtering `filteredTrades` to those whose `calculateTradeMetrics(t).closeDate` falls in the selected `year`/`monthIdx`.
-4. Render `<MonthDetailsModal isOpen={selectedMonthIdx !== null} onClose={() => setSelectedMonthIdx(null)} date={selectedMonthDate} trades={selectedMonthTrades} />`.
+- Checkbox-row pattern matching the existing Year/Month/Day/Hour rows in `AdvancedDayTimeSection`.
+- When checked → expands to reveal two side-by-side MUI `TextField` inputs labeled **Min** and **Max** (`type="number"`, `inputProps={{ min: 0 }}`).
+- When unchecked → filter cleared (min/max set to `null`) and inactive.
+- Filtering rule (matches the user's example 2–10 → 1 out, 11 out, 3/8/9 in):
+  - For each trade, compute `durationMinutes` from `calculateTradeMetrics(trade)` (already used elsewhere, e.g. `TradeDurationPerformanceChart`).
+  - Only closed trades have a duration; if `min` is set, keep trades where `durationMinutes >= min`. If `max` is set, keep trades where `durationMinutes <= max`. Both inclusive.
+  - If the filter is active but a trade has no duration (open position), it is excluded.
 
-## Empty-state copy
-In `MonthDetailsModal`, where DayDetailsModal shows "No trades on this day", show "No trades this month".
+## Changes
+
+### 1. `src/contexts/GlobalFiltersContext.tsx`
+- Add state: `durationMinutesMin: number | null`, `durationMinutesMax: number | null` with setters.
+- Include in context value + reset/clear-all handlers (mirroring `selectedHours`).
+
+### 2. `src/hooks/useFilteredTrades.ts` (and/or `useAccountScopedFilteredTrades.ts` if that's where day/hour filtering lives)
+- After computing `durationMinutes` via `calculateTradeMetrics`, apply min/max bounds when either is non-null.
+
+### 3. `src/components/layout/AdvancedDayTimeSection.tsx`
+- Install/use MUI: add `@mui/material`, `@emotion/react`, `@emotion/styled` to deps.
+- Add a new `FilterRow` **at the top** of the list (before Year) labeled `Duration, minutes`.
+- Body: two MUI `TextField` inputs in a flex row (`Min` / `Max`), sized `small`, `type="number"`. Wire to context setters with empty-string → `null` handling.
+- `active` = `durationMinutesMin !== null || durationMinutesMax !== null`. Toggle off clears both.
+
+### 4. `src/components/layout/SelectedFiltersBar.tsx` (if it surfaces other filters)
+- Add a chip showing `Duration: {min ?? '–'}–{max ?? '–'} min` when active, removable.
+
+## Technical notes
+
+- MUI `TextField` inherits MUI's default theme styling (matches the reference project look). No global MUI ThemeProvider needs to be added; the component renders standalone fine. If we later want consistent theming we can wrap the panel in a `ThemeProvider`, but it isn't required for this scope.
+- Dependencies to add via `bun add`: `@mui/material @emotion/react @emotion/styled`. (`dayjs` and `@mui/x-date-pickers` are not needed — numeric inputs only.)
+- No backend or schema changes.
 
 ## Out of scope
-- No changes to `DayDetailsModal` or the global filter contract.
-- No new routes.
-- Yearly widget tiles for other dashboard widgets are untouched.
+
+- Changing existing Year/Month/Day/Hour/Holding-Period filter visuals.
+- Replacing other inputs in the panel with MUI.
+- Adding a duration-unit toggle (seconds/hours) — strictly minutes per the request.
