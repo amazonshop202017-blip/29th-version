@@ -1334,8 +1334,21 @@ export const TradesTableCard = ({
                               >
                                 <Star className="w-3.5 h-3.5" fill={trade.starred ? "currentColor" : "none"} />
                               </button>
-                              <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                                <Eye className="w-3.5 h-3.5" />
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleHidden(trade.id); }}
+                                aria-pressed={hiddenTradeIds.has(trade.id)}
+                                aria-label={hiddenTradeIds.has(trade.id) ? `Show values for ${trade.symbol}` : `Hide values for ${trade.symbol}`}
+                                className={cn(
+                                  "p-1 rounded hover:bg-muted/50 transition-colors",
+                                  hiddenTradeIds.has(trade.id) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {hiddenTradeIds.has(trade.id) ? (
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Eye className="w-3.5 h-3.5" />
+                                )}
                               </button>
                               <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
                                 <ImageIcon className="w-3.5 h-3.5" />
@@ -1347,7 +1360,7 @@ export const TradesTableCard = ({
                             strategy={horizontalListSortingStrategy}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <DragAlongCell key={cell.id} cell={cell} />
+                              <DragAlongCell key={cell.id} cell={cell} hidden={hiddenTradeIds.has(trade.id)} />
                             ))}
                           </SortableContext>
                         </tr>
