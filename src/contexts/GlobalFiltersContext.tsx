@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback, useRef } from 'react';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, startOfQuarter, startOfYear } from 'date-fns';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'INR';
@@ -159,7 +159,74 @@ interface GlobalFiltersContextType {
   hasActiveTradeCommentFilters: boolean;
 }
 
-const GlobalFiltersContext = createContext<GlobalFiltersContextType | undefined>(undefined);
+// Popup-controlled filter fields. When the advanced filters popup is open,
+// these are "frozen" so analytics keep using the previously applied values
+// until the user clicks Apply.
+interface PopupFilterFields {
+  selectedSymbols: string[];
+  selectedOutcomes: OutcomeFilter[];
+  selectedHours: number[];
+  selectedSetups: string[];
+  excludedSetups: string[];
+  selectedDays: DayFilter[];
+  lastTradesFilter: LastTradesFilter;
+  selectedDirections: DirectionFilter[];
+  selectedReturnRanges: ReturnPercentRange[];
+  rMultipleMin: number | null;
+  rMultipleMax: number | null;
+  positionSizeMin: number | null;
+  positionSizeMax: number | null;
+  holdingPeriodFilter: HoldingPeriodFilter;
+  durationMinutesMin: number | null;
+  durationMinutesMax: number | null;
+  entryTimeIntervals: TimeInterval[];
+  exitTimeIntervals: TimeInterval[];
+  starredFilter: StarredFilter;
+  selectedYear: YearFilter;
+  selectedChecklistItems: string[];
+  excludedChecklistItems: string[];
+  selectedTagsByCategory: TagFilters;
+  selectedTradeComments: TradeCommentFilters;
+}
+
+interface AppliedFiltersExtension {
+  // Applied (frozen-while-popup-open) variants used by analytics consumers.
+  appliedSelectedSymbols: string[];
+  appliedSelectedOutcomes: OutcomeFilter[];
+  appliedSelectedHours: number[];
+  appliedSelectedSetups: string[];
+  appliedExcludedSetups: string[];
+  appliedSelectedDays: DayFilter[];
+  appliedLastTradesFilter: LastTradesFilter;
+  appliedSelectedDirections: DirectionFilter[];
+  appliedSelectedReturnRanges: ReturnPercentRange[];
+  appliedRMultipleMin: number | null;
+  appliedRMultipleMax: number | null;
+  appliedPositionSizeMin: number | null;
+  appliedPositionSizeMax: number | null;
+  appliedHoldingPeriodFilter: HoldingPeriodFilter;
+  appliedDurationMinutesMin: number | null;
+  appliedDurationMinutesMax: number | null;
+  appliedEntryTimeIntervals: TimeInterval[];
+  appliedExitTimeIntervals: TimeInterval[];
+  appliedStarredFilter: StarredFilter;
+  appliedSelectedYear: YearFilter;
+  appliedSelectedChecklistItems: string[];
+  appliedExcludedChecklistItems: string[];
+  appliedSelectedTagsByCategory: TagFilters;
+  appliedSelectedTradeComments: TradeCommentFilters;
+  // Freeze the current popup field values so analytics ignore further edits
+  // until commitAppliedFilters() or unfreezeAppliedFilters() is called.
+  freezeAppliedFilters: () => void;
+  // Rebase frozen snapshot to current live values (used on Apply).
+  commitAppliedFilters: () => void;
+  // Discard the freeze without rebasing (used after Cancel restores live state).
+  unfreezeAppliedFilters: () => void;
+}
+
+type FullGlobalFiltersContextType = GlobalFiltersContextType & AppliedFiltersExtension;
+
+const GlobalFiltersContext = createContext<FullGlobalFiltersContextType | undefined>(undefined);
 
 // LocalStorage keys
 const CURRENCY_STORAGE_KEY = 'trading-journal-currency';
@@ -281,6 +348,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     tradeManagements: [],
     exitComments: [],
   });
+
+  // Applied-filter freeze. When non-null, analytics consumers read these
+  // snapshotted values instead of the live popup-editable ones.
+  const [appliedSnapshot, setAppliedSnapshot] = useState<PopupFilterFields | null>(null);
 
   // Persist currency to localStorage
   const setCurrency = useCallback((newCurrency: CurrencyCode) => {
@@ -416,6 +487,65 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedTradeComments.entryComments.length > 0 ||
     selectedTradeComments.tradeManagements.length > 0 ||
     selectedTradeComments.exitComments.length > 0;
+
+  // ------------------------------------------------------------------
+  // Applied-filter freeze helpers + computed applied* values
+  // ------------------------------------------------------------------
+  const livePopupFieldsRef = useRef<PopupFilterFields>({
+    selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups,
+    selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges,
+    rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax,
+    holdingPeriodFilter, durationMinutesMin, durationMinutesMax,
+    entryTimeIntervals, exitTimeIntervals, starredFilter, selectedYear,
+    selectedChecklistItems, excludedChecklistItems,
+    selectedTagsByCategory, selectedTradeComments,
+  });
+  livePopupFieldsRef.current = {
+    selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups,
+    selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges,
+    rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax,
+    holdingPeriodFilter, durationMinutesMin, durationMinutesMax,
+    entryTimeIntervals, exitTimeIntervals, starredFilter, selectedYear,
+    selectedChecklistItems, excludedChecklistItems,
+    selectedTagsByCategory, selectedTradeComments,
+  };
+
+  const freezeAppliedFilters = useCallback(() => {
+    setAppliedSnapshot({ ...livePopupFieldsRef.current });
+  }, []);
+  const commitAppliedFilters = useCallback(() => {
+    // Live values become the new applied baseline.
+    setAppliedSnapshot(null);
+  }, []);
+  const unfreezeAppliedFilters = useCallback(() => {
+    setAppliedSnapshot(null);
+  }, []);
+
+  const a = appliedSnapshot;
+  const appliedSelectedSymbols = a ? a.selectedSymbols : selectedSymbols;
+  const appliedSelectedOutcomes = a ? a.selectedOutcomes : selectedOutcomes;
+  const appliedSelectedHours = a ? a.selectedHours : selectedHours;
+  const appliedSelectedSetups = a ? a.selectedSetups : selectedSetups;
+  const appliedExcludedSetups = a ? a.excludedSetups : excludedSetups;
+  const appliedSelectedDays = a ? a.selectedDays : selectedDays;
+  const appliedLastTradesFilter = a ? a.lastTradesFilter : lastTradesFilter;
+  const appliedSelectedDirections = a ? a.selectedDirections : selectedDirections;
+  const appliedSelectedReturnRanges = a ? a.selectedReturnRanges : selectedReturnRanges;
+  const appliedRMultipleMin = a ? a.rMultipleMin : rMultipleMin;
+  const appliedRMultipleMax = a ? a.rMultipleMax : rMultipleMax;
+  const appliedPositionSizeMin = a ? a.positionSizeMin : positionSizeMin;
+  const appliedPositionSizeMax = a ? a.positionSizeMax : positionSizeMax;
+  const appliedHoldingPeriodFilter = a ? a.holdingPeriodFilter : holdingPeriodFilter;
+  const appliedDurationMinutesMin = a ? a.durationMinutesMin : durationMinutesMin;
+  const appliedDurationMinutesMax = a ? a.durationMinutesMax : durationMinutesMax;
+  const appliedEntryTimeIntervals = a ? a.entryTimeIntervals : entryTimeIntervals;
+  const appliedExitTimeIntervals = a ? a.exitTimeIntervals : exitTimeIntervals;
+  const appliedStarredFilter = a ? a.starredFilter : starredFilter;
+  const appliedSelectedYear = a ? a.selectedYear : selectedYear;
+  const appliedSelectedChecklistItems = a ? a.selectedChecklistItems : selectedChecklistItems;
+  const appliedExcludedChecklistItems = a ? a.excludedChecklistItems : excludedChecklistItems;
+  const appliedSelectedTagsByCategory = a ? a.selectedTagsByCategory : selectedTagsByCategory;
+  const appliedSelectedTradeComments = a ? a.selectedTradeComments : selectedTradeComments;
 
   // Effective currency: use single-account's own currency when exactly one account is filtered,
   // otherwise fall back to the global setting.
@@ -573,6 +703,34 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectAllCommentsInCategory,
     clearTradeCommentCategory,
     hasActiveTradeCommentFilters,
+    // Applied (frozen-aware) values + freeze controls
+    appliedSelectedSymbols,
+    appliedSelectedOutcomes,
+    appliedSelectedHours,
+    appliedSelectedSetups,
+    appliedExcludedSetups,
+    appliedSelectedDays,
+    appliedLastTradesFilter,
+    appliedSelectedDirections,
+    appliedSelectedReturnRanges,
+    appliedRMultipleMin,
+    appliedRMultipleMax,
+    appliedPositionSizeMin,
+    appliedPositionSizeMax,
+    appliedHoldingPeriodFilter,
+    appliedDurationMinutesMin,
+    appliedDurationMinutesMax,
+    appliedEntryTimeIntervals,
+    appliedExitTimeIntervals,
+    appliedStarredFilter,
+    appliedSelectedYear,
+    appliedSelectedChecklistItems,
+    appliedExcludedChecklistItems,
+    appliedSelectedTagsByCategory,
+    appliedSelectedTradeComments,
+    freezeAppliedFilters,
+    commitAppliedFilters,
+    unfreezeAppliedFilters,
   }), [
     currency, 
     setCurrency,
@@ -614,6 +772,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     hasActiveTagFilters,
     selectedTradeComments,
     hasActiveTradeCommentFilters,
+    appliedSnapshot,
+    freezeAppliedFilters,
+    commitAppliedFilters,
+    unfreezeAppliedFilters,
   ]);
 
   return (
@@ -623,7 +785,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   );
 };
 
-export const useGlobalFilters = (): GlobalFiltersContextType => {
+export const useGlobalFilters = (): FullGlobalFiltersContextType => {
   const context = useContext(GlobalFiltersContext);
   if (context === undefined) {
     throw new Error('useGlobalFilters must be used within GlobalFiltersProvider');
