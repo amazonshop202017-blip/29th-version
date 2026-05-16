@@ -29,6 +29,7 @@ export type DirectionFilter = 'long' | 'short';
 export type ReturnPercentRange = '<0' | '0-1' | '1-2' | '3-5' | '5-10' | '>10';
 export type YearFilter = number | null; // null means "all years"
 export type HoldingPeriodFilter = 'all' | 'intraday' | 'multiday';
+export type StarredFilter = 'all' | 'starred' | 'unstarred';
 
 // Time interval for Entry/Exit time filters. Values are "HH:mm" or null.
 export interface TimeInterval {
@@ -127,6 +128,8 @@ interface GlobalFiltersContextType {
   setEntryTimeIntervals: (v: TimeInterval[]) => void;
   exitTimeIntervals: TimeInterval[];
   setExitTimeIntervals: (v: TimeInterval[]) => void;
+  starredFilter: StarredFilter;
+  setStarredFilter: (v: StarredFilter) => void;
   
   // Year Filter
   selectedYear: YearFilter;
@@ -260,6 +263,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [durationMinutesMax, setDurationMinutesMax] = useState<number | null>(null);
   const [entryTimeIntervals, setEntryTimeIntervals] = useState<TimeInterval[]>([]);
   const [exitTimeIntervals, setExitTimeIntervals] = useState<TimeInterval[]>([]);
+  const [starredFilter, setStarredFilter] = useState<StarredFilter>('all');
   
   // Year Filter
   const [selectedYear, setSelectedYear] = useState<YearFilter>(null);
@@ -543,6 +547,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setEntryTimeIntervals,
     exitTimeIntervals,
     setExitTimeIntervals,
+    starredFilter,
+    setStarredFilter,
     // Year Filter
     selectedYear,
     setSelectedYear,
@@ -600,6 +606,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     durationMinutesMax,
     entryTimeIntervals,
     exitTimeIntervals,
+    starredFilter,
     selectedChecklistItems,
     hasActiveChecklistFilter,
     excludedChecklistItems,

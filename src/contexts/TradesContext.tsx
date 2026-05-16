@@ -150,6 +150,7 @@ export const useFilteredTradesContext = (
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
+    starredFilter,
   } = useGlobalFilters();
 
   // Use provided activeAccountIds or default to empty (show all if not provided).
@@ -241,6 +242,13 @@ export const useFilteredTradesContext = (
         const d = parseISO(metrics.closeDate);
         return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), exitTimeIntervals);
       });
+    }
+
+    // Starred filter
+    if (starredFilter === 'starred') {
+      filtered = filtered.filter(trade => trade.starred === true);
+    } else if (starredFilter === 'unstarred') {
+      filtered = filtered.filter(trade => !trade.starred);
     }
 
     // Filter by setup (strategyId)
@@ -415,7 +423,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, durationMinutesMin, durationMinutesMax, entryTimeIntervals, exitTimeIntervals, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, durationMinutesMin, durationMinutesMax, entryTimeIntervals, exitTimeIntervals, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome, starredFilter]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
