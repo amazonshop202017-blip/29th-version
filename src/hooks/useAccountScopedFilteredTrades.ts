@@ -47,6 +47,7 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedOutcomes,
     selectedHours,
     selectedSetups,
+    excludedSetups,
     selectedDays,
     lastTradesFilter,
     selectedDirections,
@@ -106,6 +107,11 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     // Setup (strategyId)
     if (selectedSetups.length > 0) {
       filtered = filtered.filter((trade) => trade.strategyId && selectedSetups.includes(trade.strategyId));
+    }
+
+    // Exclude setups
+    if (excludedSetups.length > 0) {
+      filtered = filtered.filter((trade) => !trade.strategyId || !excludedSetups.includes(trade.strategyId));
     }
 
     // Day of week
@@ -223,6 +229,7 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedOutcomes,
     selectedHours,
     selectedSetups,
+    excludedSetups,
     selectedDays,
     lastTradesFilter,
     selectedDirections,
