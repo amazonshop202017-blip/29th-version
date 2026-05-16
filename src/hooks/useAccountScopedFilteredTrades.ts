@@ -53,6 +53,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedReturnRanges,
     rMultipleMin,
     rMultipleMax,
+    positionSizeMin,
+    positionSizeMax,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,
@@ -142,6 +144,17 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
       });
     }
 
+    // Position Size Min/Max (inclusive, qty)
+    if (positionSizeMin !== null || positionSizeMax !== null) {
+      filtered = filtered.filter((trade) => {
+        const qty = calculateTradeMetrics(trade).totalQuantity;
+        if (qty === undefined || qty === null) return false;
+        if (positionSizeMin !== null && qty < positionSizeMin) return false;
+        if (positionSizeMax !== null && qty > positionSizeMax) return false;
+        return true;
+      });
+    }
+
     // Year
     if (selectedYear !== null) {
       filtered = filtered.filter((trade) => {
@@ -216,6 +229,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedReturnRanges,
     rMultipleMin,
     rMultipleMax,
+    positionSizeMin,
+    positionSizeMax,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,

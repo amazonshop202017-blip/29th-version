@@ -114,6 +114,8 @@ export const useFilteredTradesContext = (
     rMultipleMin,
     rMultipleMax,
     holdingPeriodFilter,
+    positionSizeMin,
+    positionSizeMax,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,
@@ -240,6 +242,17 @@ export const useFilteredTradesContext = (
       });
     }
 
+    // Filter by Position Size Min/Max (inclusive bounds, qty)
+    if (positionSizeMin !== null || positionSizeMax !== null) {
+      filtered = filtered.filter(trade => {
+        const qty = calculateTradeMetrics(trade).totalQuantity;
+        if (qty === undefined || qty === null) return false;
+        if (positionSizeMin !== null && qty < positionSizeMin) return false;
+        if (positionSizeMax !== null && qty > positionSizeMax) return false;
+        return true;
+      });
+    }
+
     // Filter by Holding Period (Intraday / Multiday)
     if (holdingPeriodFilter !== 'all') {
       filtered = filtered.filter(trade => {
@@ -326,7 +339,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)

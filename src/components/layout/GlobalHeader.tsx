@@ -169,6 +169,10 @@ export const GlobalHeader = () => {
     setRMultipleMin,
     rMultipleMax,
     setRMultipleMax,
+    positionSizeMin,
+    setPositionSizeMin,
+    positionSizeMax,
+    setPositionSizeMax,
     selectedYear,
     setSelectedYear,
     selectedChecklistItems,
@@ -387,9 +391,10 @@ export const GlobalHeader = () => {
     if (selectedDirections.length > 0) count++;
     if (selectedReturnRanges.length > 0) count++;
     if (rMultipleMin !== null || rMultipleMax !== null) count++;
+    if (positionSizeMin !== null || positionSizeMax !== null) count++;
     if (selectedYear !== null) count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
@@ -1145,6 +1150,40 @@ export const GlobalHeader = () => {
                     onChange={(e) => {
                       const v = e.target.value;
                       setRMultipleMax(v === '' ? null : Number(v));
+                    }}
+                    className="h-9 bg-background border-border"
+                  />
+                </div>
+              </div>
+
+              {/* Position Size - Min/Max */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Hash className="w-3 h-3" />
+                  Position Size
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="Min"
+                    value={positionSizeMin === null ? '' : positionSizeMin}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPositionSizeMin(v === '' ? null : Number(v));
+                    }}
+                    className="h-9 bg-background border-border"
+                  />
+                  <Input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="Max"
+                    value={positionSizeMax === null ? '' : positionSizeMax}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPositionSizeMax(v === '' ? null : Number(v));
                     }}
                     className="h-9 bg-background border-border"
                   />

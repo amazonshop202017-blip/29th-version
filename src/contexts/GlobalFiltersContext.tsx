@@ -105,6 +105,10 @@ interface GlobalFiltersContextType {
   setRMultipleMin: (v: number | null) => void;
   rMultipleMax: number | null;
   setRMultipleMax: (v: number | null) => void;
+  positionSizeMin: number | null;
+  setPositionSizeMin: (v: number | null) => void;
+  positionSizeMax: number | null;
+  setPositionSizeMax: (v: number | null) => void;
   holdingPeriodFilter: HoldingPeriodFilter;
   setHoldingPeriodFilter: (v: HoldingPeriodFilter) => void;
   
@@ -230,6 +234,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [selectedReturnRanges, setSelectedReturnRanges] = useState<ReturnPercentRange[]>([]);
   const [rMultipleMin, setRMultipleMin] = useState<number | null>(null);
   const [rMultipleMax, setRMultipleMax] = useState<number | null>(null);
+  const [positionSizeMin, setPositionSizeMin] = useState<number | null>(null);
+  const [positionSizeMax, setPositionSizeMax] = useState<number | null>(null);
   const [holdingPeriodFilter, setHoldingPeriodFilter] = useState<HoldingPeriodFilter>('all');
   
   // Year Filter
@@ -497,6 +503,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setRMultipleMin,
     rMultipleMax,
     setRMultipleMax,
+    positionSizeMin,
+    setPositionSizeMin,
+    positionSizeMax,
+    setPositionSizeMax,
     holdingPeriodFilter,
     setHoldingPeriodFilter,
     // Year Filter
@@ -545,6 +555,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedReturnRanges,
     rMultipleMin,
     rMultipleMax,
+    positionSizeMin,
+    positionSizeMax,
     holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
