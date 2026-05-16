@@ -1,13 +1,12 @@
 import * as React from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { muiTextFieldSx, muiPopperSx, muiDialogSx } from "./AppDateTimePicker";
 
 /**
  * Time-only picker counterpart to AppDateTimePicker.
+ * Uses the stock MUI v7 TimePicker popup (matches the
+ * "Time Input Delight" reference project exactly).
  * - `value` is `"HH:mm"` (24h) or empty string for null.
- * - Mobile renders clock dialog; desktop renders popover with digital clock.
- * - 1-minute precision.
  */
 export interface AppTimePickerProps {
   value: string;
@@ -39,18 +38,24 @@ export const AppTimePicker: React.FC<AppTimePickerProps> = ({
       value={dayjsValue && dayjsValue.isValid() ? dayjsValue : null}
       onChange={(d) => onChange(formatTime(d as Dayjs | null))}
       disabled={disabled}
-      ampm={ampm ?? false}
-      timeSteps={{ minutes: 1 }}
+      ampm={ampm ?? true}
       slotProps={{
         textField: {
           fullWidth: true,
           size: "small",
+          label,
           className,
-          sx: muiTextFieldSx,
         },
-        popper: { sx: muiPopperSx, disablePortal: true },
-        dialog: { sx: muiDialogSx },
-        desktopPaper: { sx: { pointerEvents: "auto" } },
+        popper: {
+          sx: {
+            "& .MuiMultiSectionDigitalClockSection-root": {
+              maxHeight: 216,
+              scrollbarGutter: "stable",
+              pr: 1,
+              "&::after": { height: 0 },
+            },
+          },
+        },
       }}
     />
   );

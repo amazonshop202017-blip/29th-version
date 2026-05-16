@@ -1,48 +1,118 @@
-# Plan: Entry time & Exit time interval filters
+## Goal
 
-Add two new rows under the existing **Hour** filter in the advanced Day & Time section: **Entry time** and **Exit time**. Each supports multiple Min→Max intervals (Add +/remove) and uses the same MUI TimePicker we already use elsewhere (via `AppTimePicker` / `AppDateTimePicker` styling — responsive: desktop popper, mobile clock, `timeSteps={{ minutes: 1 }}`).
+Make the Entry time / Exit time Min & Max inputs open the **exact** MUI TimePicker popup used in the reference project [Time Input Delight](/projects/5a0a73cc-48c5-4a3e-ab86-0bcbf337e5b3), removing all of our current custom popup styling.
 
-## UX (matches reference image)
+## Reference code (from that project)
 
-- Checkbox row labeled "Entry time" / "Exit time" (same `FilterRow` pattern).
-- When expanded, shows one or more interval rows of `[ Min ] [ Max ]`.
-- Below the last interval: **Add +** button to append another interval.
-- Each additional interval has a small remove (−) button on the right (first interval has none, matching the screenshot).
-- Inputs use the MUI TimePicker (responsive: desktop draggable, mobile clock), 1-minute precision, `HH:mm` format.
+```tsx
+<TimePicker
+  label="Basic time picker"
+  value={value}
+  onChange={setValue}
+  ampm
+  slotProps={{
+    popper: {
+      sx: {
+        '& .MuiMultiSectionDigitalClockSection-root': {
+          maxHeight: 216,
+          scrollbarGutter: 'stable',
+          pr: 1,
+          '&::after': { height: 0 },
+        },
+      },
+    },
+  }}
+/>
+```
 
-## Filter semantics
+Wrapped in `<LocalizationProvider dateAdapter={AdapterDayjs}>` (already provided at the app root).
 
-- **Entry time intervals**: a trade passes if its entry datetime's time-of-day falls inside ANY one of the intervals (OR across intervals).
-- **Exit time intervals**: same logic but on the trade's exit/close datetime.
-- Intervals where Min or Max is empty are ignored. Min > Max is treated as wrap-around midnight (e.g. 22:00 → 02:00).
-- Combines with all other filters via AND (same as existing filters).
+## Changes
 
-## Files to change
+### 1. `src/components/ui/AppTimePicker.tsx` — rewrite
 
-### 1. `src/contexts/GlobalFiltersContext.tsx`
-Add new state + setters (interval = `{ min: string | null; max: string | null }`, time as `"HH:mm"`):
-- `entryTimeIntervals: TimeInterval[]` + `setEntryTimeIntervals`
-- `exitTimeIntervals: TimeInterval[]` + `setExitTimeIntervals`
-- Export `TimeInterval` type.
-- Default `[]` (no filter).
+- Remove imports of `muiTextFieldSx`, `muiPopperSx`, `muiDialogSx` from `AppDateTimePicker`.
+- Remove the `disablePortal`, `dialog`, `desktopPaper` slotProps.
+- Render `<TimePicker>` using **only** the `slotProps.popper.sx` block shown above (no theme overrides, no custom textField `sx`).
+- Keep the wrapper props the component already accepts (`value`, `onChange`, `label`, `className`, `disabled`) so existing call sites in `AdvancedDayTimeSection.tsx` keep working unchanged.
+- Default `ampm` to `true` to match the reference.
+- Pass `slotProps.textField` with only `{ fullWidth: true, size: 'small', label, className }` — no custom `sx`, so the input renders as plain MUI (the same look as the reference).
+- Keep the `"HH:mm"` ⇄ dayjs conversion so stored filter values stay in the existing 24h string format used by `GlobalFiltersContext` / `useAccountScopedFilteredTrades`.
 
-### 2. `src/components/layout/AdvancedDayTimeSection.tsx`
-- New `FilterRow`s "Entry time" and "Exit time" inserted directly under the existing Hour row.
-- New local `TimeIntervalList` subcomponent rendering the Min/Max MUI TimePickers, Add +, and remove buttons.
-- Active when intervals array has at least one entry with both min and max set.
-- Use the existing shared picker wrapper (same one with `timeSteps={{ minutes:1 }}`, responsive desktop/mobile) — extend it with a time-only variant if needed (`AppTimePicker`) reusing the same `LocalizationProvider`/`AdapterDayjs` config.
+### 2. No other files change
 
-### 3. `src/hooks/useAccountScopedFilteredTrades.ts` (and the sibling unscoped `useFilteredTrades` reducer if any)
-- Pull `entryTimeIntervals`, `exitTimeIntervals` from `useGlobalFilters()`.
-- After existing Hour filter block, add:
-  - Entry time: compute trade entry's `minutesOfDay`, accept if any interval matches (handle wrap-around).
-  - Exit time: same on `closeDate`.
-- Add both arrays to the `useMemo` deps.
+- `AdvancedDayTimeSection.tsx` still imports `AppTimePicker` with the same props — no edits needed.
+- `AppDateTimePicker.tsx` and its exported `muiTextFieldSx` / `muiPopperSx` / `muiDialogSx` stay intact (used by date-time pickers elsewhere).
+- Filter logic, context, and pluralization untouched.
 
-### 4. `src/components/layout/SelectedFiltersBar.tsx` (display chip)
-- Show a chip like "Entry time: 09:30–11:00, 14:00–15:30" when any complete intervals exist; same for Exit time. Clicking the chip clears that filter.
+## Result
 
-## Out of scope
-- No changes to backtesting trade synthesis logic.
-- No changes to the existing Duration / Hour / Day filters.
-- No new persistence (matches behavior of other Day & Time filters which are session-only).
+Clicking Entry/Exit time Min or Max opens the stock MUI v7 TimePicker popup (digital clock with 216px scrollable hour/minute columns, AM/PM column, default MUI styling) — identical to the reference project.
+
+&nbsp;
+
+> ***Add a MUI X Time Picker with AM/PM that opens a popup on click. Install @mui/x-date-pickers, @mui/material, @emotion/react, @emotion/styled, and dayjs. Use this exact component:***
+
+```
+import { useState } from 'react'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
+import { Box, Typography } from '@mui/material'
+import dayjs, { Dayjs } from 'dayjs'
+
+export default function App() {
+  const [value, setValue] = useState<Dayjs | null>(dayjs())
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 3,
+          p: 3,
+          overflow: 'hidden',
+        }}
+      >
+        <Typography variant="h5">Pick a time</Typography>
+        <TimePicker
+          label="Basic time picker"
+          value={value}
+          onChange={setValue}
+          ampm
+          slotProps={{
+            popper: {
+              sx: {
+                '& .MuiMultiSectionDigitalClockSection-root': {
+                  maxHeight: 216,            // 6 rows × 36px — no half-cut rows
+                  scrollbarGutter: 'stable', // reserve scrollbar space
+                  pr: 1,                     // gap so scrollbar never overlaps values
+                  '&::after': { height: 0 }, // remove default bottom spacer
+                },
+              },
+            },
+          }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          Selected: {value ? value.format('hh:mm A') : '—'}
+        </Typography>
+      </Box>
+    </LocalizationProvider>
+  )
+}
+```
+
+> ***Behavior baked in:***
+>
+> - ***AM/PM (12-hour) via ampm***
+> - ***Desktop: digital clock popup with hours / minutes / meridiem columns***
+> - ***Hours & minutes columns clipped to whole rows (no cut-off last row)***
+> - ***Scrollbar sits in a reserved gutter with right padding, so it never overlays the numbers***
+> - ***No DemoContainer (avoids extra page scroll)***
+> - ***Centered layout, no overflow***
+
+  
