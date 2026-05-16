@@ -196,10 +196,11 @@ export const AdvancedFiltersPanel = () => {
                   <div key={category.id} className="space-y-2">
                     {/* Category Row */}
                     <div 
-                      className="flex items-center gap-2 cursor-pointer"
+                      className="flex items-center gap-3 cursor-pointer select-none py-1.5"
                       onClick={() => handleCategoryCheckToggle(category.id)}
                     >
                       <Checkbox 
+                        className="rounded-[4px] h-3.5 w-3.5 [&_svg]:h-3 [&_svg]:w-3"
                         checked={isCategoryChecked(category.id)}
                         onClick={(e) => e.stopPropagation()}
                         onCheckedChange={() => handleCategoryCheckToggle(category.id)}
@@ -233,10 +234,10 @@ export const AdvancedFiltersPanel = () => {
                                   {/* Select All Option */}
                                   <CommandItem
                                     onSelect={() => handleSelectAllTags(category.id)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer gap-3 py-2"
                                   >
                                     <div className={cn(
-                                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                      "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
                                       isSelectAllMode
                                         ? "bg-primary text-primary-foreground"
                                         : "opacity-50"
@@ -254,10 +255,10 @@ export const AdvancedFiltersPanel = () => {
                                     <CommandItem
                                       key={tag.id}
                                       onSelect={() => handleTagClick(category.id, tag.id)}
-                                      className="cursor-pointer"
+                                      className="cursor-pointer gap-3 py-2"
                                     >
                                       <div className={cn(
-                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                        "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
                                         isTagVisuallySelected(category.id, tag.id)
                                           ? "bg-primary text-primary-foreground"
                                           : "opacity-50"
