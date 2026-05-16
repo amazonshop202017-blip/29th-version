@@ -69,7 +69,9 @@ import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
+import { useScreenshotTagsContext } from '@/contexts/ScreenshotTagsContext';
 import { AssignTagsModal } from '@/components/trades/AssignTagsModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import {
   DropdownMenu,
@@ -289,6 +291,18 @@ export const TradesTableCard = ({
   const { tags } = useTagsContext();
   const { updateTrade, trades: allTrades, toggleStarred } = useTradesContext();
   const { getStrategyById, strategies } = useStrategiesContext();
+  const { screenshotTags } = useScreenshotTagsContext();
+  const [screenshotsModalTrade, setScreenshotsModalTrade] = useState<Trade | null>(null);
+
+  const updateScreenshotTag = useCallback((screenshotId: string, tagId: string) => {
+    if (!screenshotsModalTrade) return;
+    const updated = (screenshotsModalTrade.screenshots || []).map((s) =>
+      s.id === screenshotId ? { ...s, tagId: tagId || undefined } : s
+    );
+    const nextTrade = { ...screenshotsModalTrade, screenshots: updated };
+    updateTrade(screenshotsModalTrade.id, nextTrade);
+    setScreenshotsModalTrade(nextTrade);
+  }, [screenshotsModalTrade, updateTrade]);
   const { columns: visibilityColumns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
@@ -1350,8 +1364,16 @@ export const TradesTableCard = ({
                                   <Eye className="w-3.5 h-3.5" />
                                 )}
                               </button>
-                              <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setScreenshotsModalTrade(trade); }}
+                                aria-label={`View screenshots for ${trade.symbol}`}
+                                className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground relative"
+                              >
                                 <ImageIcon className="w-3.5 h-3.5" />
+                                {trade.screenshots && trade.screenshots.length > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                                )}
                               </button>
                             </div>
                           </td>
@@ -1460,6 +1482,66 @@ export const TradesTableCard = ({
           entryDate={calculateTradeMetrics(tagModalTrade).openDate}
         />
       )}
+
+      <Dialog open={!!screenshotsModalTrade} onOpenChange={(open) => !open && setScreenshotsModalTrade(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {screenshotsModalTrade ? `Screenshots — ${screenshotsModalTrade.symbol}` : 'Screenshots'}
+            </DialogTitle>
+          </DialogHeader>
+          {screenshotsModalTrade && (
+            (screenshotsModalTrade.screenshots && screenshotsModalTrade.screenshots.length > 0) ? (
+              <div className="space-y-4 pt-2">
+                {screenshotsModalTrade.screenshots.map((s) => {
+                  const tag = screenshotTags.find((t) => t.id === s.tagId);
+                  return (
+                    <div key={s.id} className="space-y-2 rounded-lg border border-border overflow-hidden">
+                      <div className="relative">
+                        <img src={s.imageData} alt="Trade screenshot" className="w-full object-contain max-h-[55vh] bg-muted" />
+                        {tag && (
+                          <div
+                            className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs font-medium text-white"
+                            style={{ backgroundColor: tag.color }}
+                          >
+                            {tag.name}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30">
+                        <span className="text-xs text-muted-foreground">Tag</span>
+                        <Select
+                          value={s.tagId || 'none'}
+                          onValueChange={(val) => updateScreenshotTag(s.id, val === 'none' ? '' : val)}
+                        >
+                          <SelectTrigger className="h-8 w-[180px] text-xs">
+                            <SelectValue placeholder="No tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No tag</SelectItem>
+                            {screenshotTags.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                                  {t.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                No screenshots attached to this trade.
+              </div>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
