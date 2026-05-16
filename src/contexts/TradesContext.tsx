@@ -142,6 +142,8 @@ export const useFilteredTradesContext = (
     selectedYear,
     durationMinutesMin,
     durationMinutesMax,
+    entryTimeIntervals,
+    exitTimeIntervals,
     selectedChecklistItems,
     excludedChecklistItems,
     selectedTagsByCategory,
@@ -217,6 +219,26 @@ export const useFilteredTradesContext = (
         const entryDate = parseISO(metrics.openDate);
         const entryHour = getHours(entryDate);
         return selectedHours.includes(entryHour);
+      });
+    }
+
+    // Entry time intervals
+    if (hasActiveIntervals(entryTimeIntervals)) {
+      filtered = filtered.filter(trade => {
+        const metrics = calculateTradeMetrics(trade);
+        if (!metrics.openDate) return false;
+        const d = parseISO(metrics.openDate);
+        return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), entryTimeIntervals);
+      });
+    }
+
+    // Exit time intervals
+    if (hasActiveIntervals(exitTimeIntervals)) {
+      filtered = filtered.filter(trade => {
+        const metrics = calculateTradeMetrics(trade);
+        if (!metrics.closeDate) return false;
+        const d = parseISO(metrics.closeDate);
+        return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), exitTimeIntervals);
       });
     }
 
@@ -392,7 +414,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, durationMinutesMin, durationMinutesMax, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, durationMinutesMin, durationMinutesMax, entryTimeIntervals, exitTimeIntervals, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
