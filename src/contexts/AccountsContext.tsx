@@ -377,3 +377,7 @@ export const useAccountsContext = () => {
   }
   return context;
 };
+
+export const useOptionalAccountsContext = () => {
+  return useContext(AccountsContext);
+};

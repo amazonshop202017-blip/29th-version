@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
-import { useAccountsContext } from '@/contexts/AccountsContext';
+import { useOptionalAccountsContext, type Account } from '@/contexts/AccountsContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+
+const EMPTY_ACCOUNTS: Account[] = [];
 
 /**
  * Wires AccountsContext into GlobalFiltersContext so that the active currency
@@ -8,7 +10,8 @@ import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
  * Mount once inside both providers.
  */
 export const CurrencyAccountBridge = () => {
-  const { accounts } = useAccountsContext();
+  const accountsContext = useOptionalAccountsContext();
+  const accounts = accountsContext?.accounts ?? EMPTY_ACCOUNTS;
   const { setAccountCurrencyResolver } = useGlobalFilters();
 
   useEffect(() => {
