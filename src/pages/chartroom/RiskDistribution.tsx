@@ -219,6 +219,7 @@ const RiskDistribution = () => {
         totalValue: 0,
         avgWinnerValue: 0,
         avgLoserValue: 0,
+        avgRRR: 0,
       };
     }
 
@@ -235,11 +236,18 @@ const RiskDistribution = () => {
       ? Math.abs(loserValues.reduce((a, b) => a + b, 0) / loserValues.length)
       : 0;
 
+    // Calculate Avg RRR from trade data (tradeTarget / tradeRisk)
+    const tradesWithRRR = closedTrades.filter(t => t.tradeRisk > 0 && t.tradeTarget > 0);
+    const avgRRR = tradesWithRRR.length > 0
+      ? tradesWithRRR.reduce((sum, t) => sum + (t.tradeTarget / t.tradeRisk), 0) / tradesWithRRR.length
+      : 0;
+
     return {
       avgValue,
       totalValue,
       avgWinnerValue,
       avgLoserValue,
+      avgRRR,
     };
   }, [tradeValues, closedTrades]);
 
@@ -397,7 +405,7 @@ const RiskDistribution = () => {
       </Card>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <Card className="bg-card border-border">
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground font-medium mb-1">
@@ -441,6 +449,17 @@ const RiskDistribution = () => {
             </p>
           </CardContent>
         </Card>
+
+        {displayType === 'rMultiple' && (
+          <Card className="bg-card border-border">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground font-medium mb-1">Avg RRR</p>
+              <p className="text-xl font-bold text-foreground">
+                {metrics.avgRRR.toFixed(2)}R
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
