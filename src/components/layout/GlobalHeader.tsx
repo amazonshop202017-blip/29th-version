@@ -447,15 +447,6 @@ export const GlobalHeader = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
-            <DropdownMenuItem onClick={() => setBasicFiltersOpen(true)} className="cursor-pointer gap-2">
-              <Filter className="w-4 h-4" />
-              Basic Filters
-              {activeBasicFiltersCount > 0 && (
-                <span className="ml-auto px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                  {activeBasicFiltersCount}
-                </span>
-              )}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setMobileAdvancedSheetOpen(true)} className="cursor-pointer gap-2">
               <SlidersHorizontal className="w-4 h-4" />
               Filters
