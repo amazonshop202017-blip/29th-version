@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useTrades } from '@/hooks/useTrades';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
-import { useGlobalFilters, OutcomeFilter, DayFilter, DirectionFilter, ReturnPercentRange, RMultipleRange, TagFilters, TradeCommentFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, OutcomeFilter, DayFilter, DirectionFilter, ReturnPercentRange, TagFilters, TradeCommentFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
 // NOTE: useAccountsContext is imported dynamically to avoid circular dependency
 // AccountsContext imports TradesContext, so we can't import AccountsContext here at module level
 import { isWithinInterval, parseISO, startOfDay, endOfDay, getDay, getHours, getYear } from 'date-fns';
@@ -21,19 +21,6 @@ const matchesReturnRange = (returnPercent: number | undefined, range: ReturnPerc
 };
 
 // Helper function to check if R-Multiple falls within a range
-const matchesRMultipleRange = (rMultiple: number | undefined, range: RMultipleRange): boolean => {
-  if (rMultiple === undefined) return false;
-  switch (range) {
-    case '<-2': return rMultiple < -2;
-    case '-2-0': return rMultiple >= -2 && rMultiple < 0;
-    case '0-1': return rMultiple >= 0 && rMultiple < 1;
-    case '1-2': return rMultiple >= 1 && rMultiple < 2;
-    case '2-4': return rMultiple >= 2 && rMultiple < 4;
-    case '>4': return rMultiple >= 4;
-    default: return false;
-  }
-};
-
 interface TradesContextType {
   trades: Trade[]; // All trades (unfiltered)
   filteredTrades: Trade[]; // Trades after applying global filters
