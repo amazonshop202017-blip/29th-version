@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Settings, Tag, ChevronDown, ChevronRight, Check, MessageSquare, Filter } from 'lucide-react';
+import { Tag, ChevronDown, ChevronRight, Check, Filter, Clock } from 'lucide-react';
 import { AdvancedBasicFiltersSection } from './AdvancedBasicFiltersSection';
+import { AdvancedDayTimeSection } from './AdvancedDayTimeSection';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useGlobalFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
@@ -22,7 +23,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 
-type MenuSection = 'basic' | 'general' | 'tags';
+type MenuSection = 'basic' | 'daytime' | 'tags';
 
 export const AdvancedFiltersPanel = () => {
   const [activeSection, setActiveSection] = useState<MenuSection>('basic');
@@ -42,10 +43,6 @@ export const AdvancedFiltersPanel = () => {
     toggleCategoryTagFilter,
     selectAllTagsInCategory,
     clearCategoryTags,
-    selectedTradeComments,
-    toggleTradeComment,
-    selectAllCommentsInCategory,
-    clearTradeCommentCategory,
   } = useGlobalFilters();
 
   // Get active (non-archived) tags only
@@ -59,17 +56,6 @@ export const AdvancedFiltersPanel = () => {
     });
     return grouped;
   }, [categories, activeTags]);
-
-  // Get active comment options
-  const activeEntryComments: string[] = useMemo(() => [], []);
-  const activeTradeManagements: string[] = useMemo(() => [], []);
-  const activeExitComments: string[] = useMemo(() => [], []);
-
-  const commentCategories: { key: TradeCommentCategory; label: string; comments: string[] }[] = [
-    { key: 'entryComments', label: 'Entry Comments', comments: activeEntryComments },
-    { key: 'tradeManagements', label: 'Trade Management', comments: activeTradeManagements },
-    { key: 'exitComments', label: 'Exit Comments', comments: activeExitComments },
-  ];
 
   const toggleCategoryExpanded = (categoryId: string) => {
     setExpandedCategories(prev => {
@@ -147,67 +133,9 @@ export const AdvancedFiltersPanel = () => {
     return `${selectedCount} selected`;
   };
 
-  // Comment category handlers
-  const isCommentCategoryChecked = (category: TradeCommentCategory) => {
-    return selectedTradeComments[category].length > 0;
-  };
-
-  // Check if comment category is in "Select All" mode
-  const isCommentCategorySelectAllMode = (category: TradeCommentCategory, allComments: string[]) => {
-    const selectedComments = selectedTradeComments[category];
-    return allComments.length > 0 && selectedComments.length === allComments.length;
-  };
-
-  const handleCommentCategoryCheckToggle = (category: TradeCommentCategory, allComments: string[]) => {
-    if (isCommentCategoryChecked(category)) {
-      clearTradeCommentCategory(category);
-      setExpandedCommentCategories(prev => {
-        const next = new Set(prev);
-        next.delete(category);
-        return next;
-      });
-    } else {
-      // When checking, auto-select ALL comments and expand
-      selectAllCommentsInCategory(category, allComments);
-      setExpandedCommentCategories(prev => new Set([...prev, category]));
-    }
-  };
-
-  const handleSelectAllComments = (category: TradeCommentCategory, comments: string[]) => {
-    selectAllCommentsInCategory(category, comments);
-  };
-
-  const handleCommentClick = (category: TradeCommentCategory, comment: string, allComments: string[]) => {
-    const isSelectAll = isCommentCategorySelectAllMode(category, allComments);
-    
-    if (isSelectAll) {
-      // Transitioning from "Select All" to individual selection
-      // Clear all and select only the clicked item
-      selectAllCommentsInCategory(category, [comment]);
-    } else {
-      // Normal toggle behavior
-      toggleTradeComment(category, comment);
-    }
-  };
-
-  // Visual check: in "Select All" mode, individual items appear unchecked
-  const isCommentVisuallySelected = (category: TradeCommentCategory, comment: string, allComments: string[]) => {
-    if (isCommentCategorySelectAllMode(category, allComments)) {
-      return false; // In "Select All" mode, individual items are not visually checked
-    }
-    return selectedTradeComments[category].includes(comment);
-  };
-
-  const getSelectedCommentsLabel = (category: TradeCommentCategory, allComments: string[]) => {
-    const selectedCount = selectedTradeComments[category].length;
-    if (selectedCount === 0) return 'Select comments';
-    if (selectedCount === allComments.length) return 'All selected';
-    return `${selectedCount} selected`;
-  };
-
   const menuItems: { key: MenuSection; label: string; icon: React.ReactNode }[] = [
     { key: 'basic', label: 'Basic Filters', icon: <Filter className="w-4 h-4" /> },
-    { key: 'general', label: 'General', icon: <Settings className="w-4 h-4" /> },
+    { key: 'daytime', label: 'Day & Time', icon: <Clock className="w-4 h-4" /> },
     { key: 'tags', label: 'Tags', icon: <Tag className="w-4 h-4" /> },
   ];
 
@@ -242,114 +170,8 @@ export const AdvancedFiltersPanel = () => {
           <AdvancedBasicFiltersSection />
         )}
 
-        {activeSection === 'general' && (
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Trade Comments
-              </h4>
-              <div className="space-y-2">
-                {commentCategories.map(({ key, label, comments }) => {
-                  const isExpanded = expandedCommentCategories.has(key) || isCommentCategoryChecked(key);
-                  const isSelectAllMode = isCommentCategorySelectAllMode(key, comments);
-                  
-                  return (
-                    <div key={key} className="space-y-2">
-                      {/* Category Row */}
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => handleCommentCategoryCheckToggle(key, comments)}
-                      >
-                        <Checkbox 
-                          checked={isCommentCategoryChecked(key)}
-                          onClick={(e) => e.stopPropagation()}
-                          onCheckedChange={() => handleCommentCategoryCheckToggle(key, comments)}
-                        />
-                        <span className="text-sm">{label}</span>
-                      </div>
-
-                      {/* Expanded Comment Selector */}
-                      {isExpanded && comments.length > 0 && (
-                        <div className="ml-6 space-y-2">
-                          <Popover 
-                            open={openCommentPopovers[key] || false}
-                            onOpenChange={(open) => setOpenCommentPopovers(prev => ({ ...prev, [key]: open }))}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between h-9 text-sm bg-background border-border"
-                              >
-                                {getSelectedCommentsLabel(key, comments)}
-                                <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[220px] p-0 bg-popover border-border z-[100]" align="start">
-                              <Command>
-                                <CommandInput placeholder="Search comments..." className="h-9" />
-                                <CommandList>
-                                  <CommandEmpty>No comments found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {/* Select All Option */}
-                                    <CommandItem
-                                      onSelect={() => handleSelectAllComments(key, comments)}
-                                      className="cursor-pointer"
-                                    >
-                                      <div className={cn(
-                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                        isSelectAllMode
-                                          ? "bg-primary text-primary-foreground"
-                                          : "opacity-50"
-                                      )}>
-                                        {isSelectAllMode && (
-                                          <Check className="h-3 w-3" />
-                                        )}
-                                      </div>
-                                      <span className="font-medium">Select All</span>
-                                    </CommandItem>
-                                  </CommandGroup>
-                                  <CommandSeparator />
-                                  <CommandGroup>
-                                    {comments.map((comment) => (
-                                      <CommandItem
-                                        key={comment}
-                                        onSelect={() => handleCommentClick(key, comment, comments)}
-                                        className="cursor-pointer"
-                                      >
-                                        <div className={cn(
-                                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                          isCommentVisuallySelected(key, comment, comments)
-                                            ? "bg-primary text-primary-foreground"
-                                            : "opacity-50"
-                                        )}>
-                                          {isCommentVisuallySelected(key, comment, comments) && (
-                                            <Check className="h-3 w-3" />
-                                          )}
-                                        </div>
-                                        <span>{comment}</span>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
-                      
-                      {isExpanded && comments.length === 0 && (
-                        <p className="ml-6 text-xs text-muted-foreground">
-                          No comments available
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+        {activeSection === 'daytime' && (
+          <AdvancedDayTimeSection />
         )}
 
         {activeSection === 'tags' && (
