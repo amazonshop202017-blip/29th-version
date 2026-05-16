@@ -1,7 +1,7 @@
 import { useState, ReactNode, useMemo } from 'react';
 import {
   ChevronDown, Globe, TrendingUp,
-  Hash, Percent, Star,
+  Hash, Percent, Star, CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,7 +13,7 @@ import {
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   useGlobalFilters, OutcomeFilter, LastTradesFilter,
-  DirectionFilter, ReturnPercentRange, RMultipleRange,
+  DirectionFilter, ReturnPercentRange, RMultipleRange, HoldingPeriodFilter,
 } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 
@@ -148,6 +148,7 @@ export function AdvancedBasicFiltersSection() {
     lastTradesFilter, setLastTradesFilter,
     selectedReturnRanges, setSelectedReturnRanges,
     selectedRMultipleRanges, setSelectedRMultipleRanges,
+    holdingPeriodFilter, setHoldingPeriodFilter,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -269,6 +270,29 @@ export function AdvancedBasicFiltersSection() {
                 {opt.label}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      {/* Intraday / Multiday */}
+      <FilterRow
+        label="Intraday/Multiday"
+        icon={<CalendarDays className="w-3.5 h-3.5" />}
+        active={holdingPeriodFilter !== 'all'}
+        expanded={isExpanded('holding', holdingPeriodFilter !== 'all')}
+        onToggle={() => toggleManual('holding', holdingPeriodFilter !== 'all', () => setHoldingPeriodFilter('all'))}
+      >
+        <Select
+          value={holdingPeriodFilter}
+          onValueChange={(v) => setHoldingPeriodFilter(v as HoldingPeriodFilter)}
+        >
+          <SelectTrigger className="h-9 bg-background border-border">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border-border z-[120]">
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="intraday">Intraday</SelectItem>
+            <SelectItem value="multiday">Multiday</SelectItem>
           </SelectContent>
         </Select>
       </FilterRow>
