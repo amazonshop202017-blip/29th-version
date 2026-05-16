@@ -1,5 +1,5 @@
 import { useState, ReactNode, useMemo } from 'react';
-import { ChevronDown, Clock, Calendar as CalendarIcon2, CalendarDays, Timer } from 'lucide-react';
+import { ChevronDown, Clock, Calendar as CalendarIcon2, CalendarDays, Timer, Plus, MinusCircle, LogIn, LogOut } from 'lucide-react';
 import TextField from '@mui/material/TextField';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,8 +9,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { useGlobalFilters, DayFilter, HoldingPeriodFilter } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, DayFilter, HoldingPeriodFilter, TimeInterval } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { AppTimePicker } from '@/components/ui/AppTimePicker';
 
 const DAY_OPTIONS: { value: DayFilter; label: string }[] = [
   { value: 'monday', label: 'Monday' },
@@ -109,6 +110,61 @@ function CheckboxMultiSelect<T extends string | number>({
   );
 }
 
+interface TimeIntervalListProps {
+  intervals: TimeInterval[];
+  onChange: (next: TimeInterval[]) => void;
+}
+
+function TimeIntervalList({ intervals, onChange }: TimeIntervalListProps) {
+  const list = intervals.length === 0 ? [{ min: null, max: null }] : intervals;
+  const update = (idx: number, patch: Partial<TimeInterval>) => {
+    const next = list.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+    onChange(next);
+  };
+  const remove = (idx: number) => onChange(list.filter((_, i) => i !== idx));
+  const add = () => onChange([...list, { min: null, max: null }]);
+
+  return (
+    <div className="space-y-2">
+      {list.map((it, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <AppTimePicker
+              label="Min"
+              value={it.min ?? ''}
+              onChange={(v) => update(idx, { min: v === '' ? null : v })}
+            />
+            <AppTimePicker
+              label="Max"
+              value={it.max ?? ''}
+              onChange={(v) => update(idx, { max: v === '' ? null : v })}
+            />
+          </div>
+          {list.length > 1 && (
+            <button
+              type="button"
+              onClick={() => remove(idx)}
+              className="text-destructive hover:opacity-80 shrink-0"
+              aria-label="Remove interval"
+            >
+              <MinusCircle className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={add}
+        className="h-8 px-2 text-primary hover:text-primary gap-1"
+      >
+        Add <Plus className="w-3.5 h-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 export function AdvancedDayTimeSection() {
   const {
     selectedDays, setSelectedDays,
@@ -117,6 +173,8 @@ export function AdvancedDayTimeSection() {
     holdingPeriodFilter, setHoldingPeriodFilter,
     durationMinutesMin, setDurationMinutesMin,
     durationMinutesMax, setDurationMinutesMax,
+    entryTimeIntervals, setEntryTimeIntervals,
+    exitTimeIntervals, setExitTimeIntervals,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -324,6 +382,36 @@ export function AdvancedDayTimeSection() {
           onChange={setSelectedHours}
           popoverWidth="w-44"
         />
+      </FilterRow>
+
+      {/* Entry Time */}
+      <FilterRow
+        label="Entry time"
+        icon={<LogIn className="w-3.5 h-3.5" />}
+        active={entryTimeIntervals.some(i => i.min && i.max)}
+        expanded={isExpanded('entryTime', entryTimeIntervals.some(i => i.min && i.max))}
+        onToggle={() => toggleManual(
+          'entryTime',
+          entryTimeIntervals.some(i => i.min && i.max),
+          () => setEntryTimeIntervals([])
+        )}
+      >
+        <TimeIntervalList intervals={entryTimeIntervals} onChange={setEntryTimeIntervals} />
+      </FilterRow>
+
+      {/* Exit Time */}
+      <FilterRow
+        label="Exit time"
+        icon={<LogOut className="w-3.5 h-3.5" />}
+        active={exitTimeIntervals.some(i => i.min && i.max)}
+        expanded={isExpanded('exitTime', exitTimeIntervals.some(i => i.min && i.max))}
+        onToggle={() => toggleManual(
+          'exitTime',
+          exitTimeIntervals.some(i => i.min && i.max),
+          () => setExitTimeIntervals([])
+        )}
+      >
+        <TimeIntervalList intervals={exitTimeIntervals} onChange={setExitTimeIntervals} />
       </FilterRow>
 
       {/* Intraday / Multiday */}

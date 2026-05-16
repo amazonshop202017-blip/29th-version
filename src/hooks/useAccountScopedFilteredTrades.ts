@@ -6,6 +6,7 @@ import {
   type DayFilter,
   type DirectionFilter,
   type ReturnPercentRange,
+  type TimeInterval,
 } from '@/contexts/GlobalFiltersContext';
 import { calculateTradeMetrics, type Trade } from '@/types/trade';
 
@@ -32,6 +33,22 @@ const matchesReturnRange = (returnPercent: number | undefined, range: ReturnPerc
   }
 };
 
+const matchesTimeIntervals = (minutesOfDay: number, intervals: TimeInterval[]): boolean => {
+  const toMin = (s: string | null) => {
+    if (!s) return null;
+    const [h, m] = s.split(':').map(Number);
+    return isNaN(h) || isNaN(m) ? null : h * 60 + m;
+  };
+  const valid = intervals
+    .map(i => ({ min: toMin(i.min), max: toMin(i.max) }))
+    .filter((i): i is { min: number; max: number } => i.min !== null && i.max !== null);
+  if (valid.length === 0) return true;
+  return valid.some(({ min, max }) =>
+    min <= max ? minutesOfDay >= min && minutesOfDay <= max : minutesOfDay >= min || minutesOfDay <= max
+  );
+};
+const hasActiveIntervals = (intervals: TimeInterval[]) => intervals.some(i => i.min && i.max);
+
 /**
  * Returns trades scoped to a single account, with all global filters applied
  * EXCEPT the account filter (which is forcibly locked to `accountId`).
@@ -57,6 +74,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     positionSizeMin,
     positionSizeMax,
     selectedYear,
+    entryTimeIntervals,
+    exitTimeIntervals,
     selectedChecklistItems,
     excludedChecklistItems,
     selectedTagsByCategory,
@@ -102,6 +121,24 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
         const metrics = calculateTradeMetrics(trade);
         if (!metrics.openDate) return false;
         return selectedHours.includes(getHours(parseISO(metrics.openDate)));
+      });
+    }
+
+    if (hasActiveIntervals(entryTimeIntervals)) {
+      filtered = filtered.filter((trade) => {
+        const metrics = calculateTradeMetrics(trade);
+        if (!metrics.openDate) return false;
+        const d = parseISO(metrics.openDate);
+        return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), entryTimeIntervals);
+      });
+    }
+
+    if (hasActiveIntervals(exitTimeIntervals)) {
+      filtered = filtered.filter((trade) => {
+        const metrics = calculateTradeMetrics(trade);
+        if (!metrics.closeDate) return false;
+        const d = parseISO(metrics.closeDate);
+        return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), exitTimeIntervals);
       });
     }
 
@@ -247,6 +284,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     positionSizeMin,
     positionSizeMax,
     selectedYear,
+    entryTimeIntervals,
+    exitTimeIntervals,
     selectedChecklistItems,
     excludedChecklistItems,
     selectedTagsByCategory,
