@@ -141,6 +141,8 @@ export function AdvancedBasicFiltersSection() {
     selectedReturnRanges, setSelectedReturnRanges,
     rMultipleMin, setRMultipleMin,
     rMultipleMax, setRMultipleMax,
+    positionSizeMin, setPositionSizeMin,
+    positionSizeMax, setPositionSizeMax,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -314,6 +316,46 @@ export function AdvancedBasicFiltersSection() {
             onChange={(e) => {
               const v = e.target.value;
               setRMultipleMax(v === '' ? null : Number(v));
+            }}
+            className="h-9 bg-background border-border"
+          />
+        </div>
+      </FilterRow>
+
+      {/* Position Size (qty) */}
+      <FilterRow
+        label="Position Size"
+        icon={<Hash className="w-3.5 h-3.5" />}
+        active={positionSizeMin !== null || positionSizeMax !== null}
+        expanded={isExpanded('possize', positionSizeMin !== null || positionSizeMax !== null)}
+        onToggle={() => toggleManual(
+          'possize',
+          positionSizeMin !== null || positionSizeMax !== null,
+          () => { setPositionSizeMin(null); setPositionSizeMax(null); },
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            step="any"
+            min="0"
+            placeholder="Min"
+            value={positionSizeMin === null ? '' : positionSizeMin}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPositionSizeMin(v === '' ? null : Number(v));
+            }}
+            className="h-9 bg-background border-border"
+          />
+          <Input
+            type="number"
+            step="any"
+            min="0"
+            placeholder="Max"
+            value={positionSizeMax === null ? '' : positionSizeMax}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPositionSizeMax(v === '' ? null : Number(v));
             }}
             className="h-9 bg-background border-border"
           />

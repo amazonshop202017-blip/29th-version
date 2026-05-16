@@ -46,6 +46,8 @@ export const SelectedFiltersBar = () => {
     selectedReturnRanges, setSelectedReturnRanges,
     rMultipleMin, setRMultipleMin,
     rMultipleMax, setRMultipleMax,
+    positionSizeMin, setPositionSizeMin,
+    positionSizeMax, setPositionSizeMax,
     holdingPeriodFilter, setHoldingPeriodFilter,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
@@ -169,6 +171,17 @@ export const SelectedFiltersBar = () => {
       });
     }
 
+    // Position Size (Min/Max qty)
+    if (positionSizeMin !== null || positionSizeMax !== null) {
+      const minLabel = positionSizeMin === null ? '−∞' : `${positionSizeMin}`;
+      const maxLabel = positionSizeMax === null ? '+∞' : `${positionSizeMax}`;
+      result.push({
+        id: 'position-size-range', label: 'Position Size',
+        value: `${minLabel} to ${maxLabel} qty`,
+        onRemove: () => { setPositionSizeMin(null); setPositionSizeMax(null); },
+      });
+    }
+
     // Holding period
     if (holdingPeriodFilter !== 'all') {
       result.push({
@@ -219,6 +232,7 @@ export const SelectedFiltersBar = () => {
     datePreset, selectedAccounts, selectedSymbols, selectedSetups, selectedChecklistItems,
     selectedOutcomes, selectedDirections, selectedYear, selectedDays, selectedHours,
     lastTradesFilter, selectedReturnRanges, rMultipleMin, rMultipleMax,
+    positionSizeMin, positionSizeMax,
     holdingPeriodFilter,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
@@ -236,6 +250,8 @@ export const SelectedFiltersBar = () => {
     setSelectedReturnRanges([]);
     setRMultipleMin(null);
     setRMultipleMax(null);
+    setPositionSizeMin(null);
+    setPositionSizeMax(null);
     setHoldingPeriodFilter('all');
     setSelectedYear(null);
     setSelectedChecklistItems([]);

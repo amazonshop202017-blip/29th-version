@@ -1,31 +1,33 @@
-## Replace R-Multiple preset ranges with Min/Max inputs
+## Add "Position Size" Filter (Min/Max qty)
 
-Switch the R-Multiple filter from a multi-select of hard-coded ranges (`< -2R`, `-2R to 0R`, …) to a custom range driven by two number inputs: **Min** and **Max**. Either can be left blank to mean "no bound on that side". A trade matches when `savedRMultiple >= min` (if min set) AND `savedRMultiple <= max` (if max set).
+Mirror the R-Multiple Min/Max pattern across the same 5 files. Position size = `calculateTradeMetrics(trade).totalQuantity`. Supports decimals, inclusive bounds, both empty = all.
 
-### Files to change
+### 1. `src/contexts/GlobalFiltersContext.tsx`
+- Add state: `positionSizeMin: number | null`, `positionSizeMax: number | null` with setters.
+- Expose in context type, value, and `useMemo` deps. Include in `resetAllFilters`.
 
-1. **`src/contexts/GlobalFiltersContext.tsx`**
-   - Remove `RMultipleRange` type and `selectedRMultipleRanges` / `setSelectedRMultipleRanges` state from context (type + state + context value + deps).
-   - Add new state:
-     - `rMultipleMin: number | null`, `setRMultipleMin`
-     - `rMultipleMax: number | null`, `setRMultipleMax`
-   - Expose both via context value and include in the `useMemo` deps.
+### 2. `src/contexts/TradesContext.tsx`
+- Pull `positionSizeMin`, `positionSizeMax` from context.
+- After R-Multiple block, add: if either is non-null, compute `qty = calculateTradeMetrics(trade).totalQuantity`, drop trade if `min !== null && qty < min` or `max !== null && qty > max`.
+- Add both to `useMemo` deps.
 
-2. **`src/contexts/TradesContext.tsx`**
-   - Remove the `selectedRMultipleRanges` import/usage and the existing range-based filter block (and the `matchesRMultipleRange` helper if unused elsewhere — verify first).
-   - Add a new filter: when `rMultipleMin !== null` or `rMultipleMax !== null`, keep trades where `savedRMultiple` is defined and within bounds.
-   - Update the `useMemo` deps accordingly.
+### 3. `src/hooks/useAccountScopedFilteredTrades.ts`
+- Same filter logic and deps as TradesContext.
 
-3. **`src/components/layout/AdvancedBasicFiltersSection.tsx`**
-   - Remove `R_MULTIPLE_OPTIONS` constant, `RMultipleRange` import.
-   - Replace the R-Multiple `FilterRow` body with two side-by-side `Input` fields (type=number, placeholders **Min** / **Max**) bound to `rMultipleMin` / `rMultipleMax`. Empty string → `null`.
-   - `active` is true when either bound is set; toggling off clears both.
+### 4. `src/components/layout/AdvancedBasicFiltersSection.tsx`
+- Pull `positionSizeMin/Max` + setters.
+- Add a new `FilterRow` titled "Position Size" with the same two Min/Max `Input` fields (type=number, step=any to allow decimals like 0.5), placed right after the R-Multiple row.
+- `active` = either non-null; toggling off clears both.
 
-4. **`src/components/layout/SelectedFiltersBar.tsx`**
-   - Remove `RMultipleRange`, `R_MULTIPLE_LABELS`, and per-range chip loop.
-   - Add a single chip rendered when min and/or max is set, displayed as `"{min ?? '−∞'} to {max ?? '+∞'} R"`; its `onRemove` clears both bounds. Also include both setters in the `clearAll` reset.
+### 5. `src/components/layout/GlobalHeader.tsx`
+- Add the same Min/Max inputs to the header filters popover, right after R-Multiple.
+- Include in active filter count and `useMemo` deps.
+
+### 6. `src/components/layout/SelectedFiltersBar.tsx`
+- Add a chip: `"{min ?? '−∞'} to {max ?? '+∞'} qty"` when either bound set. `onRemove` clears both.
+- Include setters in `clearAll` and both values in deps.
 
 ### Notes
-- Inputs accept decimals and negatives (e.g., `-2`, `1.5`). Use `Input` with `type="number"` and `step="0.1"`.
-- Comparison is inclusive on both bounds, matching how `'-2-0'` historically meant `-2 ≤ R ≤ 0`.
-- No backend/database changes — purely client-side filter logic and UI.
+- Inputs accept decimals (`step="any"`) and reject negative values via `min="0"`.
+- Empty string → `null` (unbounded on that side).
+- No backend/schema changes.
