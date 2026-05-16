@@ -156,13 +156,9 @@ export function AdvancedStrategySection() {
             emptyText="No setups found"
           />
 
-          {/* Excluding — nested with tree line, matches sidebar Tools sub-item style */}
+          {/* Excluding — nested with tree line, matches sidebar Tools sub-item style.
+              Single branch: no shared vertical line; the SVG draws its own L. */}
           <div className="relative ml-1 pl-4">
-            <span
-              aria-hidden
-              className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
-              style={{ height: 'calc(100% - 1.125rem)' }}
-            />
             <div className="relative">
               <svg
                 aria-hidden
@@ -170,7 +166,7 @@ export function AdvancedStrategySection() {
                 height="12"
                 viewBox="0 0 16 12"
                 fill="none"
-                className="absolute -left-4 top-2 text-[#bdbdbd] pointer-events-none"
+                className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
               >
                 <path
                   d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
