@@ -60,9 +60,6 @@ const PropFirmLayout = () => {
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 Filters
-                <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  1
-                </span>
               </Button>
               <FilterPanel open={filtersOpen} onClose={() => setFiltersOpen(false)} />
             </div>
