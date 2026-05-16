@@ -4,14 +4,22 @@ import { useTradesContext } from '@/contexts/TradesContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { DayCard } from '@/components/dayview/DayCard';
+import { WeekCard } from '@/components/dayview/WeekCard';
 import { DaySidebarCalendar } from '@/components/dayview/DaySidebarCalendar';
 import { calculateTradeMetrics, Trade } from '@/types/trade';
-import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface DayGroup {
   date: Date;
   dateKey: string;
+  trades: Trade[];
+}
+
+interface WeekGroup {
+  weekStart: Date;
+  weekEnd: Date;
+  weekKey: string;
   trades: Trade[];
 }
 
@@ -65,6 +73,23 @@ const DayView = () => {
     return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [filteredTrades]);
 
+  const weekGroups = useMemo(() => {
+    const groups: Record<string, WeekGroup> = {};
+    filteredTrades.forEach((trade) => {
+      const metrics = calculateTradeMetrics(trade);
+      if (!metrics.openDate) return;
+      const d = parseISO(metrics.openDate);
+      const ws = startOfWeek(d, { weekStartsOn: 0 });
+      const we = endOfWeek(d, { weekStartsOn: 0 });
+      const key = format(ws, 'yyyy-MM-dd');
+      if (!groups[key]) {
+        groups[key] = { weekStart: ws, weekEnd: we, weekKey: key, trades: [] };
+      }
+      groups[key].trades.push(trade);
+    });
+    return Object.values(groups).sort((a, b) => b.weekStart.getTime() - a.weekStart.getTime());
+  }, [filteredTrades]);
+
   // Handle date selection from calendar
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -114,9 +139,15 @@ const DayView = () => {
         {/* Day Cards List */}
         <div className="flex-1 space-y-4 min-w-0">
           {viewMode === 'week' ? (
-            <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-xl">
-              <p className="text-muted-foreground">Week view coming soon</p>
-            </div>
+            weekGroups.length === 0 ? (
+              <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-xl">
+                <p className="text-muted-foreground">No trades found for the selected filters</p>
+              </div>
+            ) : (
+              weekGroups.map((g) => (
+                <WeekCard key={g.weekKey} weekStart={g.weekStart} weekEnd={g.weekEnd} trades={g.trades} />
+              ))
+            )
           ) : dayGroups.length === 0 ? (
             <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-xl">
               <p className="text-muted-foreground">No trades found for the selected filters</p>
