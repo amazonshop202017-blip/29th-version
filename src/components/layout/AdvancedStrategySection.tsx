@@ -167,7 +167,6 @@ export function AdvancedStrategySection() {
                 viewBox="0 0 16 12"
                 fill="none"
                 className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
-                style={{ top: '0.5rem' }}
               >
                 <path
                   d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
