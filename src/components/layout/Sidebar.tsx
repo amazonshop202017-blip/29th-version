@@ -269,13 +269,39 @@ export const Sidebar = ({ isCollapsed: isCollapsedProp, setIsCollapsed, isMobile
         />
 
         {/* Coaching */}
-        <NavItem
-          icon={GraduationCap}
-          label="Coaching"
-          path="/coaching"
-          isCollapsed={isCollapsed}
-          isActive={location.pathname.startsWith('/coaching')}
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              aria-disabled="true"
+              className={cn(
+                "relative flex items-center gap-3 px-2 py-1.5 rounded-lg cursor-not-allowed opacity-60 select-none",
+                isCollapsed ? "justify-center" : ""
+              )}
+            >
+              <span className="flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 text-sidebar-foreground">
+                <GraduationCap className="w-[15px] h-[15px]" />
+              </span>
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="overflow-hidden whitespace-nowrap flex items-center gap-2 min-w-0"
+                  >
+                    <span className="text-sm text-sidebar-foreground">Coaching</span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Coming soon</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </TooltipTrigger>
+          {isCollapsed && (
+            <TooltipContent side="right">
+              <p>Coaching — Coming soon</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
 
         {/* Separator after Dashboard */}
         <div className="py-2">
