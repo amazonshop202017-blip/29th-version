@@ -180,6 +180,8 @@ export const GlobalHeader = () => {
     selectedChecklistItems,
     setSelectedChecklistItems,
     hasActiveChecklistFilter,
+    excludedChecklistItems,
+    setExcludedChecklistItems,
     hasActiveTagFilters,
   } = useGlobalFilters();
   
@@ -192,6 +194,7 @@ export const GlobalHeader = () => {
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [excludedChecklistOpen, setExcludedChecklistOpen] = useState(false);
   
   // Mobile/tablet sheet states
   const [mobileDateSheetOpen, setMobileDateSheetOpen] = useState(false);
@@ -352,6 +355,14 @@ export const GlobalHeader = () => {
     }
   };
 
+  const handleExcludedChecklistItemToggle = (item: string) => {
+    if (excludedChecklistItems.includes(item)) {
+      setExcludedChecklistItems(excludedChecklistItems.filter(i => i !== item));
+    } else {
+      setExcludedChecklistItems([...excludedChecklistItems, item]);
+    }
+  };
+
   const getDateRangeLabel = () => {
     if (datePreset === 'all' || (!dateRange.from && !dateRange.to)) {
       return 'All time';
@@ -389,6 +400,7 @@ export const GlobalHeader = () => {
     if (selectedSetups.length > 0) count++;
     if (excludedSetups.length > 0) count++;
     if (selectedChecklistItems.length > 0) count++;
+    if (excludedChecklistItems.length > 0) count++;
     if (selectedDays.length > 0) count++;
     if (lastTradesFilter !== null) count++;
     if (selectedDirections.length > 0) count++;
@@ -397,7 +409,7 @@ export const GlobalHeader = () => {
     if (positionSizeMin !== null || positionSizeMax !== null) count++;
     if (selectedYear !== null) count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, excludedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
@@ -832,6 +844,90 @@ export const GlobalHeader = () => {
                     )}
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              {/* Excluding Checklist — nested with tree line */}
+              <div className="space-y-1.5">
+                <div className="relative ml-1 pl-4">
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+                    style={{ height: 'calc(100% - 1.125rem)' }}
+                  />
+                  <div className="relative">
+                    <svg
+                      aria-hidden
+                      width="16"
+                      height="12"
+                      viewBox="0 0 16 12"
+                      fill="none"
+                      className="absolute -left-4 top-2 text-[#bdbdbd] pointer-events-none"
+                    >
+                      <path
+                        d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        fill="none"
+                      />
+                    </svg>
+                    <label className="text-xs text-muted-foreground block mb-1.5">Excluding</label>
+                    <Popover open={excludedChecklistOpen} onOpenChange={setExcludedChecklistOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full h-9 justify-between text-sm font-normal bg-background border-border"
+                          disabled={selectedSetups.length === 0}
+                        >
+                          {selectedSetups.length === 0
+                            ? 'Select setup first'
+                            : excludedChecklistItems.length === 0
+                              ? 'Exclude'
+                              : `${excludedChecklistItems.length} excluded`}
+                          <ChevronDown className="w-3 h-3 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2 bg-popover border-border z-[70]" align="start">
+                        {selectedSetups.length === 0 ? (
+                          <div className="text-xs text-muted-foreground py-3 text-center">
+                            Please select a setup to choose checklist items.
+                          </div>
+                        ) : availableChecklistItems.length === 0 ? (
+                          <div className="text-xs text-muted-foreground py-3 text-center">
+                            No checklist items for selected setups.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-1 max-h-48 overflow-auto">
+                              {availableChecklistItems.map((item) => (
+                                <div
+                                  key={item}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                  onClick={() => handleExcludedChecklistItemToggle(item)}
+                                >
+                                  <Checkbox checked={excludedChecklistItems.includes(item)} />
+                                  <span className="text-sm truncate">{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {excludedChecklistItems.length > 0 && (
+                              <>
+                                <DropdownMenuSeparator className="my-2" />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-xs"
+                                  onClick={() => setExcludedChecklistItems([])}
+                                >
+                                  Clear selection
+                                </Button>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
               </div>
 
               {/* Outcome - Multi-select */}

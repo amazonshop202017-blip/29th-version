@@ -95,6 +95,7 @@ export function AdvancedStrategySection() {
     selectedSetups, setSelectedSetups,
     excludedSetups, setExcludedSetups,
     selectedChecklistItems, setSelectedChecklistItems,
+    excludedChecklistItems, setExcludedChecklistItems,
   } = useGlobalFilters();
 
   const { strategies } = useStrategiesContext();
@@ -109,7 +110,6 @@ export function AdvancedStrategySection() {
   }, [strategies, selectedSetups]);
 
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
-  const [checklistOpen, setChecklistOpen] = useState(false);
 
   const toggleManual = (key: string, currentlyActive: boolean, clearFn: () => void) => {
     if (currentlyActive) {
@@ -125,14 +125,6 @@ export function AdvancedStrategySection() {
     }
   };
   const isExpanded = (key: string, active: boolean) => active || manualExpanded.has(key);
-
-  const handleChecklistToggle = (item: string) => {
-    if (selectedChecklistItems.includes(item)) {
-      setSelectedChecklistItems(selectedChecklistItems.filter(i => i !== item));
-    } else {
-      setSelectedChecklistItems([...selectedChecklistItems, item]);
-    }
-  };
 
   return (
     <div className="space-y-1">
@@ -211,60 +203,77 @@ export function AdvancedStrategySection() {
       <FilterRow
         label="Checklist of Setup"
         icon={<ListFilter className="w-3.5 h-3.5" />}
-        active={selectedChecklistItems.length > 0}
-        expanded={isExpanded('checklist', selectedChecklistItems.length > 0)}
-        onToggle={() => toggleManual('checklist', selectedChecklistItems.length > 0, () => setSelectedChecklistItems([]))}
+        active={selectedChecklistItems.length > 0 || excludedChecklistItems.length > 0}
+        expanded={isExpanded('checklist', selectedChecklistItems.length > 0 || excludedChecklistItems.length > 0)}
+        onToggle={() => toggleManual(
+          'checklist',
+          selectedChecklistItems.length > 0 || excludedChecklistItems.length > 0,
+          () => { setSelectedChecklistItems([]); setExcludedChecklistItems([]); },
+        )}
       >
-        <Popover open={checklistOpen} onOpenChange={setChecklistOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full h-9 justify-between text-sm font-normal bg-background border-border"
-              disabled={selectedSetups.length === 0}
-            >
-              {selectedSetups.length === 0
-                ? 'Select setup first'
-                : selectedChecklistItems.length === 0
-                  ? 'All'
-                  : `${selectedChecklistItems.length} selected`}
-              <ChevronDown className="w-3 h-3 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-2 bg-popover border-border z-[120]" align="start">
-            {selectedSetups.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-3 text-center">
-                Please select a setup to choose checklist items.
-              </div>
-            ) : availableChecklistItems.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-3 text-center">
-                No checklist items for selected setups.
-              </div>
-            ) : (
-              <>
-                <div className="space-y-1 max-h-48 overflow-auto">
-                  {availableChecklistItems.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-3 px-2 py-2 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                      onClick={() => handleChecklistToggle(item)}
-                    >
-                      <Checkbox className="rounded-[4px] h-3.5 w-3.5 [&_svg]:h-3 [&_svg]:w-3" checked={selectedChecklistItems.includes(item)} />
-                      <span className="text-sm truncate">{item}</span>
-                    </div>
-                  ))}
-                </div>
-                {selectedChecklistItems.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator className="my-2" />
-                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setSelectedChecklistItems([])}>
-                      Clear selection
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
-          </PopoverContent>
-        </Popover>
+        {selectedSetups.length === 0 ? (
+          <div className="text-xs text-muted-foreground py-2">
+            Please select a setup first to choose checklist items.
+          </div>
+        ) : (
+          <div className="relative ml-1 pl-4 space-y-3">
+            {/* Shared vertical line */}
+            <div
+              aria-hidden
+              className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+              style={{ height: 'calc(100% - 1.125rem)' }}
+            />
+
+            {/* Including branch */}
+            <div className="relative">
+              <svg
+                aria-hidden
+                width="16"
+                height="12"
+                viewBox="0 0 16 12"
+                fill="none"
+                className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+              >
+                <path d="M 0.5 0 L 0.5 11.5 L 16 11.5" stroke="currentColor" strokeWidth="1" fill="none" />
+              </svg>
+              <label className="text-xs text-muted-foreground block mb-1.5">Including</label>
+              <CheckboxMultiSelect
+                options={availableChecklistItems.map(i => ({ value: i, label: i }))}
+                selected={selectedChecklistItems}
+                onChange={setSelectedChecklistItems}
+                emptyText="No checklist items for selected setups"
+                popoverWidth="w-56"
+              />
+            </div>
+
+            {/* Excluding branch */}
+            <div className="relative">
+              <svg
+                aria-hidden
+                width="16"
+                height="12"
+                viewBox="0 0 16 12"
+                fill="none"
+                className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+              >
+                <path
+                  d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  fill="none"
+                />
+              </svg>
+              <label className="text-xs text-muted-foreground block mb-1.5">Excluding</label>
+              <CheckboxMultiSelect
+                options={availableChecklistItems.map(i => ({ value: i, label: i }))}
+                selected={excludedChecklistItems}
+                onChange={setExcludedChecklistItems}
+                emptyText="No checklist items for selected setups"
+                popoverWidth="w-56"
+              />
+            </div>
+          </div>
+        )}
       </FilterRow>
     </div>
   );

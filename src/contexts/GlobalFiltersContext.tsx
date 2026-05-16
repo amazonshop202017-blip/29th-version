@@ -122,6 +122,8 @@ interface GlobalFiltersContextType {
   selectedChecklistItems: string[];
   setSelectedChecklistItems: (items: string[]) => void;
   hasActiveChecklistFilter: boolean;
+  excludedChecklistItems: string[];
+  setExcludedChecklistItems: (items: string[]) => void;
   // Advanced Filters - Tags
   selectedTagsByCategory: TagFilters;
   setSelectedTagsByCategory: (tags: TagFilters) => void;
@@ -246,6 +248,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   
   // Checklist of Setup Filter
   const [selectedChecklistItems, setSelectedChecklistItems] = useState<string[]>([]);
+  const [excludedChecklistItems, setExcludedChecklistItems] = useState<string[]>([]);
   
   // Advanced Filters - Tags
   const [selectedTagsByCategory, setSelectedTagsByCategory] = useState<TagFilters>({});
@@ -464,7 +467,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const isAllAccountsSelected = selectedAccounts.length === 0;
   
   // Check if checklist filter is active
-  const hasActiveChecklistFilter = selectedChecklistItems.length > 0;
+  const hasActiveChecklistFilter = selectedChecklistItems.length > 0 || excludedChecklistItems.length > 0;
 
   const value = useMemo(() => ({
     currency,
@@ -521,6 +524,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedChecklistItems,
     setSelectedChecklistItems,
     hasActiveChecklistFilter,
+    excludedChecklistItems,
+    setExcludedChecklistItems,
     // Advanced Filters - Tags
     selectedTagsByCategory,
     setSelectedTagsByCategory,
@@ -567,6 +572,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedYear,
     selectedChecklistItems,
     hasActiveChecklistFilter,
+    excludedChecklistItems,
     selectedTagsByCategory,
     hasActiveTagFilters,
     selectedTradeComments,

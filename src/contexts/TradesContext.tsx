@@ -119,6 +119,7 @@ export const useFilteredTradesContext = (
     positionSizeMax,
     selectedYear,
     selectedChecklistItems,
+    excludedChecklistItems,
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
@@ -295,6 +296,14 @@ export const useFilteredTradesContext = (
       });
     }
 
+    // Exclude trades that have ANY of the excluded checklist items ticked
+    if (excludedChecklistItems.length > 0) {
+      filtered = filtered.filter(trade => {
+        const tradeChecklist = trade.selectedChecklistItems || [];
+        return !excludedChecklistItems.some(item => tradeChecklist.includes(item));
+      });
+    }
+
     // Filter by Tags (AND across categories, OR within category)
     const activeCategoryIds = Object.keys(selectedTagsByCategory).filter(
       categoryId => selectedTagsByCategory[categoryId]?.length > 0
@@ -347,7 +356,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, excludedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
