@@ -148,8 +148,28 @@ export function AdvancedStrategySection() {
           () => { setSelectedSetups([]); setExcludedSetups([]); },
         )}
       >
-        <div className="space-y-3">
-          <div>
+        {/* Tree-branched Including + Excluding under Setup checkbox.
+            Shared vertical line ends at the last (Excluding) branch. */}
+        <div className="relative ml-1 pl-4 space-y-3">
+          {/* Shared vertical line: from top down to the Excluding label center */}
+          <div
+            aria-hidden
+            className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+            style={{ height: 'calc(100% - 1.125rem)' }}
+          />
+
+          {/* Including branch */}
+          <div className="relative">
+            <svg
+              aria-hidden
+              width="16"
+              height="12"
+              viewBox="0 0 16 12"
+              fill="none"
+              className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+            >
+              <path d="M 0.5 0 L 0.5 11.5 L 16 11.5" stroke="currentColor" strokeWidth="1" fill="none" />
+            </svg>
             <label className="text-xs text-muted-foreground block mb-1.5">Including</label>
             <CheckboxMultiSelect
               options={strategies.map(s => ({ value: s.id, label: s.name }))}
@@ -159,33 +179,30 @@ export function AdvancedStrategySection() {
             />
           </div>
 
-          {/* Excluding — nested with tree line, matches sidebar Tools sub-item style.
-              Single branch: no shared vertical line; the SVG draws its own L. */}
-          <div className="relative ml-1 pl-4">
-            <div className="relative">
-              <svg
-                aria-hidden
-                width="16"
-                height="12"
-                viewBox="0 0 16 12"
+          {/* Excluding branch (last — L-curve ending) */}
+          <div className="relative">
+            <svg
+              aria-hidden
+              width="16"
+              height="12"
+              viewBox="0 0 16 12"
+              fill="none"
+              className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
+            >
+              <path
+                d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                stroke="currentColor"
+                strokeWidth="1"
                 fill="none"
-                className="absolute -left-4 top-1/2 -translate-y-[6px] text-[#bdbdbd] pointer-events-none"
-              >
-                <path
-                  d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  fill="none"
-                />
-              </svg>
-              <label className="text-xs text-muted-foreground block mb-1.5">Excluding</label>
-              <CheckboxMultiSelect
-                options={strategies.map(s => ({ value: s.id, label: s.name }))}
-                selected={excludedSetups}
-                onChange={setExcludedSetups}
-                emptyText="No setups found"
               />
-            </div>
+            </svg>
+            <label className="text-xs text-muted-foreground block mb-1.5">Excluding</label>
+            <CheckboxMultiSelect
+              options={strategies.map(s => ({ value: s.id, label: s.name }))}
+              selected={excludedSetups}
+              onChange={setExcludedSetups}
+              emptyText="No setups found"
+            />
           </div>
         </div>
       </FilterRow>
