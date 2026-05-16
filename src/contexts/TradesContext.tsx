@@ -125,6 +125,7 @@ export const useFilteredTradesContext = (
     selectedDirections,
     selectedReturnRanges,
     selectedRMultipleRanges,
+    holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,
@@ -249,6 +250,21 @@ export const useFilteredTradesContext = (
       });
     }
 
+    // Filter by Holding Period (Intraday / Multiday)
+    if (holdingPeriodFilter !== 'all') {
+      filtered = filtered.filter(trade => {
+        const metrics = calculateTradeMetrics(trade);
+        if (!metrics.openDate || !metrics.closeDate) return false;
+        const open = parseISO(metrics.openDate);
+        const close = parseISO(metrics.closeDate);
+        const sameDay =
+          open.getFullYear() === close.getFullYear() &&
+          open.getMonth() === close.getMonth() &&
+          open.getDate() === close.getDate();
+        return holdingPeriodFilter === 'intraday' ? sameDay : !sameDay;
+      });
+    }
+
     // Filter by Year
     if (selectedYear !== null) {
       filtered = filtered.filter(trade => {
@@ -320,7 +336,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)

@@ -49,6 +49,7 @@ export const SelectedFiltersBar = () => {
     selectedDirections, setSelectedDirections,
     selectedReturnRanges, setSelectedReturnRanges,
     selectedRMultipleRanges, setSelectedRMultipleRanges,
+    holdingPeriodFilter, setHoldingPeriodFilter,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
     selectedTagsByCategory, setSelectedTagsByCategory,
@@ -168,6 +169,15 @@ export const SelectedFiltersBar = () => {
       });
     });
 
+    // Holding period
+    if (holdingPeriodFilter !== 'all') {
+      result.push({
+        id: 'holding-period', label: 'Holding',
+        value: holdingPeriodFilter === 'intraday' ? 'Intraday' : 'Multiday',
+        onRemove: () => setHoldingPeriodFilter('all'),
+      });
+    }
+
     // Tags by category
     Object.entries(selectedTagsByCategory).forEach(([categoryId, tagIds]) => {
       const categoryName = categories.find(c => c.id === categoryId)?.name || 'Tag';
@@ -209,6 +219,7 @@ export const SelectedFiltersBar = () => {
     datePreset, selectedAccounts, selectedSymbols, selectedSetups, selectedChecklistItems,
     selectedOutcomes, selectedDirections, selectedYear, selectedDays, selectedHours,
     lastTradesFilter, selectedReturnRanges, selectedRMultipleRanges,
+    holdingPeriodFilter,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
 
@@ -224,6 +235,7 @@ export const SelectedFiltersBar = () => {
     setSelectedDirections([]);
     setSelectedReturnRanges([]);
     setSelectedRMultipleRanges([]);
+    setHoldingPeriodFilter('all');
     setSelectedYear(null);
     setSelectedChecklistItems([]);
     setSelectedTagsByCategory({});
