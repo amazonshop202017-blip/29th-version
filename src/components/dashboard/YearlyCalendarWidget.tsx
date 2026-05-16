@@ -173,11 +173,22 @@ export const YearlyCalendarWidget = () => {
         {MONTH_SHORT.map((name, idx) => {
           const s = monthStats[idx];
           const isCurrent = year === currentYear && idx === currentMonthIdx;
+          const tintStyle: React.CSSProperties = s.hasData
+            ? {
+                backgroundImage: `linear-gradient(145deg, ${
+                  s.pnl >= 0 ? 'hsl(var(--profit) / 0.18)' : 'hsl(var(--loss) / 0.18)'
+                } 0%, ${
+                  s.pnl >= 0 ? 'hsl(var(--profit) / 0.04)' : 'hsl(var(--loss) / 0.04)'
+                } 100%)`,
+              }
+            : {};
           return (
             <div
               key={name}
+              style={tintStyle}
               className={cn(
-                'rounded-lg border border-border/60 bg-card/40 p-3 transition-colors',
+                'rounded-lg border border-border/60 p-3 transition-colors',
+                !s.hasData && 'bg-card/40',
                 isCurrent && 'ring-1 ring-primary/40 bg-accent/30'
               )}
             >
