@@ -23,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { useGlobalFilters, DatePreset, OutcomeFilter, DayFilter, LastTradesFilter, DirectionFilter, ReturnPercentRange, RMultipleRange, YearFilter } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, DatePreset, OutcomeFilter, DayFilter, LastTradesFilter, DirectionFilter, ReturnPercentRange, YearFilter } from '@/contexts/GlobalFiltersContext';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
@@ -119,15 +119,6 @@ const RETURN_PERCENT_OPTIONS: { value: ReturnPercentRange; label: string }[] = [
   { value: '>10', label: '> 10%' },
 ];
 
-const R_MULTIPLE_OPTIONS: { value: RMultipleRange; label: string }[] = [
-  { value: '<-2', label: '< -2R' },
-  { value: '-2-0', label: '-2R to 0R' },
-  { value: '0-1', label: '0R to 1R' },
-  { value: '1-2', label: '1R to 2R' },
-  { value: '2-4', label: '2R to 4R' },
-  { value: '>4', label: '> 4R' },
-];
-
 export const GlobalHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -174,8 +165,10 @@ export const GlobalHeader = () => {
     setSelectedDirections,
     selectedReturnRanges,
     setSelectedReturnRanges,
-    selectedRMultipleRanges,
-    setSelectedRMultipleRanges,
+    rMultipleMin,
+    setRMultipleMin,
+    rMultipleMax,
+    setRMultipleMax,
     selectedYear,
     setSelectedYear,
     selectedChecklistItems,
@@ -338,15 +331,6 @@ export const GlobalHeader = () => {
     }
   };
 
-  // R-Multiple filter handlers
-  const handleRMultipleRangeToggle = (range: RMultipleRange) => {
-    if (selectedRMultipleRanges.includes(range)) {
-      setSelectedRMultipleRanges(selectedRMultipleRanges.filter(r => r !== range));
-    } else {
-      setSelectedRMultipleRanges([...selectedRMultipleRanges, range]);
-    }
-  };
-
   // Year filter handler
   const handleYearSelect = (year: number | null) => {
     setSelectedYear(year);
@@ -402,10 +386,10 @@ export const GlobalHeader = () => {
     if (lastTradesFilter !== null) count++;
     if (selectedDirections.length > 0) count++;
     if (selectedReturnRanges.length > 0) count++;
-    if (selectedRMultipleRanges.length > 0) count++;
+    if (rMultipleMin !== null || rMultipleMax !== null) count++;
     if (selectedYear !== null) count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, selectedYear]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
