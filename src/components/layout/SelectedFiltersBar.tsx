@@ -52,6 +52,8 @@ export const SelectedFiltersBar = () => {
     holdingPeriodFilter, setHoldingPeriodFilter,
     durationMinutesMin, setDurationMinutesMin,
     durationMinutesMax, setDurationMinutesMax,
+    entryTimeIntervals, setEntryTimeIntervals,
+    exitTimeIntervals, setExitTimeIntervals,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
     excludedChecklistItems, setExcludedChecklistItems,
@@ -223,6 +225,25 @@ export const SelectedFiltersBar = () => {
       });
     }
 
+    // Entry time intervals
+    const validEntry = entryTimeIntervals.filter(i => i.min && i.max);
+    if (validEntry.length > 0) {
+      result.push({
+        id: 'entry-time', label: 'Entry time',
+        value: validEntry.map(i => `${i.min}–${i.max}`).join(', '),
+        onRemove: () => setEntryTimeIntervals([]),
+      });
+    }
+    // Exit time intervals
+    const validExit = exitTimeIntervals.filter(i => i.min && i.max);
+    if (validExit.length > 0) {
+      result.push({
+        id: 'exit-time', label: 'Exit time',
+        value: validExit.map(i => `${i.min}–${i.max}`).join(', '),
+        onRemove: () => setExitTimeIntervals([]),
+      });
+    }
+
     // Tags by category
     Object.entries(selectedTagsByCategory).forEach(([categoryId, tagIds]) => {
       const categoryName = categories.find(c => c.id === categoryId)?.name || 'Tag';
@@ -267,6 +288,7 @@ export const SelectedFiltersBar = () => {
     positionSizeMin, positionSizeMax,
     holdingPeriodFilter,
     durationMinutesMin, durationMinutesMax,
+    entryTimeIntervals, exitTimeIntervals,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
 
@@ -289,6 +311,8 @@ export const SelectedFiltersBar = () => {
     setHoldingPeriodFilter('all');
     setDurationMinutesMin(null);
     setDurationMinutesMax(null);
+    setEntryTimeIntervals([]);
+    setExitTimeIntervals([]);
     setSelectedYear(null);
     setSelectedChecklistItems([]);
     setExcludedChecklistItems([]);
