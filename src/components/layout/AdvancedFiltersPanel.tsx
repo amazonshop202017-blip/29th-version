@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Settings, Tag, ChevronDown, ChevronRight, Check, MessageSquare } from 'lucide-react';
+import { Settings, Tag, ChevronDown, ChevronRight, Check, MessageSquare, Filter } from 'lucide-react';
+import { AdvancedBasicFiltersSection } from './AdvancedBasicFiltersSection';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useGlobalFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
@@ -21,10 +22,10 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 
-type MenuSection = 'general' | 'tags';
+type MenuSection = 'basic' | 'general' | 'tags';
 
 export const AdvancedFiltersPanel = () => {
-  const [activeSection, setActiveSection] = useState<MenuSection>('general');
+  const [activeSection, setActiveSection] = useState<MenuSection>('basic');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [expandedCommentCategories, setExpandedCommentCategories] = useState<Set<TradeCommentCategory>>(new Set());
@@ -205,6 +206,7 @@ export const AdvancedFiltersPanel = () => {
   };
 
   const menuItems: { key: MenuSection; label: string; icon: React.ReactNode }[] = [
+    { key: 'basic', label: 'Basic Filters', icon: <Filter className="w-4 h-4" /> },
     { key: 'general', label: 'General', icon: <Settings className="w-4 h-4" /> },
     { key: 'tags', label: 'Tags', icon: <Tag className="w-4 h-4" /> },
   ];
@@ -236,6 +238,10 @@ export const AdvancedFiltersPanel = () => {
 
       {/* Right Content */}
       <div className="flex-1 p-4 min-w-[320px]">
+        {activeSection === 'basic' && (
+          <AdvancedBasicFiltersSection />
+        )}
+
         {activeSection === 'general' && (
           <div className="space-y-4">
             <div>
