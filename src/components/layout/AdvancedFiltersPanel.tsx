@@ -49,6 +49,9 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
     toggleCategoryTagFilter,
     selectAllTagsInCategory,
     clearCategoryTags,
+    freezeAppliedFilters,
+    commitAppliedFilters,
+    unfreezeAppliedFilters,
   } = filters;
 
   // Snapshot of all popup-relevant filter values on mount; Cancel restores them.
@@ -85,11 +88,15 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
   useEffect(() => {
     if (snapshotRef.current === null) {
       snapshotRef.current = captureSnapshot();
+      // Freeze applied-filter values used by analytics so edits in this
+      // popup do not affect charts/tables until Apply is clicked.
+      freezeAppliedFilters();
     }
     return () => {
       // On unmount (popup closed without Apply), revert pending changes.
       if (!appliedRef.current && snapshotRef.current) {
         restoreSnapshotFromRef(snapshotRef.current);
+        unfreezeAppliedFilters();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,12 +162,14 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
 
   const handleCancel = () => {
     if (snapshotRef.current) restoreSnapshotFromRef(snapshotRef.current);
+    unfreezeAppliedFilters();
     appliedRef.current = true; // prevent double-restore on unmount
     onClose?.();
   };
   const handleApply = () => {
     // Update snapshot baseline so re-opening does not revert applied changes
     snapshotRef.current = captureSnapshot();
+    commitAppliedFilters();
     appliedRef.current = true;
     onClose?.();
   };
