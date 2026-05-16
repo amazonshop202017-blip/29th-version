@@ -134,36 +134,71 @@ export const AdvancedFiltersPanel = () => {
     return `${selectedCount} selected`;
   };
 
-  const menuItems: { key: MenuSection; label: string; icon: React.ReactNode }[] = [
-    { key: 'basic', label: 'Basic Filters', icon: <Filter className="w-4 h-4" /> },
-    { key: 'strategy', label: 'Strategy', icon: <BarChart2 className="w-4 h-4" /> },
-    { key: 'daytime', label: 'Day & Time', icon: <Clock className="w-4 h-4" /> },
-    { key: 'tags', label: 'Tags', icon: <Tag className="w-4 h-4" /> },
+  const menuItems: {
+    key: MenuSection;
+    label: string;
+    icon: React.ReactNode;
+    iconBg: string;
+    iconColor: string;
+  }[] = [
+    {
+      key: 'basic',
+      label: 'Basic Filters',
+      icon: <Filter className="w-3.5 h-3.5" />,
+      iconBg: 'bg-violet-100 dark:bg-violet-500/20',
+      iconColor: 'text-violet-600 dark:text-violet-300',
+    },
+    {
+      key: 'tags',
+      label: 'Tags',
+      icon: <Tag className="w-3.5 h-3.5" />,
+      iconBg: 'bg-pink-100 dark:bg-pink-500/20',
+      iconColor: 'text-pink-600 dark:text-pink-300',
+    },
+    {
+      key: 'daytime',
+      label: 'Day & Time',
+      icon: <Clock className="w-3.5 h-3.5" />,
+      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
+      iconColor: 'text-indigo-600 dark:text-indigo-300',
+    },
+    {
+      key: 'strategy',
+      label: 'Strategy',
+      icon: <BarChart2 className="w-3.5 h-3.5" />,
+      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+      iconColor: 'text-amber-600 dark:text-amber-300',
+    },
   ];
 
   return (
     <div className="flex h-[336px] w-[537px]">
       {/* Left Menu */}
-      <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-1">
-        {menuItems.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setActiveSection(item.key)}
-            className={cn(
-              "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full",
-              activeSection === item.key
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
-            )}
-          >
-            {item.icon}
-            {item.label}
-            <ChevronRight className={cn(
-              "w-3 h-3 ml-auto transition-transform",
-              activeSection === item.key && "rotate-0"
-            )} />
-          </button>
-        ))}
+      <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-2">
+        {menuItems.map((item) => {
+          const isActive = activeSection === item.key;
+          return (
+            <button
+              key={item.key}
+              onClick={() => setActiveSection(item.key)}
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-all text-left w-full border",
+                isActive
+                  ? "bg-accent/60 border-border shadow-sm text-foreground"
+                  : "bg-card border-border/60 hover:bg-accent/40 text-foreground"
+              )}
+            >
+              <span className={cn("flex items-center justify-center w-7 h-7 rounded-lg shrink-0", item.iconBg, item.iconColor)}>
+                {item.icon}
+              </span>
+              <span className="flex-1 truncate">{item.label}</span>
+              <ChevronRight className={cn(
+                "w-3.5 h-3.5 shrink-0 transition-transform text-muted-foreground",
+                isActive ? "rotate-0" : "rotate-90"
+              )} />
+            </button>
+          );
+        })}
       </div>
 
       {/* Right Content */}
