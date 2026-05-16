@@ -138,36 +138,26 @@ export const AdvancedFiltersPanel = () => {
     key: MenuSection;
     label: string;
     icon: React.ReactNode;
-    iconBg: string;
-    iconColor: string;
   }[] = [
     {
       key: 'basic',
       label: 'Basic Filters',
       icon: <Filter className="w-3.5 h-3.5" />,
-      iconBg: 'bg-violet-100 dark:bg-violet-500/20',
-      iconColor: 'text-violet-600 dark:text-violet-300',
     },
     {
       key: 'tags',
       label: 'Tags',
       icon: <Tag className="w-3.5 h-3.5" />,
-      iconBg: 'bg-pink-100 dark:bg-pink-500/20',
-      iconColor: 'text-pink-600 dark:text-pink-300',
     },
     {
       key: 'daytime',
       label: 'Day & Time',
       icon: <Clock className="w-3.5 h-3.5" />,
-      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
-      iconColor: 'text-indigo-600 dark:text-indigo-300',
     },
     {
       key: 'strategy',
       label: 'Strategy',
       icon: <BarChart2 className="w-3.5 h-3.5" />,
-      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
-      iconColor: 'text-amber-600 dark:text-amber-300',
     },
   ];
 
@@ -188,7 +178,7 @@ export const AdvancedFiltersPanel = () => {
                   : "bg-card border-border/60 hover:bg-accent/40 text-foreground"
               )}
             >
-              <span className={cn("flex items-center justify-center w-7 h-7 rounded-lg shrink-0", item.iconBg, item.iconColor)}>
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-muted text-muted-foreground">
                 {item.icon}
               </span>
               <span className="flex-1 truncate">{item.label}</span>
