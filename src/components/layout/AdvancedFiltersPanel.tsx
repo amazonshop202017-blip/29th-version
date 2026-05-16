@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Tag, ChevronDown, ChevronRight, Check, Filter, Clock, BarChart2 } from 'lucide-react';
 import { AdvancedBasicFiltersSection } from './AdvancedBasicFiltersSection';
 import { AdvancedDayTimeSection } from './AdvancedDayTimeSection';
@@ -26,7 +26,11 @@ import {
 
 type MenuSection = 'basic' | 'strategy' | 'daytime' | 'tags';
 
-export const AdvancedFiltersPanel = () => {
+interface AdvancedFiltersPanelProps {
+  onClose?: () => void;
+}
+
+export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}) => {
   const [activeSection, setActiveSection] = useState<MenuSection>('basic');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
@@ -39,12 +43,127 @@ export const AdvancedFiltersPanel = () => {
   
   const { categories } = useCategoriesContext();
   const { getActiveTags } = useTagsContext();
+  const filters = useGlobalFilters();
   const {
     selectedTagsByCategory,
     toggleCategoryTagFilter,
     selectAllTagsInCategory,
     clearCategoryTags,
-  } = useGlobalFilters();
+  } = filters;
+
+  // Snapshot of all popup-relevant filter values on mount; Cancel restores them.
+  const captureSnapshot = useCallback(() => ({
+    selectedSymbols: filters.selectedSymbols,
+    selectedOutcomes: filters.selectedOutcomes,
+    selectedHours: filters.selectedHours,
+    selectedSetups: filters.selectedSetups,
+    excludedSetups: filters.excludedSetups,
+    selectedDays: filters.selectedDays,
+    lastTradesFilter: filters.lastTradesFilter,
+    selectedDirections: filters.selectedDirections,
+    selectedReturnRanges: filters.selectedReturnRanges,
+    rMultipleMin: filters.rMultipleMin,
+    rMultipleMax: filters.rMultipleMax,
+    positionSizeMin: filters.positionSizeMin,
+    positionSizeMax: filters.positionSizeMax,
+    holdingPeriodFilter: filters.holdingPeriodFilter,
+    durationMinutesMin: filters.durationMinutesMin,
+    durationMinutesMax: filters.durationMinutesMax,
+    entryTimeIntervals: filters.entryTimeIntervals,
+    exitTimeIntervals: filters.exitTimeIntervals,
+    starredFilter: filters.starredFilter,
+    selectedYear: filters.selectedYear,
+    selectedChecklistItems: filters.selectedChecklistItems,
+    excludedChecklistItems: filters.excludedChecklistItems,
+    selectedTagsByCategory: filters.selectedTagsByCategory,
+    selectedTradeComments: filters.selectedTradeComments,
+  }), [filters]);
+
+  const snapshotRef = useRef<ReturnType<typeof captureSnapshot> | null>(null);
+  const appliedRef = useRef(false);
+  // Capture once on mount (popup open)
+  useEffect(() => {
+    if (snapshotRef.current === null) {
+      snapshotRef.current = captureSnapshot();
+    }
+    return () => {
+      // On unmount (popup closed without Apply), revert pending changes.
+      if (!appliedRef.current && snapshotRef.current) {
+        restoreSnapshotFromRef(snapshotRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Stable restore that reads from a passed snapshot (used in cleanup where filters ref may be stale)
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const restoreSnapshotFromRef = useCallback((s: ReturnType<typeof captureSnapshot>) => {
+    const f = filtersRef.current;
+    f.setSelectedSymbols(s.selectedSymbols);
+    f.setSelectedOutcomes(s.selectedOutcomes);
+    f.setSelectedHours(s.selectedHours);
+    f.setSelectedSetups(s.selectedSetups);
+    f.setExcludedSetups(s.excludedSetups);
+    f.setSelectedDays(s.selectedDays);
+    f.setLastTradesFilter(s.lastTradesFilter);
+    f.setSelectedDirections(s.selectedDirections);
+    f.setSelectedReturnRanges(s.selectedReturnRanges);
+    f.setRMultipleMin(s.rMultipleMin);
+    f.setRMultipleMax(s.rMultipleMax);
+    f.setPositionSizeMin(s.positionSizeMin);
+    f.setPositionSizeMax(s.positionSizeMax);
+    f.setHoldingPeriodFilter(s.holdingPeriodFilter);
+    f.setDurationMinutesMin(s.durationMinutesMin);
+    f.setDurationMinutesMax(s.durationMinutesMax);
+    f.setEntryTimeIntervals(s.entryTimeIntervals);
+    f.setExitTimeIntervals(s.exitTimeIntervals);
+    f.setStarredFilter(s.starredFilter);
+    f.setSelectedYear(s.selectedYear);
+    f.setSelectedChecklistItems(s.selectedChecklistItems);
+    f.setExcludedChecklistItems(s.excludedChecklistItems);
+    f.setSelectedTagsByCategory(s.selectedTagsByCategory);
+    f.setSelectedTradeComments(s.selectedTradeComments);
+  }, []);
+
+  const resetAll = useCallback(() => {
+    filters.setSelectedSymbols([]);
+    filters.setSelectedOutcomes([]);
+    filters.setSelectedHours([]);
+    filters.setSelectedSetups([]);
+    filters.setExcludedSetups([]);
+    filters.setSelectedDays([]);
+    filters.setLastTradesFilter(null);
+    filters.setSelectedDirections([]);
+    filters.setSelectedReturnRanges([]);
+    filters.setRMultipleMin(null);
+    filters.setRMultipleMax(null);
+    filters.setPositionSizeMin(null);
+    filters.setPositionSizeMax(null);
+    filters.setHoldingPeriodFilter('all');
+    filters.setDurationMinutesMin(null);
+    filters.setDurationMinutesMax(null);
+    filters.setEntryTimeIntervals([]);
+    filters.setExitTimeIntervals([]);
+    filters.setStarredFilter('all');
+    filters.setSelectedYear(null);
+    filters.setSelectedChecklistItems([]);
+    filters.setExcludedChecklistItems([]);
+    filters.setSelectedTagsByCategory({});
+    filters.setSelectedTradeComments({ entryComments: [], tradeManagements: [], exitComments: [] });
+  }, [filters]);
+
+  const handleCancel = () => {
+    if (snapshotRef.current) restoreSnapshotFromRef(snapshotRef.current);
+    appliedRef.current = true; // prevent double-restore on unmount
+    onClose?.();
+  };
+  const handleApply = () => {
+    // Update snapshot baseline so re-opening does not revert applied changes
+    snapshotRef.current = captureSnapshot();
+    appliedRef.current = true;
+    onClose?.();
+  };
 
   // Get active (non-archived) tags only
   const activeTags = useMemo(() => getActiveTags(), [getActiveTags]);
@@ -162,7 +281,8 @@ export const AdvancedFiltersPanel = () => {
   ];
 
   return (
-    <div className="flex h-[336px] w-[537px]">
+    <div className="flex flex-col w-[537px]">
+      <div className="flex h-[336px]">
       {/* Left Menu */}
       <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-2">
         {menuItems.map((item) => {
@@ -314,6 +434,17 @@ export const AdvancedFiltersPanel = () => {
             )}
           </div>
         )}
+      </div>
+      </div>
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
+        <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
+          Reset all
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
+          <Button size="sm" onClick={handleApply}>Apply filters</Button>
+        </div>
       </div>
     </div>
   );

@@ -485,7 +485,7 @@ export const GlobalHeader = () => {
             </Button>
           </SheetHeader>
           <div className="p-0">
-            <AdvancedFiltersPanel />
+            <AdvancedFiltersPanel onClose={() => setMobileAdvancedSheetOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
@@ -1388,7 +1388,7 @@ export const GlobalHeader = () => {
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" collisionPadding={24} className="w-auto p-0 bg-popover border-border z-50">
-            <AdvancedFiltersPanel />
+            <AdvancedFiltersPanel onClose={() => setAdvancedFiltersOpen(false)} />
           </PopoverContent>
         </Popover>
 
