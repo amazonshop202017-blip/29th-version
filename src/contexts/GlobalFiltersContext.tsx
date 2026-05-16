@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback, useRef } from 'react';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, startOfQuarter, startOfYear } from 'date-fns';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'INR';
@@ -157,6 +157,71 @@ interface GlobalFiltersContextType {
   selectAllCommentsInCategory: (category: TradeCommentCategory, comments: string[]) => void;
   clearTradeCommentCategory: (category: TradeCommentCategory) => void;
   hasActiveTradeCommentFilters: boolean;
+}
+
+// Popup-controlled filter fields. When the advanced filters popup is open,
+// these are "frozen" so analytics keep using the previously applied values
+// until the user clicks Apply.
+interface PopupFilterFields {
+  selectedSymbols: string[];
+  selectedOutcomes: OutcomeFilter[];
+  selectedHours: number[];
+  selectedSetups: string[];
+  excludedSetups: string[];
+  selectedDays: DayFilter[];
+  lastTradesFilter: LastTradesFilter;
+  selectedDirections: DirectionFilter[];
+  selectedReturnRanges: ReturnPercentRange[];
+  rMultipleMin: number | null;
+  rMultipleMax: number | null;
+  positionSizeMin: number | null;
+  positionSizeMax: number | null;
+  holdingPeriodFilter: HoldingPeriodFilter;
+  durationMinutesMin: number | null;
+  durationMinutesMax: number | null;
+  entryTimeIntervals: TimeInterval[];
+  exitTimeIntervals: TimeInterval[];
+  starredFilter: StarredFilter;
+  selectedYear: YearFilter;
+  selectedChecklistItems: string[];
+  excludedChecklistItems: string[];
+  selectedTagsByCategory: TagFilters;
+  selectedTradeComments: TradeCommentFilters;
+}
+
+interface AppliedFiltersExtension {
+  // Applied (frozen-while-popup-open) variants used by analytics consumers.
+  appliedSelectedSymbols: string[];
+  appliedSelectedOutcomes: OutcomeFilter[];
+  appliedSelectedHours: number[];
+  appliedSelectedSetups: string[];
+  appliedExcludedSetups: string[];
+  appliedSelectedDays: DayFilter[];
+  appliedLastTradesFilter: LastTradesFilter;
+  appliedSelectedDirections: DirectionFilter[];
+  appliedSelectedReturnRanges: ReturnPercentRange[];
+  appliedRMultipleMin: number | null;
+  appliedRMultipleMax: number | null;
+  appliedPositionSizeMin: number | null;
+  appliedPositionSizeMax: number | null;
+  appliedHoldingPeriodFilter: HoldingPeriodFilter;
+  appliedDurationMinutesMin: number | null;
+  appliedDurationMinutesMax: number | null;
+  appliedEntryTimeIntervals: TimeInterval[];
+  appliedExitTimeIntervals: TimeInterval[];
+  appliedStarredFilter: StarredFilter;
+  appliedSelectedYear: YearFilter;
+  appliedSelectedChecklistItems: string[];
+  appliedExcludedChecklistItems: string[];
+  appliedSelectedTagsByCategory: TagFilters;
+  appliedSelectedTradeComments: TradeCommentFilters;
+  // Freeze the current popup field values so analytics ignore further edits
+  // until commitAppliedFilters() or unfreezeAppliedFilters() is called.
+  freezeAppliedFilters: () => void;
+  // Rebase frozen snapshot to current live values (used on Apply).
+  commitAppliedFilters: () => void;
+  // Discard the freeze without rebasing (used after Cancel restores live state).
+  unfreezeAppliedFilters: () => void;
 }
 
 const GlobalFiltersContext = createContext<GlobalFiltersContextType | undefined>(undefined);
