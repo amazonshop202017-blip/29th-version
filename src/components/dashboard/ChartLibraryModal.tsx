@@ -14,6 +14,7 @@ const WIDGET_LIST = [
   { id: 'externalLinks', name: 'External Links', description: 'Quick access to your favorite external links' },
   { id: 'instrumentDistribution', name: 'Instrument Trade Distribution', description: 'Donut chart showing trade distribution across symbols' },
   { id: 'directionSplit', name: 'Direction Split', description: 'Long vs Short breakdown with profit factor, R, expectancy and best/worst' },
+  { id: 'yearlyCalendar', name: 'Yearly Calendar', description: '12-month overview with P&L, trades and R per month' },
 ];
 
 interface ChartLibraryModalProps {
