@@ -52,7 +52,7 @@ export const AppDateTimePicker: React.FC<AppDateTimePickerProps> = ({
           className,
           sx: muiTextFieldSx,
         },
-        popper: { sx: muiPopperSx, disablePortal: false },
+        popper: { sx: muiPopperSx, disablePortal: true },
         dialog: { sx: muiDialogSx },
         desktopPaper: { sx: { pointerEvents: "auto" } },
       }}
