@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MoreHorizontal, History, Pencil, Trash2, Eraser } from 'lucide-react';
+import { Plus, MoreVertical, History, Pencil, Trash2, Eraser, ChevronRight } from 'lucide-react';
 import { useAccountsContext } from '@/contexts/AccountsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Area, AreaChart, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -94,55 +97,107 @@ const BacktestingHome = () => {
           {sessions.map((s) => {
             const rows = loadRows(s.id);
             const stats = computeStats(rows);
+            // Cumulative R series for mini chart
+            let running = 0;
+            const series = rows
+              .map(r => Number(r.values?.rr))
+              .filter(n => Number.isFinite(n))
+              .map((rr, i) => { running += rr; return { x: i, y: running }; });
+            const chartData = series.length > 0 ? series : [{ x: 0, y: 0 }, { x: 1, y: 0 }];
+            const isPositive = stats.totalR >= 0;
+            const chartColor = isPositive ? 'hsl(var(--profit))' : 'hsl(var(--loss))';
+            const gradId = `bt-grad-${s.id}`;
+            const totalRPositive = stats.totalR >= 0;
             return (
-              <div
+              <motion.div
                 key={s.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 onClick={() => navigate(`/backtesting/${s.id}`)}
-                className="group rounded-2xl border border-border bg-card p-5 cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
+                className="glass-card rounded-2xl p-5 flex flex-col cursor-pointer hover:border-primary/30 transition-colors"
               >
+                {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
-                      <History className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-muted/40 border border-border flex items-center justify-center shrink-0">
+                      <History className="w-4 h-4 text-foreground" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{s.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(s.createdAt), 'MMM d, yyyy')}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground truncate">{s.name.toUpperCase()}</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-[10px] font-medium text-primary border border-primary/20">
+                          <span className="w-1 h-1 rounded-full bg-primary" /> BACKTEST
+                        </span>
+                      </div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 truncate">
+                        SESSION · CREATED: {format(new Date(s.createdAt), 'M/d/yyyy')}
                       </p>
                     </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <button className="p-1 rounded-md hover:bg-muted/60 text-muted-foreground">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onSelect={() => navigate(`/backtesting/${s.id}`)}>
+                        <ChevronRight className="w-4 h-4 mr-2" /> Open Session
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => { setRenameTarget({ id: s.id, name: s.name }); setRenameValue(s.name); }}>
-                        <Pencil className="h-4 w-4 mr-2" /> Rename
+                        <Pencil className="w-4 h-4 mr-2" /> Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => setClearTarget({ id: s.id, name: s.name })}>
-                        <Eraser className="h-4 w-4 mr-2" /> Clear Trades
+                        <Eraser className="w-4 h-4 mr-2" /> Clear Trades
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-rose-500 focus:text-rose-500"
+                        className="text-loss focus:text-loss"
                         onSelect={() => setDeleteTarget({ id: s.id, name: s.name })}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete Session
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete Session
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Stat label="Total Trades" value={String(stats.total)} />
-                  <Stat label="Win Rate" value={stats.total ? `${stats.winRate.toFixed(1)}%` : '—'} />
-                  <Stat label="Wins" value={String(stats.wins)} accent="text-emerald-500" />
-                  <Stat label="Losses" value={String(stats.losses)} accent="text-rose-500" />
+                {/* Metrics grid */}
+                <div className="grid grid-cols-3 gap-y-3 gap-x-4 mb-4">
+                  <Metric label="WIN RATE" value={stats.total ? `${Math.round(stats.winRate)}%` : '—'} />
+                  <Metric label="TRADES" value={String(stats.total)} />
+                  <Metric
+                    label="TOTAL R"
+                    value={`${totalRPositive ? '+' : ''}${stats.totalR.toFixed(1)}R`}
+                    className={totalRPositive ? 'text-profit' : 'text-loss'}
+                  />
+                  <Metric label="WINS" value={String(stats.wins)} className="text-profit" />
+                  <Metric label="LOSSES" value={String(stats.losses)} className="text-loss" />
+                  <Metric label="AVG R" value={`${stats.avgR.toFixed(1)}R`} />
                 </div>
-              </div>
+
+                {/* Mini chart */}
+                <div className="h-16 -mx-1 mt-auto">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={chartColor} stopOpacity={0.25} />
+                          <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area
+                        type="monotone"
+                        dataKey="y"
+                        stroke={chartColor}
+                        strokeWidth={2}
+                        fill={`url(#${gradId})`}
+                        isAnimationActive={false}
+                        dot={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </motion.div>
             );
           })}
         </div>
@@ -209,10 +264,10 @@ const BacktestingHome = () => {
   );
 };
 
-const Stat = ({ label, value, accent }: { label: string; value: string; accent?: string }) => (
-  <div className="rounded-lg bg-muted/30 p-3">
-    <div className="text-xs text-muted-foreground mb-1">{label}</div>
-    <div className={`text-base font-semibold ${accent ?? 'text-foreground'}`}>{value}</div>
+const Metric = ({ label, value, className }: { label: string; value: string; className?: string }) => (
+  <div>
+    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{label}</p>
+    <p className={cn('text-sm font-medium text-foreground truncate', className)}>{value}</p>
   </div>
 );
 
