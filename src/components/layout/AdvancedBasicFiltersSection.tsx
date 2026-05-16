@@ -1,7 +1,7 @@
 import { useState, ReactNode, useMemo } from 'react';
 import {
   ChevronDown, Globe, BarChart2, ListFilter, TrendingUp,
-  Clock, Hash, Calendar as CalendarIcon2, Percent, Star,
+  Hash, Percent, Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,21 +12,11 @@ import {
 } from '@/components/ui/select';
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
-  useGlobalFilters, OutcomeFilter, DayFilter, LastTradesFilter,
+  useGlobalFilters, OutcomeFilter, LastTradesFilter,
   DirectionFilter, ReturnPercentRange, RMultipleRange,
 } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
-
-const DAY_OPTIONS: { value: DayFilter; label: string }[] = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
 
 const OUTCOME_OPTIONS: { value: OutcomeFilter; label: string }[] = [
   { value: 'win', label: 'Win' },
@@ -64,11 +54,6 @@ const R_MULTIPLE_OPTIONS: { value: RMultipleRange; label: string }[] = [
   { value: '2-4', label: '2R to 4R' },
   { value: '>4', label: '> 4R' },
 ];
-
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
-  value: i,
-  label: `${i.toString().padStart(2, '0')}:00–${i.toString().padStart(2, '0')}:59`,
-}));
 
 interface FilterRowProps {
   label: string;
