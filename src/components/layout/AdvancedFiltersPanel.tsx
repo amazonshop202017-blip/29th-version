@@ -126,35 +126,6 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
     f.setSelectedTradeComments(s.selectedTradeComments);
   }, []);
 
-  const restoreSnapshot = useCallback(() => {
-    const s = snapshotRef.current;
-    if (!s) return;
-    filters.setSelectedSymbols(s.selectedSymbols);
-    filters.setSelectedOutcomes(s.selectedOutcomes);
-    filters.setSelectedHours(s.selectedHours);
-    filters.setSelectedSetups(s.selectedSetups);
-    filters.setExcludedSetups(s.excludedSetups);
-    filters.setSelectedDays(s.selectedDays);
-    filters.setLastTradesFilter(s.lastTradesFilter);
-    filters.setSelectedDirections(s.selectedDirections);
-    filters.setSelectedReturnRanges(s.selectedReturnRanges);
-    filters.setRMultipleMin(s.rMultipleMin);
-    filters.setRMultipleMax(s.rMultipleMax);
-    filters.setPositionSizeMin(s.positionSizeMin);
-    filters.setPositionSizeMax(s.positionSizeMax);
-    filters.setHoldingPeriodFilter(s.holdingPeriodFilter);
-    filters.setDurationMinutesMin(s.durationMinutesMin);
-    filters.setDurationMinutesMax(s.durationMinutesMax);
-    filters.setEntryTimeIntervals(s.entryTimeIntervals);
-    filters.setExitTimeIntervals(s.exitTimeIntervals);
-    filters.setStarredFilter(s.starredFilter);
-    filters.setSelectedYear(s.selectedYear);
-    filters.setSelectedChecklistItems(s.selectedChecklistItems);
-    filters.setExcludedChecklistItems(s.excludedChecklistItems);
-    filters.setSelectedTagsByCategory(s.selectedTagsByCategory);
-    filters.setSelectedTradeComments(s.selectedTradeComments);
-  }, [filters]);
-
   const resetAll = useCallback(() => {
     filters.setSelectedSymbols([]);
     filters.setSelectedOutcomes([]);
