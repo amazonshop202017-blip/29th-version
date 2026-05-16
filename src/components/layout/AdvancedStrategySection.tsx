@@ -25,6 +25,7 @@ function FilterRow({ label, icon, active, expanded, onToggle, children }: Filter
         onClick={onToggle}
       >
         <Checkbox
+          className="rounded-[4px] h-3.5 w-3.5 [&_svg]:h-3 [&_svg]:w-3"
           checked={active}
           onClick={(e) => e.stopPropagation()}
           onCheckedChange={onToggle}
