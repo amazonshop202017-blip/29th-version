@@ -1007,13 +1007,13 @@ export const GlobalHeader = () => {
                 </Popover>
               </div>
 
-              {/* Starred - UI only (not wired) */}
+              {/* Starred */}
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <Star className="w-3 h-3" />
                   Starred
                 </label>
-                <Select>
+                <Select value={starredFilter} onValueChange={(v) => setStarredFilter(v as any)}>
                   <SelectTrigger className="h-9 bg-background border-border">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>

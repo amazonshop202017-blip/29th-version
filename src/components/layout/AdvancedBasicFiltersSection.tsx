@@ -13,7 +13,7 @@ import {
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   useGlobalFilters, OutcomeFilter, LastTradesFilter,
-  DirectionFilter, ReturnPercentRange,
+  DirectionFilter, ReturnPercentRange, StarredFilter,
 } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { Input } from '@/components/ui/input';
@@ -143,6 +143,7 @@ export function AdvancedBasicFiltersSection() {
     rMultipleMax, setRMultipleMax,
     positionSizeMin, setPositionSizeMin,
     positionSizeMax, setPositionSizeMax,
+    starredFilter, setStarredFilter,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -219,19 +220,15 @@ export function AdvancedBasicFiltersSection() {
         />
       </FilterRow>
 
-      {/* Starred (UI only) */}
+      {/* Starred */}
       <FilterRow
         label="Starred"
         icon={<Star className="w-3.5 h-3.5" />}
-        active={false}
-        expanded={manualExpanded.has('starred')}
-        onToggle={() => setManualExpanded(prev => {
-          const n = new Set(prev);
-          if (n.has('starred')) n.delete('starred'); else n.add('starred');
-          return n;
-        })}
+        active={starredFilter !== 'all'}
+        expanded={isExpanded('starred', starredFilter !== 'all')}
+        onToggle={() => toggleManual('starred', starredFilter !== 'all', () => setStarredFilter('all'))}
       >
-        <Select>
+        <Select value={starredFilter} onValueChange={(v) => setStarredFilter(v as StarredFilter)}>
           <SelectTrigger className="h-9 bg-background border-border">
             <SelectValue placeholder="All" />
           </SelectTrigger>
