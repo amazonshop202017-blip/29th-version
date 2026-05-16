@@ -157,6 +157,8 @@ export const GlobalHeader = () => {
     setSelectedHours,
     selectedSetups,
     setSelectedSetups,
+    excludedSetups,
+    setExcludedSetups,
     selectedDays,
     setSelectedDays,
     lastTradesFilter,
@@ -385,6 +387,7 @@ export const GlobalHeader = () => {
     if (selectedOutcomes.length > 0) count++;
     if (selectedHours.length > 0) count++;
     if (selectedSetups.length > 0) count++;
+    if (excludedSetups.length > 0) count++;
     if (selectedChecklistItems.length > 0) count++;
     if (selectedDays.length > 0) count++;
     if (lastTradesFilter !== null) count++;
@@ -394,7 +397,7 @@ export const GlobalHeader = () => {
     if (positionSizeMin !== null || positionSizeMax !== null) count++;
     if (selectedYear !== null) count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
