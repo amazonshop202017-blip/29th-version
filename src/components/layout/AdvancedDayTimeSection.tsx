@@ -184,7 +184,7 @@ export function AdvancedDayTimeSection() {
               const v = e.target.value;
               setDurationMinutesMin(v === '' ? null : Math.max(0, Number(v)));
             }}
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
             sx={{ flex: 1 }}
           />
           <TextField
@@ -196,7 +196,7 @@ export function AdvancedDayTimeSection() {
               const v = e.target.value;
               setDurationMinutesMax(v === '' ? null : Math.max(0, Number(v)));
             }}
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
             sx={{ flex: 1 }}
           />
         </div>
