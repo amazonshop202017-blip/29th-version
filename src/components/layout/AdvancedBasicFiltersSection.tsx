@@ -13,9 +13,10 @@ import {
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   useGlobalFilters, OutcomeFilter, LastTradesFilter,
-  DirectionFilter, ReturnPercentRange, RMultipleRange,
+  DirectionFilter, ReturnPercentRange,
 } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
+import { Input } from '@/components/ui/input';
 
 const OUTCOME_OPTIONS: { value: OutcomeFilter; label: string }[] = [
   { value: 'win', label: 'Win' },
@@ -43,15 +44,6 @@ const RETURN_PERCENT_OPTIONS: { value: ReturnPercentRange; label: string }[] = [
   { value: '3-5', label: '3% – 5%' },
   { value: '5-10', label: '5% – 10%' },
   { value: '>10', label: '> 10%' },
-];
-
-const R_MULTIPLE_OPTIONS: { value: RMultipleRange; label: string }[] = [
-  { value: '<-2', label: '< -2R' },
-  { value: '-2-0', label: '-2R to 0R' },
-  { value: '0-1', label: '0R to 1R' },
-  { value: '1-2', label: '1R to 2R' },
-  { value: '2-4', label: '2R to 4R' },
-  { value: '>4', label: '> 4R' },
 ];
 
 interface FilterRowProps {
@@ -147,7 +139,8 @@ export function AdvancedBasicFiltersSection() {
     selectedDirections, setSelectedDirections,
     lastTradesFilter, setLastTradesFilter,
     selectedReturnRanges, setSelectedReturnRanges,
-    selectedRMultipleRanges, setSelectedRMultipleRanges,
+    rMultipleMin, setRMultipleMin,
+    rMultipleMax, setRMultipleMax,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -291,18 +284,40 @@ export function AdvancedBasicFiltersSection() {
 
       {/* R-Multiple Gain */}
       <FilterRow
-        label="R-Multiple Gain"
+        label="R-Multiple"
         icon={<Hash className="w-3.5 h-3.5" />}
-        active={selectedRMultipleRanges.length > 0}
-        expanded={isExpanded('rmult', selectedRMultipleRanges.length > 0)}
-        onToggle={() => toggleManual('rmult', selectedRMultipleRanges.length > 0, () => setSelectedRMultipleRanges([]))}
+        active={rMultipleMin !== null || rMultipleMax !== null}
+        expanded={isExpanded('rmult', rMultipleMin !== null || rMultipleMax !== null)}
+        onToggle={() => toggleManual(
+          'rmult',
+          rMultipleMin !== null || rMultipleMax !== null,
+          () => { setRMultipleMin(null); setRMultipleMax(null); },
+        )}
       >
-        <CheckboxMultiSelect
-          options={R_MULTIPLE_OPTIONS}
-          selected={selectedRMultipleRanges}
-          onChange={setSelectedRMultipleRanges}
-          popoverWidth="w-36"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            step="0.1"
+            placeholder="Min"
+            value={rMultipleMin === null ? '' : rMultipleMin}
+            onChange={(e) => {
+              const v = e.target.value;
+              setRMultipleMin(v === '' ? null : Number(v));
+            }}
+            className="h-9 bg-background border-border"
+          />
+          <Input
+            type="number"
+            step="0.1"
+            placeholder="Max"
+            value={rMultipleMax === null ? '' : rMultipleMax}
+            onChange={(e) => {
+              const v = e.target.value;
+              setRMultipleMax(v === '' ? null : Number(v));
+            }}
+            className="h-9 bg-background border-border"
+          />
+        </div>
       </FilterRow>
 
       {/* RRR (UI only) */}
