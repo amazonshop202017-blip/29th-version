@@ -224,7 +224,9 @@ interface AppliedFiltersExtension {
   unfreezeAppliedFilters: () => void;
 }
 
-const GlobalFiltersContext = createContext<GlobalFiltersContextType | undefined>(undefined);
+type FullGlobalFiltersContextType = GlobalFiltersContextType & AppliedFiltersExtension;
+
+const GlobalFiltersContext = createContext<FullGlobalFiltersContextType | undefined>(undefined);
 
 // LocalStorage keys
 const CURRENCY_STORAGE_KEY = 'trading-journal-currency';
