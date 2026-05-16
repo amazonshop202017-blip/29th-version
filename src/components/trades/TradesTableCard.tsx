@@ -69,7 +69,9 @@ import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { useTagsContext } from '@/contexts/TagsContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
+import { useScreenshotTagsContext } from '@/contexts/ScreenshotTagsContext';
 import { AssignTagsModal } from '@/components/trades/AssignTagsModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AccountImportModal } from '@/components/settings/AccountImportModal';
 import {
   DropdownMenu,
@@ -289,6 +291,18 @@ export const TradesTableCard = ({
   const { tags } = useTagsContext();
   const { updateTrade, trades: allTrades, toggleStarred } = useTradesContext();
   const { getStrategyById, strategies } = useStrategiesContext();
+  const { screenshotTags } = useScreenshotTagsContext();
+  const [screenshotsModalTrade, setScreenshotsModalTrade] = useState<Trade | null>(null);
+
+  const updateScreenshotTag = useCallback((screenshotId: string, tagId: string) => {
+    if (!screenshotsModalTrade) return;
+    const updated = (screenshotsModalTrade.screenshots || []).map((s) =>
+      s.id === screenshotId ? { ...s, tagId: tagId || undefined } : s
+    );
+    const nextTrade = { ...screenshotsModalTrade, screenshots: updated };
+    updateTrade(screenshotsModalTrade.id, nextTrade);
+    setScreenshotsModalTrade(nextTrade);
+  }, [screenshotsModalTrade, updateTrade]);
   const { columns: visibilityColumns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
 
