@@ -19,7 +19,10 @@ export interface StrategyStats {
 export function calculateStrategyStats(strategyId: string, trades: Trade[]): StrategyStats {
   // Filter trades that belong to this strategy
   const strategyTrades = trades.filter(trade => trade.strategyId === strategyId);
-  
+  return calculateStatsFromTrades(strategyTrades);
+}
+
+export function calculateStatsFromTrades(strategyTrades: Trade[]): StrategyStats {
   if (strategyTrades.length === 0) {
     return {
       totalTrades: 0,

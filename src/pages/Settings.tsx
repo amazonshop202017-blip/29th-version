@@ -3,7 +3,7 @@ import { DeleteAccountDialog } from '@/components/settings/DeleteAccountDialog';
 import { NewAccountModal } from '@/components/settings/NewAccountModal';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, Check, X, Tag, Wallet, TrendingUp, TrendingDown, Settings as SettingsIcon, Download, DollarSign, FolderOpen, Archive, ArchiveRestore, ChevronDown, ChevronUp, Target, MessageSquare, Ruler, MoreVertical, ArrowRightLeft, Eraser, LogOut, Image } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Tag, Wallet, TrendingUp, TrendingDown, Settings as SettingsIcon, Download, DollarSign, FolderOpen, Archive, ArchiveRestore, ChevronDown, ChevronUp, Target, MessageSquare, Ruler, MoreVertical, ArrowRightLeft, Eraser, LogOut, Image, LayoutGrid, LayoutList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,8 @@ import { TpSlSettings } from '@/components/settings/TpSlSettings';
 import { FeesSettings } from '@/components/settings/FeesSettings';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { SettingsTab } from '@/components/settings/SettingsSidebar';
+import { AccountCard } from '@/components/settings/AccountCard';
+import { calculateStatsFromTrades } from '@/lib/strategyStats';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -91,6 +93,8 @@ const Settings = () => {
 
   // Archived accounts toggle
   const [showArchivedAccounts, setShowArchivedAccounts] = useState(false);
+  // Accounts view mode (card | table)
+  const [accountsViewMode, setAccountsViewMode] = useState<'card' | 'table'>('card');
 
   const activeAccountsWithStats = getActiveAccountsWithStats();
   const archivedAccountsWithStats = getArchivedAccountsWithStats();
@@ -314,7 +318,56 @@ const Settings = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* View toggle */}
+                <div className="flex justify-end">
+                  <div className="inline-flex border border-border rounded-lg p-1 gap-1">
+                    <button
+                      onClick={() => setAccountsViewMode('card')}
+                      className={cn(
+                        'h-7 w-7 rounded-md flex items-center justify-center transition-colors',
+                        accountsViewMode === 'card' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      title="Card view"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setAccountsViewMode('table')}
+                      className={cn(
+                        'h-7 w-7 rounded-md flex items-center justify-center transition-colors',
+                        accountsViewMode === 'table' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      title="Table view"
+                    >
+                      <LayoutList className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Active Accounts — Card view */}
+                {accountsViewMode === 'card' && activeAccountsWithStats.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {activeAccountsWithStats.map((account) => {
+                      const accountTrades = trades.filter(t => t.accountId === account.id);
+                      const stats = calculateStatsFromTrades(accountTrades);
+                      return (
+                        <AccountCard
+                          key={account.id}
+                          account={account}
+                          stats={stats}
+                          currencySymbol={currencyConfig.symbol}
+                          onEdit={() => startEditingAccount(account)}
+                          onArchive={() => archiveAccount(account.id)}
+                          onDepositWithdraw={() => setDepositWithdrawAccountId(account.id)}
+                          onImport={() => setShowImportModal(true)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Active Accounts */}
+                {accountsViewMode === 'table' && (
                 <div className="space-y-2">
                   <AnimatePresence>
                     {activeAccountsWithStats.map((account) => (
@@ -391,6 +444,7 @@ const Settings = () => {
                     ))}
                   </AnimatePresence>
                 </div>
+                )}
 
                 {/* Archived Accounts Section */}
                 {archivedAccountsWithStats.length > 0 && (
