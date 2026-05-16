@@ -80,12 +80,50 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
   }), [filters]);
 
   const snapshotRef = useRef<ReturnType<typeof captureSnapshot> | null>(null);
+  const appliedRef = useRef(false);
   // Capture once on mount (popup open)
   useEffect(() => {
     if (snapshotRef.current === null) {
       snapshotRef.current = captureSnapshot();
     }
+    return () => {
+      // On unmount (popup closed without Apply), revert pending changes.
+      if (!appliedRef.current && snapshotRef.current) {
+        restoreSnapshotFromRef(snapshotRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Stable restore that reads from a passed snapshot (used in cleanup where filters ref may be stale)
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const restoreSnapshotFromRef = useCallback((s: ReturnType<typeof captureSnapshot>) => {
+    const f = filtersRef.current;
+    f.setSelectedSymbols(s.selectedSymbols);
+    f.setSelectedOutcomes(s.selectedOutcomes);
+    f.setSelectedHours(s.selectedHours);
+    f.setSelectedSetups(s.selectedSetups);
+    f.setExcludedSetups(s.excludedSetups);
+    f.setSelectedDays(s.selectedDays);
+    f.setLastTradesFilter(s.lastTradesFilter);
+    f.setSelectedDirections(s.selectedDirections);
+    f.setSelectedReturnRanges(s.selectedReturnRanges);
+    f.setRMultipleMin(s.rMultipleMin);
+    f.setRMultipleMax(s.rMultipleMax);
+    f.setPositionSizeMin(s.positionSizeMin);
+    f.setPositionSizeMax(s.positionSizeMax);
+    f.setHoldingPeriodFilter(s.holdingPeriodFilter);
+    f.setDurationMinutesMin(s.durationMinutesMin);
+    f.setDurationMinutesMax(s.durationMinutesMax);
+    f.setEntryTimeIntervals(s.entryTimeIntervals);
+    f.setExitTimeIntervals(s.exitTimeIntervals);
+    f.setStarredFilter(s.starredFilter);
+    f.setSelectedYear(s.selectedYear);
+    f.setSelectedChecklistItems(s.selectedChecklistItems);
+    f.setExcludedChecklistItems(s.excludedChecklistItems);
+    f.setSelectedTagsByCategory(s.selectedTagsByCategory);
+    f.setSelectedTradeComments(s.selectedTradeComments);
   }, []);
 
   const restoreSnapshot = useCallback(() => {
@@ -145,12 +183,14 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
   }, [filters]);
 
   const handleCancel = () => {
-    restoreSnapshot();
+    if (snapshotRef.current) restoreSnapshotFromRef(snapshotRef.current);
+    appliedRef.current = true; // prevent double-restore on unmount
     onClose?.();
   };
   const handleApply = () => {
     // Update snapshot baseline so re-opening does not revert applied changes
     snapshotRef.current = captureSnapshot();
+    appliedRef.current = true;
     onClose?.();
   };
 
