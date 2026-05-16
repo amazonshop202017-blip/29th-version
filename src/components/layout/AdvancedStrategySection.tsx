@@ -149,12 +149,15 @@ export function AdvancedStrategySection() {
         )}
       >
         <div className="space-y-3">
-          <CheckboxMultiSelect
-            options={strategies.map(s => ({ value: s.id, label: s.name }))}
-            selected={selectedSetups}
-            onChange={setSelectedSetups}
-            emptyText="No setups found"
-          />
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1.5">Including</label>
+            <CheckboxMultiSelect
+              options={strategies.map(s => ({ value: s.id, label: s.name }))}
+              selected={selectedSetups}
+              onChange={setSelectedSetups}
+              emptyText="No setups found"
+            />
+          </div>
 
           {/* Excluding — nested with tree line, matches sidebar Tools sub-item style.
               Single branch: no shared vertical line; the SVG draws its own L. */}
