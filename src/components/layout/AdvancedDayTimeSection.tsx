@@ -128,17 +128,21 @@ function TimeIntervalList({ intervals, onChange }: TimeIntervalListProps) {
     <div className="space-y-2">
       {list.map((it, idx) => (
         <div key={idx} className="flex items-center gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <AppTimePicker
-              label="Min"
-              value={it.min ?? ''}
-              onChange={(v) => update(idx, { min: v === '' ? null : v })}
-            />
-            <AppTimePicker
-              label="Max"
-              value={it.max ?? ''}
-              onChange={(v) => update(idx, { max: v === '' ? null : v })}
-            />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
+              <AppTimePicker
+                label="Min"
+                value={it.min ?? ''}
+                onChange={(v) => update(idx, { min: v === '' ? null : v })}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <AppTimePicker
+                label="Max"
+                value={it.max ?? ''}
+                onChange={(v) => update(idx, { max: v === '' ? null : v })}
+              />
+            </div>
           </div>
           {list.length > 1 && (
             <button
