@@ -180,6 +180,8 @@ export const GlobalHeader = () => {
     selectedChecklistItems,
     setSelectedChecklistItems,
     hasActiveChecklistFilter,
+    excludedChecklistItems,
+    setExcludedChecklistItems,
     hasActiveTagFilters,
   } = useGlobalFilters();
   
@@ -192,6 +194,7 @@ export const GlobalHeader = () => {
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [excludedChecklistOpen, setExcludedChecklistOpen] = useState(false);
   
   // Mobile/tablet sheet states
   const [mobileDateSheetOpen, setMobileDateSheetOpen] = useState(false);
@@ -352,6 +355,14 @@ export const GlobalHeader = () => {
     }
   };
 
+  const handleExcludedChecklistItemToggle = (item: string) => {
+    if (excludedChecklistItems.includes(item)) {
+      setExcludedChecklistItems(excludedChecklistItems.filter(i => i !== item));
+    } else {
+      setExcludedChecklistItems([...excludedChecklistItems, item]);
+    }
+  };
+
   const getDateRangeLabel = () => {
     if (datePreset === 'all' || (!dateRange.from && !dateRange.to)) {
       return 'All time';
@@ -389,6 +400,7 @@ export const GlobalHeader = () => {
     if (selectedSetups.length > 0) count++;
     if (excludedSetups.length > 0) count++;
     if (selectedChecklistItems.length > 0) count++;
+    if (excludedChecklistItems.length > 0) count++;
     if (selectedDays.length > 0) count++;
     if (lastTradesFilter !== null) count++;
     if (selectedDirections.length > 0) count++;
@@ -397,7 +409,7 @@ export const GlobalHeader = () => {
     if (positionSizeMin !== null || positionSizeMax !== null) count++;
     if (selectedYear !== null) count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, excludedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
