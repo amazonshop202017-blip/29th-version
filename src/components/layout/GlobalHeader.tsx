@@ -454,7 +454,7 @@ export const GlobalHeader = () => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setMobileAdvancedSheetOpen(true)} className="cursor-pointer gap-2">
               <SlidersHorizontal className="w-4 h-4" />
-              Advanced Filters
+              Filters
               {hasActiveTagFilters && (
                 <span className="ml-auto px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
                   Tags
@@ -481,7 +481,7 @@ export const GlobalHeader = () => {
       <Sheet open={mobileAdvancedSheetOpen} onOpenChange={setMobileAdvancedSheetOpen}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-auto p-0">
           <SheetHeader className="flex flex-row items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-background z-10">
-            <SheetTitle className="text-base font-semibold">Advanced Filters</SheetTitle>
+            <SheetTitle className="text-base font-semibold">Filters</SheetTitle>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileAdvancedSheetOpen(false)}>
               <X className="w-4 h-4" />
             </Button>
@@ -1215,7 +1215,7 @@ export const GlobalHeader = () => {
           <PopoverTrigger asChild>
             <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              <span>Advanced Filters</span>
+              <span>Filters</span>
               {hasActiveTagFilters && (
                 <span className="ml-0.5 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
                   Tags
