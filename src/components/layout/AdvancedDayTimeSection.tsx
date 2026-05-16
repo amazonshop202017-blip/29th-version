@@ -1,5 +1,5 @@
 import { useState, ReactNode, useMemo } from 'react';
-import { ChevronDown, Clock, Calendar as CalendarIcon2 } from 'lucide-react';
+import { ChevronDown, Clock, Calendar as CalendarIcon2, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { useGlobalFilters, DayFilter } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, DayFilter, HoldingPeriodFilter } from '@/contexts/GlobalFiltersContext';
 import { useTradesContext } from '@/contexts/TradesContext';
 
 const DAY_OPTIONS: { value: DayFilter; label: string }[] = [
@@ -113,6 +113,7 @@ export function AdvancedDayTimeSection() {
     selectedDays, setSelectedDays,
     selectedHours, setSelectedHours,
     selectedYear, setSelectedYear,
+    holdingPeriodFilter, setHoldingPeriodFilter,
   } = useGlobalFilters();
 
   const { trades } = useTradesContext();
@@ -280,6 +281,29 @@ export function AdvancedDayTimeSection() {
           onChange={setSelectedHours}
           popoverWidth="w-44"
         />
+      </FilterRow>
+
+      {/* Intraday / Multiday */}
+      <FilterRow
+        label="Intraday/Multiday"
+        icon={<CalendarDays className="w-3.5 h-3.5" />}
+        active={holdingPeriodFilter !== 'all'}
+        expanded={isExpanded('holding', holdingPeriodFilter !== 'all')}
+        onToggle={() => toggleManual('holding', holdingPeriodFilter !== 'all', () => setHoldingPeriodFilter('all'))}
+      >
+        <Select
+          value={holdingPeriodFilter}
+          onValueChange={(v) => setHoldingPeriodFilter(v as HoldingPeriodFilter)}
+        >
+          <SelectTrigger className="h-9 bg-background border-border">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border-border z-[120]">
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="intraday">Intraday</SelectItem>
+            <SelectItem value="multiday">Multiday</SelectItem>
+          </SelectContent>
+        </Select>
       </FilterRow>
     </div>
   );
