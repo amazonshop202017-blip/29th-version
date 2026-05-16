@@ -226,21 +226,21 @@ export const SelectedFiltersBar = () => {
       });
     }
 
-    // Entry time intervals
-    const validEntry = entryTimeIntervals.filter(i => i.min && i.max);
+    // Entry time intervals (single side defaults: min→00:00, max→23:59)
+    const validEntry = entryTimeIntervals.filter(i => i.min || i.max);
     if (validEntry.length > 0) {
       result.push({
         id: 'entry-time', label: 'Entry time',
-        value: validEntry.map(i => `${i.min}–${i.max}`).join(', '),
+        value: validEntry.map(i => `${i.min || '00:00'}–${i.max || '23:59'}`).join(', '),
         onRemove: () => setEntryTimeIntervals([]),
       });
     }
     // Exit time intervals
-    const validExit = exitTimeIntervals.filter(i => i.min && i.max);
+    const validExit = exitTimeIntervals.filter(i => i.min || i.max);
     if (validExit.length > 0) {
       result.push({
         id: 'exit-time', label: 'Exit time',
-        value: validExit.map(i => `${i.min}–${i.max}`).join(', '),
+        value: validExit.map(i => `${i.min || '00:00'}–${i.max || '23:59'}`).join(', '),
         onRemove: () => setExitTimeIntervals([]),
       });
     }

@@ -392,11 +392,11 @@ export function AdvancedDayTimeSection() {
       <FilterRow
         label="Entry time"
         icon={<LogIn className="w-3.5 h-3.5" />}
-        active={entryTimeIntervals.some(i => i.min && i.max)}
-        expanded={isExpanded('entryTime', entryTimeIntervals.some(i => i.min && i.max))}
+        active={entryTimeIntervals.some(i => i.min || i.max)}
+        expanded={isExpanded('entryTime', entryTimeIntervals.some(i => i.min || i.max))}
         onToggle={() => toggleManual(
           'entryTime',
-          entryTimeIntervals.some(i => i.min && i.max),
+          entryTimeIntervals.some(i => i.min || i.max),
           () => setEntryTimeIntervals([])
         )}
       >
@@ -407,11 +407,11 @@ export function AdvancedDayTimeSection() {
       <FilterRow
         label="Exit time"
         icon={<LogOut className="w-3.5 h-3.5" />}
-        active={exitTimeIntervals.some(i => i.min && i.max)}
-        expanded={isExpanded('exitTime', exitTimeIntervals.some(i => i.min && i.max))}
+        active={exitTimeIntervals.some(i => i.min || i.max)}
+        expanded={isExpanded('exitTime', exitTimeIntervals.some(i => i.min || i.max))}
         onToggle={() => toggleManual(
           'exitTime',
-          exitTimeIntervals.some(i => i.min && i.max),
+          exitTimeIntervals.some(i => i.min || i.max),
           () => setExitTimeIntervals([])
         )}
       >

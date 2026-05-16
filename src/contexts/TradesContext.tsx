@@ -30,8 +30,14 @@ const matchesTimeIntervals = (minutesOfDay: number, intervals: TimeInterval[]): 
     return h * 60 + m;
   };
   const valid = intervals
-    .map(({ min, max }) => ({ min: toMinutes(min), max: toMinutes(max) }))
-    .filter((i): i is { min: number; max: number } => i.min !== null && i.max !== null);
+    .map(({ min, max }) => {
+      const mn = toMinutes(min);
+      const mx = toMinutes(max);
+      if (mn === null && mx === null) return null;
+      // If only one side provided, default the other: min->00:00, max->23:59
+      return { min: mn ?? 0, max: mx ?? 23 * 60 + 59 };
+    })
+    .filter((i): i is { min: number; max: number } => i !== null);
   if (valid.length === 0) return true; // no active intervals -> pass-through
   return valid.some(({ min, max }) => {
     if (min <= max) return minutesOfDay >= min && minutesOfDay <= max;
@@ -40,7 +46,7 @@ const matchesTimeIntervals = (minutesOfDay: number, intervals: TimeInterval[]): 
   });
 };
 const hasActiveIntervals = (intervals: TimeInterval[]) =>
-  intervals.some(i => i.min && i.max);
+  intervals.some(i => i.min || i.max);
 
 // Helper function to check if R-Multiple falls within a range
 interface TradesContextType {
