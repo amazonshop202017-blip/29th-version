@@ -6,7 +6,6 @@ import {
   type DayFilter,
   type DirectionFilter,
   type ReturnPercentRange,
-  type RMultipleRange,
 } from '@/contexts/GlobalFiltersContext';
 import { calculateTradeMetrics, type Trade } from '@/types/trade';
 
@@ -33,19 +32,6 @@ const matchesReturnRange = (returnPercent: number | undefined, range: ReturnPerc
   }
 };
 
-const matchesRMultipleRange = (rMultiple: number | undefined, range: RMultipleRange): boolean => {
-  if (rMultiple === undefined) return false;
-  switch (range) {
-    case '<-2': return rMultiple < -2;
-    case '-2-0': return rMultiple >= -2 && rMultiple < 0;
-    case '0-1': return rMultiple >= 0 && rMultiple < 1;
-    case '1-2': return rMultiple >= 1 && rMultiple < 2;
-    case '2-4': return rMultiple >= 2 && rMultiple < 4;
-    case '>4': return rMultiple >= 4;
-    default: return false;
-  }
-};
-
 /**
  * Returns trades scoped to a single account, with all global filters applied
  * EXCEPT the account filter (which is forcibly locked to `accountId`).
@@ -65,7 +51,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     lastTradesFilter,
     selectedDirections,
     selectedReturnRanges,
-    selectedRMultipleRanges,
+    rMultipleMin,
+    rMultipleMax,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,
@@ -144,11 +131,15 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
       );
     }
 
-    // R-Multiple ranges
-    if (selectedRMultipleRanges.length > 0) {
-      filtered = filtered.filter((trade) =>
-        selectedRMultipleRanges.some((range) => matchesRMultipleRange(trade.savedRMultiple, range))
-      );
+    // R-Multiple Min/Max (inclusive)
+    if (rMultipleMin !== null || rMultipleMax !== null) {
+      filtered = filtered.filter((trade) => {
+        const r = trade.savedRMultiple;
+        if (r === undefined || r === null) return false;
+        if (rMultipleMin !== null && r < rMultipleMin) return false;
+        if (rMultipleMax !== null && r > rMultipleMax) return false;
+        return true;
+      });
     }
 
     // Year
@@ -223,7 +214,8 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     lastTradesFilter,
     selectedDirections,
     selectedReturnRanges,
-    selectedRMultipleRanges,
+    rMultipleMin,
+    rMultipleMax,
     selectedYear,
     selectedChecklistItems,
     selectedTagsByCategory,

@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useTrades } from '@/hooks/useTrades';
 import { Trade, TradeFormData, calculateTradeMetrics } from '@/types/trade';
-import { useGlobalFilters, OutcomeFilter, DayFilter, DirectionFilter, ReturnPercentRange, RMultipleRange, TagFilters, TradeCommentFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
+import { useGlobalFilters, OutcomeFilter, DayFilter, DirectionFilter, ReturnPercentRange, TagFilters, TradeCommentFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
 // NOTE: useAccountsContext is imported dynamically to avoid circular dependency
 // AccountsContext imports TradesContext, so we can't import AccountsContext here at module level
 import { isWithinInterval, parseISO, startOfDay, endOfDay, getDay, getHours, getYear } from 'date-fns';
@@ -21,19 +21,6 @@ const matchesReturnRange = (returnPercent: number | undefined, range: ReturnPerc
 };
 
 // Helper function to check if R-Multiple falls within a range
-const matchesRMultipleRange = (rMultiple: number | undefined, range: RMultipleRange): boolean => {
-  if (rMultiple === undefined) return false;
-  switch (range) {
-    case '<-2': return rMultiple < -2;
-    case '-2-0': return rMultiple >= -2 && rMultiple < 0;
-    case '0-1': return rMultiple >= 0 && rMultiple < 1;
-    case '1-2': return rMultiple >= 1 && rMultiple < 2;
-    case '2-4': return rMultiple >= 2 && rMultiple < 4;
-    case '>4': return rMultiple >= 4;
-    default: return false;
-  }
-};
-
 interface TradesContextType {
   trades: Trade[]; // All trades (unfiltered)
   filteredTrades: Trade[]; // Trades after applying global filters
@@ -124,7 +111,8 @@ export const useFilteredTradesContext = (
     lastTradesFilter,
     selectedDirections,
     selectedReturnRanges,
-    selectedRMultipleRanges,
+    rMultipleMin,
+    rMultipleMax,
     holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
@@ -241,12 +229,14 @@ export const useFilteredTradesContext = (
       });
     }
 
-    // Filter by R-Multiple ranges
-    if (selectedRMultipleRanges.length > 0) {
+    // Filter by R-Multiple Min/Max (inclusive bounds)
+    if (rMultipleMin !== null || rMultipleMax !== null) {
       filtered = filtered.filter(trade => {
-        const rMultiple = trade.savedRMultiple;
-        // Match if trade falls within ANY of the selected ranges (OR logic)
-        return selectedRMultipleRanges.some(range => matchesRMultipleRange(rMultiple, range));
+        const r = trade.savedRMultiple;
+        if (r === undefined || r === null) return false;
+        if (rMultipleMin !== null && r < rMultipleMin) return false;
+        if (rMultipleMax !== null && r > rMultipleMax) return false;
+        return true;
       });
     }
 
@@ -336,7 +326,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, selectedRMultipleRanges, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)
