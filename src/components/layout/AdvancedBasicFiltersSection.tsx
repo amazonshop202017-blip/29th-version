@@ -148,10 +148,7 @@ export function AdvancedBasicFiltersSection() {
     selectedChecklistItems, setSelectedChecklistItems,
     selectedOutcomes, setSelectedOutcomes,
     selectedDirections, setSelectedDirections,
-    selectedDays, setSelectedDays,
-    selectedHours, setSelectedHours,
     lastTradesFilter, setLastTradesFilter,
-    selectedYear, setSelectedYear,
     selectedReturnRanges, setSelectedReturnRanges,
     selectedRMultipleRanges, setSelectedRMultipleRanges,
   } = useGlobalFilters();
@@ -164,19 +161,6 @@ export function AdvancedBasicFiltersSection() {
     return Array.from(s).filter(Boolean).sort();
   }, [trades]);
 
-  const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    trades.forEach(trade => {
-      if (trade.entries && trade.entries.length > 0) {
-        const first = [...trade.entries].sort((a, b) =>
-          new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
-        )[0];
-        if (first?.datetime) years.add(new Date(first.datetime).getFullYear());
-      }
-    });
-    return Array.from(years).sort((a, b) => b - a);
-  }, [trades]);
-
   const availableChecklistItems = useMemo(() => {
     if (selectedSetups.length === 0) return [];
     const items = new Set<string>();
@@ -187,7 +171,6 @@ export function AdvancedBasicFiltersSection() {
   }, [strategies, selectedSetups]);
 
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
-  const [yearOpen, setYearOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
 
   const toggleManual = (key: string, currentlyActive: boolean, clearFn: () => void) => {
@@ -204,14 +187,6 @@ export function AdvancedBasicFiltersSection() {
     }
   };
   const isExpanded = (key: string, active: boolean) => active || manualExpanded.has(key);
-
-  const handleYearSelect = (year: number | null) => {
-    setSelectedYear(year);
-    setYearOpen(false);
-    if (year === null) {
-      setManualExpanded(prev => { const n = new Set(prev); n.delete('year'); return n; });
-    }
-  };
 
   const handleChecklistToggle = (item: string) => {
     if (selectedChecklistItems.includes(item)) {
