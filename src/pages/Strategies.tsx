@@ -402,9 +402,10 @@ const Strategies = () => {
           </>
         )}
       </div>
+      )}
 
-      {/* Checklist Editor Modal */}
-      {strategiesWithStats.length > 0 && (
+      {/* Setup Overview Cards */}
+      {viewMode === 'card' && strategiesWithStats.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg sm:text-xl font-semibold">Setup Overview</h2>
