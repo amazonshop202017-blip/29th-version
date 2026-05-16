@@ -1,8 +1,6 @@
 import * as React from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
-import { DesktopTimePicker } from "@mui/x-date-pickers/DesktopTimePicker";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { muiTextFieldSx, muiPopperSx, muiDialogSx } from "./AppDateTimePicker";
 
 /**
@@ -33,12 +31,10 @@ export const AppTimePicker: React.FC<AppTimePickerProps> = ({
   disabled,
   ampm,
 }) => {
-  const isMobile = useIsMobile();
-  const Picker = isMobile ? MobileTimePicker : DesktopTimePicker;
   const dayjsValue = value ? dayjs(`2000-01-01T${value}`) : null;
 
   return (
-    <Picker
+    <TimePicker
       label={label}
       value={dayjsValue && dayjsValue.isValid() ? dayjsValue : null}
       onChange={(d) => onChange(formatTime(d as Dayjs | null))}
