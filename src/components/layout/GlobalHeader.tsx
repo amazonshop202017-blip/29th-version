@@ -1190,25 +1190,6 @@ export const GlobalHeader = () => {
                 </div>
               </div>
 
-              {/* RRR - UI only (not wired) */}
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Percent className="w-3 h-3" />
-                  RRR
-                </label>
-                <Select>
-                  <SelectTrigger className="h-9 bg-background border-border">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border z-[60]">
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="1">1:1</SelectItem>
-                    <SelectItem value="2">1:2</SelectItem>
-                    <SelectItem value="3">1:3+</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Empty placeholders */}
               <div />
               <div />

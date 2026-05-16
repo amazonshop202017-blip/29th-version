@@ -361,31 +361,6 @@ export function AdvancedBasicFiltersSection() {
           />
         </div>
       </FilterRow>
-
-      {/* RRR (UI only) */}
-      <FilterRow
-        label="RRR"
-        icon={<Percent className="w-3.5 h-3.5" />}
-        active={false}
-        expanded={manualExpanded.has('rrr')}
-        onToggle={() => setManualExpanded(prev => {
-          const n = new Set(prev);
-          if (n.has('rrr')) n.delete('rrr'); else n.add('rrr');
-          return n;
-        })}
-      >
-        <Select>
-          <SelectTrigger className="h-9 bg-background border-border">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border z-[120]">
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="1">1:1</SelectItem>
-            <SelectItem value="2">1:2</SelectItem>
-            <SelectItem value="3">1:3+</SelectItem>
-          </SelectContent>
-        </Select>
-      </FilterRow>
     </div>
   );
 }
