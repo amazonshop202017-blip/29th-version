@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AppDatePicker } from '@/components/ui/AppDatePicker';
+import { AppDateTimePicker } from '@/components/ui/AppDateTimePicker';
 import { TypeableCombobox } from '@/components/trades/TypeableCombobox';
 import { useTradedSymbols } from '@/hooks/useTradedSymbols';
 import { useStrategiesContext } from '@/contexts/StrategiesContext';
@@ -338,7 +338,7 @@ const FieldInput = ({
         />
       )}
       {field.type === 'date' && (
-        <AppDatePicker value={(v as string) ?? ''} onChange={(s) => onChange(s)} className="h-10 bg-input border-border" />
+        <AppDateTimePicker value={(v as string) ?? ''} onChange={(s) => onChange(s)} />
       )}
       {field.type === 'select' && (
         <Select value={(v as string) ?? ''} onValueChange={(val) => onChange(val)}>
