@@ -93,6 +93,8 @@ interface GlobalFiltersContextType {
   setSelectedHours: (hours: number[]) => void;
   selectedSetups: string[];
   setSelectedSetups: (setups: string[]) => void;
+  excludedSetups: string[];
+  setExcludedSetups: (setups: string[]) => void;
   selectedDays: DayFilter[];
   setSelectedDays: (days: DayFilter[]) => void;
   lastTradesFilter: LastTradesFilter;
@@ -228,6 +230,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [selectedOutcomes, setSelectedOutcomes] = useState<OutcomeFilter[]>([]);
   const [selectedHours, setSelectedHours] = useState<number[]>([]);
   const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
+  const [excludedSetups, setExcludedSetups] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<DayFilter[]>([]);
   const [lastTradesFilter, setLastTradesFilter] = useState<LastTradesFilter>(null);
   const [selectedDirections, setSelectedDirections] = useState<DirectionFilter[]>([]);
@@ -491,6 +494,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setSelectedHours,
     selectedSetups,
     setSelectedSetups,
+    excludedSetups,
+    setExcludedSetups,
     selectedDays,
     setSelectedDays,
     lastTradesFilter,
@@ -549,6 +554,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedOutcomes,
     selectedHours,
     selectedSetups,
+    excludedSetups,
     selectedDays,
     lastTradesFilter,
     selectedDirections,

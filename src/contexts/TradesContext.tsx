@@ -107,6 +107,7 @@ export const useFilteredTradesContext = (
     selectedOutcomes,
     selectedHours,
     selectedSetups,
+    excludedSetups,
     selectedDays,
     lastTradesFilter,
     selectedDirections,
@@ -198,6 +199,13 @@ export const useFilteredTradesContext = (
     if (selectedSetups.length > 0) {
       filtered = filtered.filter(trade => 
         trade.strategyId && selectedSetups.includes(trade.strategyId)
+      );
+    }
+
+    // Exclude setups: remove trades whose strategyId is in excludedSetups
+    if (excludedSetups.length > 0) {
+      filtered = filtered.filter(trade =>
+        !trade.strategyId || !excludedSetups.includes(trade.strategyId)
       );
     }
 
@@ -339,7 +347,7 @@ export const useFilteredTradesContext = (
     }
 
     return filtered;
-  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
+  }, [trades, extraTrades, dateRange, selectedAccounts, accountIds, selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, holdingPeriodFilter, selectedYear, selectedChecklistItems, selectedTagsByCategory, selectedTradeComments, classifyTradeOutcome]);
 
   const stats = useMemo(() => {
     // Classify trades using breakeven tolerance (pass trade-level isBreakeven flag)

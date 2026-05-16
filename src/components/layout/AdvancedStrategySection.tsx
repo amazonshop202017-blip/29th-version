@@ -93,6 +93,7 @@ function CheckboxMultiSelect<T extends string | number>({
 export function AdvancedStrategySection() {
   const {
     selectedSetups, setSelectedSetups,
+    excludedSetups, setExcludedSetups,
     selectedChecklistItems, setSelectedChecklistItems,
   } = useGlobalFilters();
 
@@ -135,20 +136,59 @@ export function AdvancedStrategySection() {
 
   return (
     <div className="space-y-1">
-      {/* Setup */}
+      {/* Setup (with nested Excluding) */}
       <FilterRow
         label="Setup"
         icon={<BarChart2 className="w-3.5 h-3.5" />}
-        active={selectedSetups.length > 0}
-        expanded={isExpanded('setup', selectedSetups.length > 0)}
-        onToggle={() => toggleManual('setup', selectedSetups.length > 0, () => setSelectedSetups([]))}
+        active={selectedSetups.length > 0 || excludedSetups.length > 0}
+        expanded={isExpanded('setup', selectedSetups.length > 0 || excludedSetups.length > 0)}
+        onToggle={() => toggleManual(
+          'setup',
+          selectedSetups.length > 0 || excludedSetups.length > 0,
+          () => { setSelectedSetups([]); setExcludedSetups([]); },
+        )}
       >
-        <CheckboxMultiSelect
-          options={strategies.map(s => ({ value: s.id, label: s.name }))}
-          selected={selectedSetups}
-          onChange={setSelectedSetups}
-          emptyText="No setups found"
-        />
+        <div className="space-y-3">
+          <CheckboxMultiSelect
+            options={strategies.map(s => ({ value: s.id, label: s.name }))}
+            selected={selectedSetups}
+            onChange={setSelectedSetups}
+            emptyText="No setups found"
+          />
+
+          {/* Excluding — nested with tree line, matches sidebar Tools sub-item style */}
+          <div className="relative ml-1 pl-4">
+            <span
+              aria-hidden
+              className="absolute left-0 top-0 w-px bg-[#bdbdbd] pointer-events-none"
+              style={{ height: 'calc(100% - 1.125rem)' }}
+            />
+            <div className="relative">
+              <svg
+                aria-hidden
+                width="16"
+                height="12"
+                viewBox="0 0 16 12"
+                fill="none"
+                className="absolute -left-4 top-2 text-[#bdbdbd] pointer-events-none"
+              >
+                <path
+                  d="M 0.5 0 L 0.5 6 Q 0.5 11.5, 6 11.5 L 16 11.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  fill="none"
+                />
+              </svg>
+              <label className="text-xs text-muted-foreground block mb-1.5">Excluding</label>
+              <CheckboxMultiSelect
+                options={strategies.map(s => ({ value: s.id, label: s.name }))}
+                selected={excludedSetups}
+                onChange={setExcludedSetups}
+                emptyText="No setups found"
+              />
+            </div>
+          </div>
+        </div>
       </FilterRow>
 
       {/* Checklist of Setup */}

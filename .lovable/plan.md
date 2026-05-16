@@ -1,33 +1,52 @@
-## Add "Position Size" Filter (Min/Max qty)
+# Add Setup "Excluding" Filter
 
-Mirror the R-Multiple Min/Max pattern across the same 5 files. Position size = `calculateTradeMetrics(trade).totalQuantity`. Supports decimals, inclusive bounds, both empty = all.
+Mirror the existing Setup (include) multi-select with a second "Excluding" multi-select directly beneath it. Trades whose `strategyId` matches any excluded setup are removed from results.
+
+## Scope
+
+- Applies to the global Strategy filter only (Setup). Checklist items are unchanged for now.
+- "Include" semantics unchanged: if non-empty, only trades with one of those setups pass.
+- "Exclude" semantics: if non-empty, trades with any of those setups are removed (applied after include).
+
+## Files to change
 
 ### 1. `src/contexts/GlobalFiltersContext.tsx`
-- Add state: `positionSizeMin: number | null`, `positionSizeMax: number | null` with setters.
-- Expose in context type, value, and `useMemo` deps. Include in `resetAllFilters`.
+
+- Add state `excludedSetups: string[]` + `setExcludedSetups`.
+- Add to context type, provider value, `useMemo` deps, and `resetAllFilters`.
 
 ### 2. `src/contexts/TradesContext.tsx`
-- Pull `positionSizeMin`, `positionSizeMax` from context.
-- After R-Multiple block, add: if either is non-null, compute `qty = calculateTradeMetrics(trade).totalQuantity`, drop trade if `min !== null && qty < min` or `max !== null && qty > max`.
-- Add both to `useMemo` deps.
+
+- After the existing `selectedSetups` include filter, add:
+  ```
+  if (excludedSetups.length > 0) {
+    filtered = filtered.filter(t => !t.strategyId || !excludedSetups.includes(t.strategyId));
+  }
+  ```
+- Add to `useMemo` deps.
 
 ### 3. `src/hooks/useAccountScopedFilteredTrades.ts`
-- Same filter logic and deps as TradesContext.
 
-### 4. `src/components/layout/AdvancedBasicFiltersSection.tsx`
-- Pull `positionSizeMin/Max` + setters.
-- Add a new `FilterRow` titled "Position Size" with the same two Min/Max `Input` fields (type=number, step=any to allow decimals like 0.5), placed right after the R-Multiple row.
-- `active` = either non-null; toggling off clears both.
+- Same exclude filter as above; add to deps array.
+
+### 4. `src/components/layout/AdvancedStrategySection.tsx`
+
+- Pull `excludedSetups`, `setExcludedSetups` from context.
+- Under the existing Setup `FilterRow`, when Setup row is expanded/active, render a second labeled block "Excluding" with a `CheckboxMultiSelect` bound to `excludedSetups`. Match the reference screenshot styling (small label above the dropdown, placeholder "Exclude").
+- Treat the row as `active` if either include or exclude has selections; toggling off clears both.
 
 ### 5. `src/components/layout/GlobalHeader.tsx`
-- Add the same Min/Max inputs to the header filters popover, right after R-Multiple.
-- Include in active filter count and `useMemo` deps.
+
+- Add `excludedSetups`/`setExcludedSetups` to the header filter popover (same place Setup currently lives), as a second select labeled "Excluding".
+- Include in `useMemo`/`useEffect` deps.
 
 ### 6. `src/components/layout/SelectedFiltersBar.tsx`
-- Add a chip: `"{min ?? '−∞'} to {max ?? '+∞'} qty"` when either bound set. `onRemove` clears both.
-- Include setters in `clearAll` and both values in deps.
 
-### Notes
-- Inputs accept decimals (`step="any"`) and reject negative values via `min="0"`.
-- Empty string → `null` (unbounded on that side).
-- No backend/schema changes.
+- Add an "Excluding setups: N" chip when `excludedSetups.length > 0`, with `onRemove` clearing `excludedSetups`. Include in `clearAll`.
+
+## Notes
+
+- No backend / schema changes.
+- Pure frontend, follows the established R-Multiple / Position Size pattern.
+
+make sure to match the design, as it have similar menu tree line like we have in tools menu in sidebar

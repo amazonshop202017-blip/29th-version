@@ -40,6 +40,7 @@ export const SelectedFiltersBar = () => {
     selectedOutcomes, setSelectedOutcomes,
     selectedHours, setSelectedHours,
     selectedSetups, setSelectedSetups,
+    excludedSetups, setExcludedSetups,
     selectedDays, setSelectedDays,
     lastTradesFilter, setLastTradesFilter,
     selectedDirections, setSelectedDirections,
@@ -93,6 +94,15 @@ export const SelectedFiltersBar = () => {
       result.push({
         id: `setup-${setupId}`, label: 'Setup', value: name,
         onRemove: () => setSelectedSetups(selectedSetups.filter(s => s !== setupId)),
+      });
+    });
+
+    // Excluded Setups
+    excludedSetups.forEach(setupId => {
+      const name = strategies.find(s => s.id === setupId)?.name || setupId;
+      result.push({
+        id: `setup-excl-${setupId}`, label: 'Excluding Setup', value: name,
+        onRemove: () => setExcludedSetups(excludedSetups.filter(s => s !== setupId)),
       });
     });
 
@@ -229,7 +239,7 @@ export const SelectedFiltersBar = () => {
 
     return result;
   }, [
-    datePreset, selectedAccounts, selectedSymbols, selectedSetups, selectedChecklistItems,
+    datePreset, selectedAccounts, selectedSymbols, selectedSetups, excludedSetups, selectedChecklistItems,
     selectedOutcomes, selectedDirections, selectedYear, selectedDays, selectedHours,
     lastTradesFilter, selectedReturnRanges, rMultipleMin, rMultipleMax,
     positionSizeMin, positionSizeMax,
@@ -244,6 +254,7 @@ export const SelectedFiltersBar = () => {
     setSelectedOutcomes([]);
     setSelectedHours([]);
     setSelectedSetups([]);
+    setExcludedSetups([]);
     setSelectedDays([]);
     setLastTradesFilter(null);
     setSelectedDirections([]);
