@@ -183,6 +183,8 @@ export const GlobalHeader = () => {
     excludedChecklistItems,
     setExcludedChecklistItems,
     hasActiveTagFilters,
+    starredFilter,
+    setStarredFilter,
   } = useGlobalFilters();
   
   const { accounts, getActiveAccountsWithStats } = useAccountsContext();
@@ -408,8 +410,9 @@ export const GlobalHeader = () => {
     if (rMultipleMin !== null || rMultipleMax !== null) count++;
     if (positionSizeMin !== null || positionSizeMax !== null) count++;
     if (selectedYear !== null) count++;
+    if (starredFilter !== 'all') count++;
     return count;
-  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, excludedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear]);
+  }, [selectedSymbols, selectedOutcomes, selectedHours, selectedSetups, excludedSetups, selectedChecklistItems, excludedChecklistItems, selectedDays, lastTradesFilter, selectedDirections, selectedReturnRanges, rMultipleMin, rMultipleMax, positionSizeMin, positionSizeMax, selectedYear, starredFilter]);
 
   const totalActiveFilters = activeBasicFiltersCount + (hasActiveTagFilters ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!isAllAccountsSelected ? 1 : 0);
 
@@ -1007,13 +1010,13 @@ export const GlobalHeader = () => {
                 </Popover>
               </div>
 
-              {/* Starred - UI only (not wired) */}
+              {/* Starred */}
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <Star className="w-3 h-3" />
                   Starred
                 </label>
-                <Select>
+                <Select value={starredFilter} onValueChange={(v) => setStarredFilter(v as any)}>
                   <SelectTrigger className="h-9 bg-background border-border">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>

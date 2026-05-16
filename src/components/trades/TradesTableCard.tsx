@@ -282,7 +282,7 @@ export const TradesTableCard = ({
   const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { categories } = useCategoriesContext();
   const { tags } = useTagsContext();
-  const { updateTrade, trades: allTrades } = useTradesContext();
+  const { updateTrade, trades: allTrades, toggleStarred } = useTradesContext();
   const { getStrategyById, strategies } = useStrategiesContext();
   const { columns: visibilityColumns, toggleColumn, isColumnVisible, columnGroups } =
     useTradesColumnVisibility(categories);
@@ -1289,8 +1289,17 @@ export const TradesTableCard = ({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1">
-                              <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-yellow-500">
-                                <Star className="w-3.5 h-3.5" />
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleStarred(trade.id); }}
+                                aria-pressed={!!trade.starred}
+                                aria-label={trade.starred ? `Unstar trade ${trade.symbol}` : `Star trade ${trade.symbol}`}
+                                className={cn(
+                                  "p-1 rounded hover:bg-muted/50 transition-colors",
+                                  trade.starred ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"
+                                )}
+                              >
+                                <Star className="w-3.5 h-3.5" fill={trade.starred ? "currentColor" : "none"} />
                               </button>
                               <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
                                 <Eye className="w-3.5 h-3.5" />

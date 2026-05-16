@@ -466,6 +466,17 @@ export const useTrades = () => {
     saveTrades(trades.filter(trade => trade.id !== id));
   }, [trades, saveTrades]);
 
+  // Toggle the starred flag on a single trade. Does not touch fingerprint,
+  // snapshots, or saved* fields — pure flag flip.
+  const toggleStarred = useCallback((id: string) => {
+    const updated = trades.map(trade =>
+      trade.id === id
+        ? { ...trade, starred: !trade.starred, updatedAt: nowISO() }
+        : trade
+    );
+    saveTrades(updated);
+  }, [trades, saveTrades]);
+
   // Atomic bulk delete to avoid stale-closure issues when deleting multiple trades
   const deleteTrades = useCallback((ids: string[]) => {
     if (!ids || ids.length === 0) return;
@@ -539,5 +550,6 @@ export const useTrades = () => {
     deleteTrades,
     deleteTradesByAccountId,
     getTradeById,
+    toggleStarred,
   };
 };

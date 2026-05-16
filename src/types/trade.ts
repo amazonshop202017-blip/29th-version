@@ -87,6 +87,8 @@ export interface Trade {
   source: 'imported' | 'manual';
   // Deterministic identity for deduplication. Always present, never recomputed during comparison.
   fingerprint: string;
+  // User-toggled star/bookmark flag
+  starred?: boolean;
 }
 
 // Calculated values (not stored, computed on-the-fly)

@@ -54,6 +54,7 @@ export const SelectedFiltersBar = () => {
     durationMinutesMax, setDurationMinutesMax,
     entryTimeIntervals, setEntryTimeIntervals,
     exitTimeIntervals, setExitTimeIntervals,
+    starredFilter, setStarredFilter,
     selectedYear, setSelectedYear,
     selectedChecklistItems, setSelectedChecklistItems,
     excludedChecklistItems, setExcludedChecklistItems,
@@ -244,6 +245,15 @@ export const SelectedFiltersBar = () => {
       });
     }
 
+    // Starred
+    if (starredFilter !== 'all') {
+      result.push({
+        id: 'starred', label: 'Starred',
+        value: starredFilter === 'starred' ? 'Starred only' : 'Unstarred only',
+        onRemove: () => setStarredFilter('all'),
+      });
+    }
+
     // Tags by category
     Object.entries(selectedTagsByCategory).forEach(([categoryId, tagIds]) => {
       const categoryName = categories.find(c => c.id === categoryId)?.name || 'Tag';
@@ -289,6 +299,7 @@ export const SelectedFiltersBar = () => {
     holdingPeriodFilter,
     durationMinutesMin, durationMinutesMax,
     entryTimeIntervals, exitTimeIntervals,
+    starredFilter,
     selectedTagsByCategory, selectedTradeComments, strategies, categories, tags,
   ]);
 
@@ -313,6 +324,7 @@ export const SelectedFiltersBar = () => {
     setDurationMinutesMax(null);
     setEntryTimeIntervals([]);
     setExitTimeIntervals([]);
+    setStarredFilter('all');
     setSelectedYear(null);
     setSelectedChecklistItems([]);
     setExcludedChecklistItems([]);

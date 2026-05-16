@@ -81,6 +81,7 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
+    starredFilter,
   } = useGlobalFilters();
 
   return useMemo(() => {
@@ -140,6 +141,12 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
         const d = parseISO(metrics.closeDate);
         return matchesTimeIntervals(d.getHours() * 60 + d.getMinutes(), exitTimeIntervals);
       });
+    }
+
+    if (starredFilter === 'starred') {
+      filtered = filtered.filter((trade) => trade.starred === true);
+    } else if (starredFilter === 'unstarred') {
+      filtered = filtered.filter((trade) => !trade.starred);
     }
 
     // Setup (strategyId)
@@ -291,5 +298,6 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
+    starredFilter,
   ]);
 };
