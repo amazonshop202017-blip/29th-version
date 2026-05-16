@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AppDatePicker } from '@/components/ui/AppDatePicker';
+import { AppDateTimePicker } from '@/components/ui/AppDateTimePicker';
 import type { FieldDef } from '@/lib/backtestStore';
 import { TypeableCombobox } from '@/components/trades/TypeableCombobox';
 import { useTradedSymbols } from '@/hooks/useTradedSymbols';
@@ -99,10 +99,9 @@ export const AddTradeModal = ({ open, onOpenChange, fields, initialValues, onSav
                   />
                 )}
                 {f.type === 'date' && (
-                  <AppDatePicker
+                  <AppDateTimePicker
                     value={(v as string) ?? ''}
                     onChange={(s) => setVal(f.id, s)}
-                    className="h-10 bg-input border-border"
                   />
                 )}
                 {f.type === 'select' && (
