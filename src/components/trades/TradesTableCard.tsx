@@ -299,6 +299,34 @@ export const TradesTableCard = ({
   const [tradesPerPage, setTradesPerPage] = useState(50);
   const [tagModalTrade, setTagModalTrade] = useState<Trade | null>(null);
 
+  const HIDDEN_STORAGE_KEY = 'tradesTable.hiddenTradeIds';
+  const [hiddenTradeIds, setHiddenTradeIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_STORAGE_KEY);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw);
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(Array.from(hiddenTradeIds)));
+    } catch {
+      // ignore
+    }
+  }, [hiddenTradeIds]);
+  const toggleHidden = useCallback((id: string) => {
+    setHiddenTradeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const handleOpenTagModal = useCallback((trade: Trade) => {
     setTagModalTrade(trade);
   }, []);
