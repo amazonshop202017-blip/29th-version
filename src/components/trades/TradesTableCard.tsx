@@ -15,6 +15,7 @@ import {
   Menu,
   Star,
   Eye,
+  EyeOff,
   Image as ImageIcon,
   Plus,
   ArrowUp,
@@ -236,7 +237,7 @@ function DraggableTableHeader({
   );
 }
 
-function DragAlongCell({ cell }: { cell: Cell<Trade, unknown> }) {
+function DragAlongCell({ cell, hidden }: { cell: Cell<Trade, unknown>; hidden?: boolean }) {
   const { isDragging, setNodeRef, transform } = useSortable({
     id: cell.column.id,
   });
@@ -257,7 +258,11 @@ function DragAlongCell({ cell }: { cell: Cell<Trade, unknown> }) {
       className="px-2 py-1 align-middle overflow-hidden"
       onClick={(cell.column.columnDef.meta as { stopRowClick?: boolean } | undefined)?.stopRowClick ? (e) => e.stopPropagation() : undefined}
     >
-      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      {hidden ? (
+        <span className="text-muted-foreground select-none tracking-widest">***</span>
+      ) : (
+        flexRender(cell.column.columnDef.cell, cell.getContext())
+      )}
     </td>
   );
 }
@@ -293,6 +298,34 @@ export const TradesTableCard = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [tradesPerPage, setTradesPerPage] = useState(50);
   const [tagModalTrade, setTagModalTrade] = useState<Trade | null>(null);
+
+  const HIDDEN_STORAGE_KEY = 'tradesTable.hiddenTradeIds';
+  const [hiddenTradeIds, setHiddenTradeIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_STORAGE_KEY);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw);
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(Array.from(hiddenTradeIds)));
+    } catch {
+      // ignore
+    }
+  }, [hiddenTradeIds]);
+  const toggleHidden = useCallback((id: string) => {
+    setHiddenTradeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const handleOpenTagModal = useCallback((trade: Trade) => {
     setTagModalTrade(trade);
@@ -1301,8 +1334,21 @@ export const TradesTableCard = ({
                               >
                                 <Star className="w-3.5 h-3.5" fill={trade.starred ? "currentColor" : "none"} />
                               </button>
-                              <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                                <Eye className="w-3.5 h-3.5" />
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleHidden(trade.id); }}
+                                aria-pressed={hiddenTradeIds.has(trade.id)}
+                                aria-label={hiddenTradeIds.has(trade.id) ? `Show values for ${trade.symbol}` : `Hide values for ${trade.symbol}`}
+                                className={cn(
+                                  "p-1 rounded hover:bg-muted/50 transition-colors",
+                                  hiddenTradeIds.has(trade.id) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {hiddenTradeIds.has(trade.id) ? (
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Eye className="w-3.5 h-3.5" />
+                                )}
                               </button>
                               <button className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
                                 <ImageIcon className="w-3.5 h-3.5" />
@@ -1314,7 +1360,7 @@ export const TradesTableCard = ({
                             strategy={horizontalListSortingStrategy}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <DragAlongCell key={cell.id} cell={cell} />
+                              <DragAlongCell key={cell.id} cell={cell} hidden={hiddenTradeIds.has(trade.id)} />
                             ))}
                           </SortableContext>
                         </tr>
