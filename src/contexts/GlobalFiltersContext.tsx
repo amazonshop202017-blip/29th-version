@@ -467,7 +467,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const isAllAccountsSelected = selectedAccounts.length === 0;
   
   // Check if checklist filter is active
-  const hasActiveChecklistFilter = selectedChecklistItems.length > 0;
+  const hasActiveChecklistFilter = selectedChecklistItems.length > 0 || excludedChecklistItems.length > 0;
 
   const value = useMemo(() => ({
     currency,
