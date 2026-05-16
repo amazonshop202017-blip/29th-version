@@ -7,6 +7,7 @@ import { DayCard } from '@/components/dayview/DayCard';
 import { DaySidebarCalendar } from '@/components/dayview/DaySidebarCalendar';
 import { calculateTradeMetrics, Trade } from '@/types/trade';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface DayGroup {
   date: Date;
@@ -23,6 +24,7 @@ const DayView = () => {
   // Calendar month state
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
 
   // Get active account names for filtering
   const activeAccountIds = useMemo(() => getActiveAccountIds(), [getActiveAccountIds]);
@@ -75,6 +77,27 @@ const DayView = () => {
 
   return (
     <div className="space-y-6">
+      {/* Day/Week toggle */}
+      <div className="flex items-center">
+        <div className="inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-muted/40">
+          {(['day', 'week'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setViewMode(mode)}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-md transition-colors capitalize',
+                viewMode === mode
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Mobile Calendar (above cards) */}
       <div className="block lg:hidden">
         <DaySidebarCalendar
@@ -90,7 +113,11 @@ const DayView = () => {
       <div className="flex gap-6">
         {/* Day Cards List */}
         <div className="flex-1 space-y-4 min-w-0">
-          {dayGroups.length === 0 ? (
+          {viewMode === 'week' ? (
+            <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-xl">
+              <p className="text-muted-foreground">Week view coming soon</p>
+            </div>
+          ) : dayGroups.length === 0 ? (
             <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-xl">
               <p className="text-muted-foreground">No trades found for the selected filters</p>
             </div>
