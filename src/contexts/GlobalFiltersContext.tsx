@@ -703,6 +703,34 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectAllCommentsInCategory,
     clearTradeCommentCategory,
     hasActiveTradeCommentFilters,
+    // Applied (frozen-aware) values + freeze controls
+    appliedSelectedSymbols,
+    appliedSelectedOutcomes,
+    appliedSelectedHours,
+    appliedSelectedSetups,
+    appliedExcludedSetups,
+    appliedSelectedDays,
+    appliedLastTradesFilter,
+    appliedSelectedDirections,
+    appliedSelectedReturnRanges,
+    appliedRMultipleMin,
+    appliedRMultipleMax,
+    appliedPositionSizeMin,
+    appliedPositionSizeMax,
+    appliedHoldingPeriodFilter,
+    appliedDurationMinutesMin,
+    appliedDurationMinutesMax,
+    appliedEntryTimeIntervals,
+    appliedExitTimeIntervals,
+    appliedStarredFilter,
+    appliedSelectedYear,
+    appliedSelectedChecklistItems,
+    appliedExcludedChecklistItems,
+    appliedSelectedTagsByCategory,
+    appliedSelectedTradeComments,
+    freezeAppliedFilters,
+    commitAppliedFilters,
+    unfreezeAppliedFilters,
   }), [
     currency, 
     setCurrency,
@@ -744,6 +772,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     hasActiveTagFilters,
     selectedTradeComments,
     hasActiveTradeCommentFilters,
+    appliedSnapshot,
+    freezeAppliedFilters,
+    commitAppliedFilters,
+    unfreezeAppliedFilters,
   ]);
 
   return (
@@ -753,7 +785,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   );
 };
 
-export const useGlobalFilters = (): GlobalFiltersContextType => {
+export const useGlobalFilters = (): FullGlobalFiltersContextType => {
   const context = useContext(GlobalFiltersContext);
   if (context === undefined) {
     throw new Error('useGlobalFilters must be used within GlobalFiltersProvider');
