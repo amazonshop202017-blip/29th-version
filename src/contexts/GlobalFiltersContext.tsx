@@ -27,7 +27,6 @@ export type DayFilter = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'frida
 export type LastTradesFilter = 10 | 25 | 50 | 100 | null;
 export type DirectionFilter = 'long' | 'short';
 export type ReturnPercentRange = '<0' | '0-1' | '1-2' | '3-5' | '5-10' | '>10';
-export type RMultipleRange = '<-2' | '-2-0' | '0-1' | '1-2' | '2-4' | '>4';
 export type YearFilter = number | null; // null means "all years"
 export type HoldingPeriodFilter = 'all' | 'intraday' | 'multiday';
 
@@ -102,8 +101,10 @@ interface GlobalFiltersContextType {
   setSelectedDirections: (directions: DirectionFilter[]) => void;
   selectedReturnRanges: ReturnPercentRange[];
   setSelectedReturnRanges: (ranges: ReturnPercentRange[]) => void;
-  selectedRMultipleRanges: RMultipleRange[];
-  setSelectedRMultipleRanges: (ranges: RMultipleRange[]) => void;
+  rMultipleMin: number | null;
+  setRMultipleMin: (v: number | null) => void;
+  rMultipleMax: number | null;
+  setRMultipleMax: (v: number | null) => void;
   holdingPeriodFilter: HoldingPeriodFilter;
   setHoldingPeriodFilter: (v: HoldingPeriodFilter) => void;
   
@@ -227,7 +228,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [lastTradesFilter, setLastTradesFilter] = useState<LastTradesFilter>(null);
   const [selectedDirections, setSelectedDirections] = useState<DirectionFilter[]>([]);
   const [selectedReturnRanges, setSelectedReturnRanges] = useState<ReturnPercentRange[]>([]);
-  const [selectedRMultipleRanges, setSelectedRMultipleRanges] = useState<RMultipleRange[]>([]);
+  const [rMultipleMin, setRMultipleMin] = useState<number | null>(null);
+  const [rMultipleMax, setRMultipleMax] = useState<number | null>(null);
   const [holdingPeriodFilter, setHoldingPeriodFilter] = useState<HoldingPeriodFilter>('all');
   
   // Year Filter
@@ -491,8 +493,10 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setSelectedDirections,
     selectedReturnRanges,
     setSelectedReturnRanges,
-    selectedRMultipleRanges,
-    setSelectedRMultipleRanges,
+    rMultipleMin,
+    setRMultipleMin,
+    rMultipleMax,
+    setRMultipleMax,
     holdingPeriodFilter,
     setHoldingPeriodFilter,
     // Year Filter
@@ -539,7 +543,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     lastTradesFilter,
     selectedDirections,
     selectedReturnRanges,
-    selectedRMultipleRanges,
+    rMultipleMin,
+    rMultipleMax,
     holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
