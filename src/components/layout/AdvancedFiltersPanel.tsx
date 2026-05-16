@@ -142,9 +142,9 @@ export const AdvancedFiltersPanel = () => {
   ];
 
   return (
-    <div className="flex min-h-[336px]">
+    <div className="flex h-[336px] w-[537px]">
       {/* Left Menu */}
-      <div className="w-[179px] border-r border-border p-2 flex flex-col gap-1">
+      <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-1">
         {menuItems.map((item) => (
           <button
             key={item.key}
@@ -167,7 +167,7 @@ export const AdvancedFiltersPanel = () => {
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 p-4 min-w-[358px]">
+      <div className="flex-1 p-4 w-[358px] overflow-y-auto">
         {activeSection === 'basic' && (
           <AdvancedBasicFiltersSection />
         )}
