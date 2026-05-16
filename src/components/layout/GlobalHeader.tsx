@@ -1119,47 +1119,36 @@ export const GlobalHeader = () => {
                 </Popover>
               </div>
 
-              {/* R-Multiple Gain - Multi-select */}
+              {/* R-Multiple - Min/Max */}
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <Hash className="w-3 h-3" />
-                  R-Multiple Gain
+                  R-Multiple
                 </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full h-9 justify-between text-sm font-normal bg-background border-border">
-                      {selectedRMultipleRanges.length === 0 ? 'All' : `${selectedRMultipleRanges.length} selected`}
-                      <ChevronDown className="w-3 h-3 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-36 p-2 bg-popover border-border z-[70]" align="start">
-                    <div className="space-y-1">
-                      {R_MULTIPLE_OPTIONS.map((option) => (
-                        <div 
-                          key={option.value} 
-                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={() => handleRMultipleRangeToggle(option.value)}
-                        >
-                          <Checkbox checked={selectedRMultipleRanges.includes(option.value)} />
-                          <span className="text-sm">{option.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {selectedRMultipleRanges.length > 0 && (
-                      <>
-                        <DropdownMenuSeparator className="my-2" />
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full text-xs"
-                          onClick={() => setSelectedRMultipleRanges([])}
-                        >
-                          Clear selection
-                        </Button>
-                      </>
-                    )}
-                  </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="Min"
+                    value={rMultipleMin === null ? '' : rMultipleMin}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setRMultipleMin(v === '' ? null : Number(v));
+                    }}
+                    className="h-9 bg-background border-border"
+                  />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="Max"
+                    value={rMultipleMax === null ? '' : rMultipleMax}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setRMultipleMax(v === '' ? null : Number(v));
+                    }}
+                    className="h-9 bg-background border-border"
+                  />
+                </div>
               </div>
 
               {/* RRR - UI only (not wired) */}
