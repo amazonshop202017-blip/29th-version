@@ -58,6 +58,7 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     positionSizeMax,
     selectedYear,
     selectedChecklistItems,
+    excludedChecklistItems,
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
@@ -178,6 +179,13 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
       });
     }
 
+    if (excludedChecklistItems.length > 0) {
+      filtered = filtered.filter((trade) => {
+        const tradeChecklist = trade.selectedChecklistItems || [];
+        return !excludedChecklistItems.some((item) => tradeChecklist.includes(item));
+      });
+    }
+
     // Tags (AND across categories, OR within category)
     const activeCategoryIds = Object.keys(selectedTagsByCategory).filter(
       (categoryId) => selectedTagsByCategory[categoryId]?.length > 0
@@ -240,6 +248,7 @@ export const useAccountScopedFilteredTrades = (accountId: string | undefined): T
     positionSizeMax,
     selectedYear,
     selectedChecklistItems,
+    excludedChecklistItems,
     selectedTagsByCategory,
     selectedTradeComments,
     classifyTradeOutcome,
