@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Tag, ChevronDown, ChevronRight, Check, Filter, Clock } from 'lucide-react';
+import { Tag, ChevronDown, ChevronRight, Check, Filter, Clock, BarChart2 } from 'lucide-react';
 import { AdvancedBasicFiltersSection } from './AdvancedBasicFiltersSection';
 import { AdvancedDayTimeSection } from './AdvancedDayTimeSection';
+import { AdvancedStrategySection } from './AdvancedStrategySection';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useGlobalFilters, TradeCommentCategory } from '@/contexts/GlobalFiltersContext';
@@ -23,7 +24,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 
-type MenuSection = 'basic' | 'daytime' | 'tags';
+type MenuSection = 'basic' | 'strategy' | 'daytime' | 'tags';
 
 export const AdvancedFiltersPanel = () => {
   const [activeSection, setActiveSection] = useState<MenuSection>('basic');
@@ -135,6 +136,7 @@ export const AdvancedFiltersPanel = () => {
 
   const menuItems: { key: MenuSection; label: string; icon: React.ReactNode }[] = [
     { key: 'basic', label: 'Basic Filters', icon: <Filter className="w-4 h-4" /> },
+    { key: 'strategy', label: 'Strategy', icon: <BarChart2 className="w-4 h-4" /> },
     { key: 'daytime', label: 'Day & Time', icon: <Clock className="w-4 h-4" /> },
     { key: 'tags', label: 'Tags', icon: <Tag className="w-4 h-4" /> },
   ];
@@ -168,6 +170,10 @@ export const AdvancedFiltersPanel = () => {
       <div className="flex-1 p-4 min-w-[320px]">
         {activeSection === 'basic' && (
           <AdvancedBasicFiltersSection />
+        )}
+
+        {activeSection === 'strategy' && (
+          <AdvancedStrategySection />
         )}
 
         {activeSection === 'daytime' && (
