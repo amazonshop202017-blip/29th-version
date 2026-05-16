@@ -77,7 +77,7 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
   // Build a chronological cumulative series for the mini chart.
   const chrono = [...tradesWithMetrics]
     .filter(t => !!t.metrics.closeDate)
-    .sort((a, b) => new Date(a.trade.closeDate).getTime() - new Date(b.trade.closeDate).getTime());
+    .sort((a, b) => new Date(a.metrics.closeDate).getTime() - new Date(b.metrics.closeDate).getTime());
   let running = 0;
   const cumulativeSeries = chrono.map((t, i) => {
     running += t.metrics.netPnl;
@@ -106,7 +106,7 @@ export function calculateStrategyStats(strategyId: string, trades: Trade[]): Str
   // Avg R (proxy): avg winner / |avg loser|.
   const avgR = Math.abs(avgLoser) > 0 ? avgWinner / Math.abs(avgLoser) : 0;
 
-  const lastExecutionDate = chrono.length > 0 ? chrono[chrono.length - 1].trade.closeDate : null;
+  const lastExecutionDate = chrono.length > 0 ? chrono[chrono.length - 1].metrics.closeDate : null;
 
   return {
     totalTrades: strategyTrades.length,
