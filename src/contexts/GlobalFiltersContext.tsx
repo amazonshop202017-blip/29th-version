@@ -29,6 +29,7 @@ export type DirectionFilter = 'long' | 'short';
 export type ReturnPercentRange = '<0' | '0-1' | '1-2' | '3-5' | '5-10' | '>10';
 export type RMultipleRange = '<-2' | '-2-0' | '0-1' | '1-2' | '2-4' | '>4';
 export type YearFilter = number | null; // null means "all years"
+export type HoldingPeriodFilter = 'all' | 'intraday' | 'multiday';
 
 // Display Mode for analytics values
 export type DisplayMode = 'dollar' | 'percentage' | 'privacy' | 'tickpip';
@@ -103,6 +104,8 @@ interface GlobalFiltersContextType {
   setSelectedReturnRanges: (ranges: ReturnPercentRange[]) => void;
   selectedRMultipleRanges: RMultipleRange[];
   setSelectedRMultipleRanges: (ranges: RMultipleRange[]) => void;
+  holdingPeriodFilter: HoldingPeriodFilter;
+  setHoldingPeriodFilter: (v: HoldingPeriodFilter) => void;
   
   // Year Filter
   selectedYear: YearFilter;
@@ -225,6 +228,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
   const [selectedDirections, setSelectedDirections] = useState<DirectionFilter[]>([]);
   const [selectedReturnRanges, setSelectedReturnRanges] = useState<ReturnPercentRange[]>([]);
   const [selectedRMultipleRanges, setSelectedRMultipleRanges] = useState<RMultipleRange[]>([]);
+  const [holdingPeriodFilter, setHoldingPeriodFilter] = useState<HoldingPeriodFilter>('all');
   
   // Year Filter
   const [selectedYear, setSelectedYear] = useState<YearFilter>(null);
@@ -489,6 +493,8 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     setSelectedReturnRanges,
     selectedRMultipleRanges,
     setSelectedRMultipleRanges,
+    holdingPeriodFilter,
+    setHoldingPeriodFilter,
     // Year Filter
     selectedYear,
     setSelectedYear,
@@ -534,6 +540,7 @@ export const GlobalFiltersProvider = ({ children }: { children: ReactNode }) => 
     selectedDirections,
     selectedReturnRanges,
     selectedRMultipleRanges,
+    holdingPeriodFilter,
     selectedYear,
     selectedChecklistItems,
     hasActiveChecklistFilter,
