@@ -171,9 +171,9 @@ export default function RiskToRuinSimulator() {
   }, []);
 
   const getRiskLevel = (ror: number) => {
-    if (ror < 5) return { label: 'Well / Low Risk', color: 'var(--success)' };
-    if (ror <= 20) return { label: 'Acceptable Risk', color: 'var(--warning)' };
-    return { label: 'High Risk', color: 'var(--danger)' };
+    if (ror < 5) return { label: 'Well / Low Risk', color: 'hsl(var(--profit))' };
+    if (ror <= 20) return { label: 'Acceptable Risk', color: 'hsl(38 92% 50%)' };
+    return { label: 'High Risk', color: 'hsl(var(--loss))' };
   };
 
   const getInterpretationText = (ror: number) => {
