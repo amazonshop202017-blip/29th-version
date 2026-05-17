@@ -113,7 +113,7 @@ export const DiaryNotesList = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 text-primary hover:text-primary"
+            className="gap-2 text-primary hover:text-primary hover:bg-primary/10 hover:opacity-80 transition-all"
             onClick={handleNewNote}
           >
             <Plus className="h-4 w-4" />
