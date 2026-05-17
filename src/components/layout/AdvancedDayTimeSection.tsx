@@ -372,22 +372,6 @@ export function AdvancedDayTimeSection() {
         />
       </FilterRow>
 
-      {/* Hour */}
-      <FilterRow
-        label="Hour"
-        icon={<Clock className="w-3.5 h-3.5" />}
-        active={selectedHours.length > 0}
-        expanded={isExpanded('hour', selectedHours.length > 0)}
-        onToggle={() => toggleManual('hour', selectedHours.length > 0, () => setSelectedHours([]))}
-      >
-        <CheckboxMultiSelect
-          options={HOUR_OPTIONS}
-          selected={selectedHours}
-          onChange={setSelectedHours}
-          popoverWidth="w-44"
-        />
-      </FilterRow>
-
       {/* Entry Time */}
       <FilterRow
         label="Entry time"
