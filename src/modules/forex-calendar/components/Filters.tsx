@@ -24,17 +24,17 @@ const IMPACT_COLORS: Record<
   High: {
     active: "bg-red-600 text-white border-red-600 shadow-sm",
     inactive:
-      "bg-white text-gray-600 border-gray-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700",
+      "bg-card text-muted-foreground border-border hover:bg-red-50 dark:hover:bg-red-950/40 hover:border-red-300 dark:hover:border-red-900/60 hover:text-red-700 dark:hover:text-red-300",
   },
   Medium: {
     active: "bg-orange-500 text-white border-orange-500 shadow-sm",
     inactive:
-      "bg-white text-gray-600 border-gray-200 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700",
+      "bg-card text-muted-foreground border-border hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:border-orange-300 dark:hover:border-orange-900/60 hover:text-orange-700 dark:hover:text-orange-300",
   },
   Low: {
-    active: "bg-gray-500 text-white border-gray-500 shadow-sm",
+    active: "bg-muted-foreground text-background border-muted-foreground shadow-sm",
     inactive:
-      "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-400",
+      "bg-card text-muted-foreground border-border hover:bg-muted hover:border-border",
   },
 };
 
@@ -52,10 +52,10 @@ export function Filters({
   onToggleImpact,
 }: FiltersProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
+    <div className="bg-card rounded-xl border border-border p-5 mb-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
         <div>
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-3">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
             Currency Focus
           </p>
           <div className="flex flex-wrap gap-2">
@@ -68,8 +68,8 @@ export function Filters({
                   className={cn(
                     "px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 cursor-pointer",
                     isActive
-                      ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                      : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100 hover:border-gray-400"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border hover:bg-muted hover:border-border"
                   )}
                 >
                   {cur}
@@ -80,7 +80,7 @@ export function Filters({
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-3">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
             Impact Level
           </p>
           <div className="flex flex-wrap gap-2">
