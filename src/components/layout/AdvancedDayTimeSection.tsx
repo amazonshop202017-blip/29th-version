@@ -236,7 +236,7 @@ export function AdvancedDayTimeSection() {
           () => { setDurationMinutesMin(null); setDurationMinutesMax(null); }
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           <TextField
             size="small"
             type="number"
@@ -247,7 +247,7 @@ export function AdvancedDayTimeSection() {
               setDurationMinutesMin(v === '' ? null : Math.max(0, Number(v)));
             }}
             slotProps={{ htmlInput: { min: 0 } }}
-            sx={{ flex: 1 }}
+            sx={{ minWidth: 0 }}
           />
           <TextField
             size="small"
@@ -259,7 +259,7 @@ export function AdvancedDayTimeSection() {
               setDurationMinutesMax(v === '' ? null : Math.max(0, Number(v)));
             }}
             slotProps={{ htmlInput: { min: 0 } }}
-            sx={{ flex: 1 }}
+            sx={{ minWidth: 0 }}
           />
         </div>
       </FilterRow>
