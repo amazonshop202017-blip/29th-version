@@ -44,7 +44,7 @@ import { useCategoriesContext } from '@/contexts/CategoriesContext';
 import { MissingSymbolRulesModal } from '@/components/settings/MissingSymbolRulesModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Info } from 'lucide-react';
 
 const IMPORT_SOURCES = [
   { value: 'TradeValley', label: 'TradeValley CSV' },
