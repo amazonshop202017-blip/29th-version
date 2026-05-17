@@ -65,7 +65,7 @@ export const DiaryFolderSidebar = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-accent-foreground hover:bg-accent [&_svg]:text-muted-foreground hover:[&_svg]:text-accent-foreground transition-colors"
           onClick={() => setIsAddFolderOpen(true)}
         >
           <FolderPlus className="h-4 w-4" />
