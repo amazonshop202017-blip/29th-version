@@ -57,6 +57,8 @@ import OpportunityAnalysis from "./pages/edgelab/OpportunityAnalysis";
 import MonteCarlo from "./pages/tools/MonteCarlo";
 import StreakAnalysis from "./pages/tools/StreakAnalysis";
 import ForexClock from "./pages/tools/ForexClock";
+import RiskOfRuin from "./pages/tools/RiskOfRuin";
+import KellyCriterion from "./pages/tools/KellyCriterion";
 import PropFirmLayout from "./pages/propfirm/PropFirmLayout";
 import PropFirmDashboard from "./pages/propfirm/PropFirmDashboard";
 import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
@@ -137,6 +139,8 @@ const AuthenticatedApp = () => {
                                   <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
                                   <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
                                   <Route path="/tools/forex-clock" element={<ForexClock />} />
+                                  <Route path="/tools/risk-of-ruin" element={<RiskOfRuin />} />
+                                  <Route path="/tools/kelly-criterion" element={<KellyCriterion />} />
                                   <Route path="/forex-news" element={<ForexNews />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>
                                     <Route index element={<PropFirmDashboard />} />
