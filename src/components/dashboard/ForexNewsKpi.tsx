@@ -9,7 +9,7 @@ import type { CalendarEvent, CurrencyCode, ImpactLevel } from '@/modules/forex-c
 import { formatDateHeader, formatTime, getDateKey } from '@/modules/forex-calendar/utils/date.utils';
 import { getCurrencyFlag } from '@/modules/forex-calendar/utils/format.utils';
 
-const FILTER_KEY = 'forex-calendar-kpi-filters-v1';
+const FILTER_KEY = 'forex-calendar-kpi-filters-v2';
 
 const ALL_CURRENCIES: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'NZD', 'CHF'];
 
@@ -19,7 +19,7 @@ interface KpiFilters {
 }
 
 const DEFAULT_FILTERS: KpiFilters = {
-  currencies: ['USD'],
+  currencies: [...ALL_CURRENCIES],
   impacts: ['High'],
 };
 
