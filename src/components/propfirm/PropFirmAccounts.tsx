@@ -436,7 +436,7 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
         </div>
       </div>
       <div className="border-b border-border" />
-      <div className="p-5">
+      <div className="p-3 sm:p-5">
         {activeTab === "Breached" && tableRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
