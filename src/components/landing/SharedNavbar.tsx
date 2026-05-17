@@ -18,6 +18,7 @@ const homeLinks = [
 const mobileLinks = [
   { label: 'Home', path: '/' },
   { label: 'Features', path: '/features' },
+  { label: 'Supported Brokers', path: '/supported-brokers' },
   { label: 'Pricing', path: '/pricing' },
 ];
 
@@ -82,11 +83,15 @@ export const SharedNavbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {['Features', 'Pricing'].map((label) => (
+            {[
+              { label: 'Features', path: '/features' },
+              { label: 'Supported Brokers', path: '/supported-brokers' },
+              { label: 'Pricing', path: '/pricing' },
+            ].map(({ label, path }) => (
               <Link
                 key={label}
-                to={label === 'Pricing' ? '/pricing' : `/${label.toLowerCase()}`}
-                className="text-sm transition-colors"
+                to={path}
+                className="text-sm transition-colors whitespace-nowrap"
                 style={{ color: '#8A8A8A', fontFamily: "'DM Sans', 'Inter', sans-serif" }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#0F0F0F')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#8A8A8A')}
