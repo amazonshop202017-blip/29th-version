@@ -54,7 +54,6 @@ const DEFAULT_CHART_ORDER = [
   'tradeDuration',
   'symbolAnalysis',
   'longShortAnalysis',
-  'yearlyCalendar',
 ];
 
 const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
