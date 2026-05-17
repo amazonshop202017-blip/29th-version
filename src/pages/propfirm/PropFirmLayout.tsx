@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/propfirm/FilterPanel";
 import { PayoutModal } from "@/components/propfirm/PayoutModal";
 import { TrackAccountModal } from "@/components/propfirm/TrackAccountModal";
+import { PropFirmFiltersProvider, usePropFirmFilters } from "@/contexts/PropFirmFiltersContext";
 
 type Tab = "dashboard" | "accounts" | "transactions";
 
-const PropFirmLayout = () => {
+const PropFirmLayoutInner = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
   const isAccountDetails = Boolean(params.accountId);
+  const { activeCount } = usePropFirmFilters();
 
   const activeTab: Tab = location.pathname.startsWith("/prop-firm/accounts")
     ? "accounts"
@@ -60,6 +62,11 @@ const PropFirmLayout = () => {
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 Filters
+                {activeCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                    {activeCount}
+                  </span>
+                )}
               </Button>
               <FilterPanel open={filtersOpen} onClose={() => setFiltersOpen(false)} />
             </div>
@@ -109,5 +116,11 @@ const PropFirmLayout = () => {
     </div>
   );
 };
+
+const PropFirmLayout = () => (
+  <PropFirmFiltersProvider>
+    <PropFirmLayoutInner />
+  </PropFirmFiltersProvider>
+);
 
 export default PropFirmLayout;
