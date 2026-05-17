@@ -13,6 +13,7 @@ import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
 import { computeAccountStats, accountToRow } from "@/lib/propFirmStats";
 import { nowISO } from "@/lib/datetime";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 
 type AccountTab = "Evaluations" | "Funded" | "Breached";
 type ViewMode = "list" | "grid";
@@ -158,11 +159,17 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
   const { accounts, removeAccount, patchAccount, addAccount } = useAccountsContext();
   const { challenges, getChallengeById, updateChallenge, removeChallenge } = useChallengesContext();
   const { trades } = useTradesContext();
+  const { accounts: filteredAccounts } = usePropFirmFiltered();
+  const filteredAccountIds = useMemo(() => new Set(filteredAccounts.map(a => a.id)), [filteredAccounts]);
 
   // All real propfirm accounts for current user (used for Breached tab — includes archived)
   const allRealPropfirmAccounts = useMemo(
-    () => accounts.filter(a => a.accountMode === 'propfirm' && a.userId === (user?.userId || '')),
-    [accounts, user?.userId]
+    () => accounts.filter(a =>
+      a.accountMode === 'propfirm' &&
+      a.userId === (user?.userId || '') &&
+      filteredAccountIds.has(a.id)
+    ),
+    [accounts, user?.userId, filteredAccountIds]
   );
 
   // Active (non-archived) accounts — used for Evaluations / Funded buckets and row actions
