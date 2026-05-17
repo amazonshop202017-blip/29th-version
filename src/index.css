@@ -106,8 +106,8 @@
     --loss: 0 84% 60%;
     --loss-foreground: 0 84% 95%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 14%;
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
     --ring: 217 20% 18%;
 
     --sidebar-background: 0 0% 9%;
