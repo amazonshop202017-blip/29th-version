@@ -7,51 +7,17 @@ import { countryToCurrency, getDateKey } from "../utils/date.utils";
 import { normalizeImpact, generateEventId } from "../utils/format.utils";
 
 const DEFAULT_CONFIG: CalendarConfig = {
-  apiUrl: "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://nfs.faireconomy.media/ff_calendar_thisweek.json"),
+  apiUrl: "https://forex-calendar.mpin364.workers.dev/",
   refreshIntervalMs: 0,
   defaultCurrencies: [],
   defaultImpacts: [],
 };
 
-const CACHE_KEY = "forex-calendar-cache-v1";
+// Per-tab in-flight dedupe (prevents duplicate fetches on rapid re-renders).
+// Shared 24h caching is handled by the Cloudflare Worker.
 let inFlightRequest: Promise<CalendarEventRaw[]> | null = null;
-let inFlightDateKey = "";
 
-function getTodayLocalKey(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function readCache(): CalendarEventRaw[] | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { date: string; data: CalendarEventRaw[] };
-    if (!parsed?.date || !Array.isArray(parsed.data)) return null;
-    if (parsed.date !== getTodayLocalKey()) return null;
-    return parsed.data;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(data: CalendarEventRaw[]): void {
-  try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ date: getTodayLocalKey(), data }),
-    );
-  } catch {
-    // ignore quota/serialization errors
-  }
-}
-
-async function fetchRawEvents(
-  apiUrl: string
-): Promise<CalendarEventRaw[]> {
+async function fetchRawEvents(apiUrl: string): Promise<CalendarEventRaw[]> {
   const response = await fetch(apiUrl);
   if (!response.ok) {
     throw new Error(
@@ -91,27 +57,14 @@ export async function getCalendarEvents(
   config: Partial<CalendarConfig> = {}
 ): Promise<CalendarEvent[]> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
-  const cached = readCache();
-  if (cached) {
-    return transformEvents(cached);
-  }
-  const todayKey = getTodayLocalKey();
-  if (!inFlightRequest || inFlightDateKey !== todayKey) {
-    inFlightDateKey = todayKey;
-    inFlightRequest = fetchRawEvents(mergedConfig.apiUrl)
-      .then((raw) => {
-        writeCache(raw);
-        return raw;
-      })
-      .finally(() => {
-        inFlightRequest = null;
-      });
+  if (!inFlightRequest) {
+    inFlightRequest = fetchRawEvents(mergedConfig.apiUrl).finally(() => {
+      inFlightRequest = null;
+    });
   }
   const raw = await inFlightRequest;
   return transformEvents(raw);
 }
 
 export { DEFAULT_CONFIG };
-
-// silence unused import warning when types are only used for casts
 export type { CalendarEvent };
