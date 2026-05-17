@@ -298,7 +298,13 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
 
   return (
     <>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleMetricDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleMetricDragStart}
+        onDragEnd={handleMetricDragEnd}
+        onDragCancel={handleMetricDragCancel}
+      >
         <SortableContext items={metricsOrder} strategy={rectSortingStrategy}>
           <div className={`grid ${gridColsClass} gap-3 auto-rows-fr`}>
             {allItems.map((item, i) => {
@@ -311,16 +317,23 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
                 needsLgSpan ? 'lg:col-span-2' : '',
               ].filter(Boolean).join(' ') : '';
               if (item.type === 'add') {
-                return <div key="__add__" className={spanClass}><AddWidgetPlaceholder onClick={() => setIsMetricsLibraryOpen(true)} /></div>;
+                return <div key="__add__" className={spanClass}><AddWidgetPlaceholder onClick={() => setIsMetricsLibraryOpen(true)} size="sm" /></div>;
               }
               return (
-                <SortableMetric key={item.metricId} id={item.metricId} isEditMode={isEditMode} onRemove={handleRemoveMetric} className={spanClass}>
+                <SortableMetric key={item.metricId} id={item.metricId} isEditMode={isEditMode} onRemove={handleRemoveMetric} className={spanClass} isActive={activeMetricId === item.metricId}>
                   {renderMetric(item.metricId, item.index)}
                 </SortableMetric>
               );
             })}
           </div>
         </SortableContext>
+        <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
+          {activeMetricId ? (
+            <div className="rounded-xl shadow-2xl ring-2 ring-primary/40 bg-background/95 backdrop-blur-sm overflow-hidden opacity-95 pointer-events-none" style={{ transform: 'scale(1.02)' }}>
+              {renderMetric(activeMetricId, metricsOrder.indexOf(activeMetricId))}
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <MetricsLibraryModal
