@@ -8,13 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      "/api/calendar": {
-        target: "https://nfs.faireconomy.media",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/calendar/, ""),
-      },
-    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
