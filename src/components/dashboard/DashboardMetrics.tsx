@@ -46,9 +46,10 @@ interface SortableMetricProps {
   onRemove: (id: string) => void;
   children: ReactNode;
   className?: string;
+  isActive?: boolean;
 }
 
-const SortableMetric = ({ id, isEditMode, onRemove, children, className }: SortableMetricProps) => {
+const SortableMetric = ({ id, isEditMode, onRemove, children, className, isActive }: SortableMetricProps) => {
   const {
     attributes,
     listeners,
@@ -56,10 +57,14 @@ const SortableMetric = ({ id, isEditMode, onRemove, children, className }: Sorta
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({
+    id,
+    animateLayoutChanges: () => true,
+    transition: { duration: 220, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' },
+  });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 
@@ -67,7 +72,7 @@ const SortableMetric = ({ id, isEditMode, onRemove, children, className }: Sorta
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative ${isDragging ? 'z-50 opacity-90' : ''} ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''} ${className || ''}`}
+      className={`relative ${(isDragging || isActive) ? 'opacity-30' : ''} ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''} ${className || ''}`}
     >
       {isEditMode && (
         <>
