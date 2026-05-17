@@ -43,6 +43,7 @@ import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 
 import SupportedPlatforms from "./pages/SupportedPlatforms";
+import SupportedBrokers from "./pages/SupportedBrokers";
 import Drawdown from "./pages/chartroom/Drawdown";
 import ConsecutiveWinnersLosers from "./pages/chartroom/ConsecutiveWinnersLosers";
 import ExitAnalysis from "./pages/edgelab/ExitAnalysis";
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
         <Route path="/pricing" element={<Pricing />} />
         
         <Route path="/supported-platforms" element={<SupportedPlatforms />} />
+        <Route path="/supported-brokers" element={<SupportedBrokers />} />
         <Route path="/entering" element={<Entering />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
