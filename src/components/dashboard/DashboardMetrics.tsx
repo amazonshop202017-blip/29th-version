@@ -8,12 +8,14 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -44,9 +46,10 @@ interface SortableMetricProps {
   onRemove: (id: string) => void;
   children: ReactNode;
   className?: string;
+  isActive?: boolean;
 }
 
-const SortableMetric = ({ id, isEditMode, onRemove, children, className }: SortableMetricProps) => {
+const SortableMetric = ({ id, isEditMode, onRemove, children, className, isActive }: SortableMetricProps) => {
   const {
     attributes,
     listeners,
@@ -54,10 +57,14 @@ const SortableMetric = ({ id, isEditMode, onRemove, children, className }: Sorta
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({
+    id,
+    animateLayoutChanges: () => true,
+    transition: { duration: 220, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' },
+  });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 
@@ -65,7 +72,7 @@ const SortableMetric = ({ id, isEditMode, onRemove, children, className }: Sorta
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative ${isDragging ? 'z-50 opacity-90' : ''} ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''} ${className || ''}`}
+      className={`relative ${(isDragging || isActive) ? 'opacity-30' : ''} ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''} ${className || ''}`}
     >
       {isEditMode && (
         <>
@@ -145,8 +152,17 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
     updatePreferences({ dashboardMetricsOrder: metricsOrder });
   }, [metricsOrder, updatePreferences]);
 
+  const [activeMetricId, setActiveMetricId] = useState<string | null>(null);
+
+  const handleMetricDragStart = (event: DragStartEvent) => {
+    setActiveMetricId(event.active.id as string);
+    document.body.style.cursor = 'grabbing';
+  };
+
   const handleMetricDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveMetricId(null);
+    document.body.style.cursor = '';
     if (over && active.id !== over.id) {
       setMetricsOrder((items) => {
         const oldIndex = items.indexOf(active.id as string);
@@ -154,6 +170,11 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  const handleMetricDragCancel = () => {
+    setActiveMetricId(null);
+    document.body.style.cursor = '';
   };
 
   const handleAddMetric = (metricId: string) => {
@@ -277,8 +298,14 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
 
   return (
     <>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleMetricDragEnd}>
-        <SortableContext items={metricsOrder} strategy={horizontalListSortingStrategy}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleMetricDragStart}
+        onDragEnd={handleMetricDragEnd}
+        onDragCancel={handleMetricDragCancel}
+      >
+        <SortableContext items={metricsOrder} strategy={rectSortingStrategy}>
           <div className={`grid ${gridColsClass} gap-3 auto-rows-fr`}>
             {allItems.map((item, i) => {
               const isLast = i === allItems.length - 1;
@@ -290,16 +317,23 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
                 needsLgSpan ? 'lg:col-span-2' : '',
               ].filter(Boolean).join(' ') : '';
               if (item.type === 'add') {
-                return <div key="__add__" className={spanClass}><AddWidgetPlaceholder onClick={() => setIsMetricsLibraryOpen(true)} /></div>;
+                return <div key="__add__" className={spanClass}><AddWidgetPlaceholder onClick={() => setIsMetricsLibraryOpen(true)} size="sm" /></div>;
               }
               return (
-                <SortableMetric key={item.metricId} id={item.metricId} isEditMode={isEditMode} onRemove={handleRemoveMetric} className={spanClass}>
+                <SortableMetric key={item.metricId} id={item.metricId} isEditMode={isEditMode} onRemove={handleRemoveMetric} className={spanClass} isActive={activeMetricId === item.metricId}>
                   {renderMetric(item.metricId, item.index)}
                 </SortableMetric>
               );
             })}
           </div>
         </SortableContext>
+        <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
+          {activeMetricId ? (
+            <div className="rounded-xl shadow-2xl ring-2 ring-primary/40 bg-background/95 backdrop-blur-sm overflow-hidden opacity-95 pointer-events-none" style={{ transform: 'scale(1.02)' }}>
+              {renderMetric(activeMetricId, metricsOrder.indexOf(activeMetricId))}
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <MetricsLibraryModal

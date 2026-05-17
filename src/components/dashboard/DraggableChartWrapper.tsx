@@ -10,6 +10,7 @@ interface DraggableChartWrapperProps {
   colSpan?: number;
   rowSpan?: number;
   onRemove?: (id: string) => void;
+  isActive?: boolean;
 }
 
 export const DraggableChartWrapper = ({ 
@@ -18,7 +19,8 @@ export const DraggableChartWrapper = ({
   isEditMode,
   colSpan = 1,
   rowSpan = 1,
-  onRemove
+  onRemove,
+  isActive = false,
 }: DraggableChartWrapperProps) => {
   const {
     attributes,
@@ -27,10 +29,14 @@ export const DraggableChartWrapper = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({
+    id,
+    animateLayoutChanges: () => true,
+    transition: { duration: 220, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' },
+  });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 
@@ -42,7 +48,7 @@ export const DraggableChartWrapper = ({
       ref={setNodeRef}
       style={style}
       className={`${colSpanClass} ${rowSpanClass} relative ${
-        isDragging ? 'z-50 opacity-90' : ''
+        isDragging || isActive ? 'opacity-30' : ''
       } ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''}`}
     >
       {isEditMode && (

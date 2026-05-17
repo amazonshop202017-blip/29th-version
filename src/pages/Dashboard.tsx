@@ -9,6 +9,9 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -80,6 +83,7 @@ const Dashboard = () => {
   const { isEditMode } = useDashboardEdit();
   const { getPreferences, updatePreferences, user } = useAuth();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [chartOrder, setChartOrder] = useState<string[]>(() => {
     const prefs = getPreferences();
     if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
@@ -119,16 +123,39 @@ const Dashboard = () => {
     updatePreferences({ dashboardChartOrder: chartOrder });
   }, [chartOrder, updatePreferences]);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    document.body.style.cursor = 'grabbing';
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
+    document.body.style.cursor = '';
 
-    if (over && active.id !== over.id) {
-      setChartOrder((items) => {
-        const oldIndex = items.indexOf(active.id as string);
-        const newIndex = items.indexOf(over.id as string);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+    if (!over || active.id === over.id) return;
+    const overId = over.id as string;
+    const activeIdStr = active.id as string;
+
+    setChartOrder((items) => {
+      const oldIndex = items.indexOf(activeIdStr);
+      if (oldIndex < 0) return items;
+      if (overId.startsWith('__gap_')) {
+        // append to end
+        const next = [...items];
+        next.splice(oldIndex, 1);
+        next.push(activeIdStr);
+        return next;
+      }
+      const newIndex = items.indexOf(overId);
+      if (newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    document.body.style.cursor = '';
   };
 
   const handleAddChart = (chartId: string) => {
@@ -147,6 +174,12 @@ const Dashboard = () => {
     const ChartComponent = config.component;
     return <ChartComponent />;
   };
+
+  // Compute trailing gap count at lg (3 col) breakpoint
+  const totalCols = chartOrder.reduce((acc, id) => acc + (CHART_CONFIGS[id]?.colSpan || 1), 0);
+  const lgGapCount = (3 - (totalCols % 3)) % 3;
+  // ensure at least 2 add placeholders visible in edit mode for the user to drop/click
+  const placeholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -169,7 +202,9 @@ const Dashboard = () => {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2">
@@ -184,19 +219,26 @@ const Dashboard = () => {
                   colSpan={config.colSpan}
                   rowSpan={config.rowSpan}
                   onRemove={handleRemoveChart}
+                  isActive={activeId === chartId}
                 >
                   {renderChart(chartId)}
                 </DraggableChartWrapper>
               );
             })}
-            {isEditMode && (
-              <>
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <GapDroppable key={`__gap_${i}__`} id={`__gap_${i}__`}>
                 <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
-                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
-              </>
-            )}
+              </GapDroppable>
+            ))}
           </div>
         </SortableContext>
+        <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
+          {activeId ? (
+            <div className="rounded-xl shadow-2xl ring-2 ring-primary/40 bg-background/95 backdrop-blur-sm overflow-hidden opacity-95 pointer-events-none" style={{ transform: 'scale(1.02)' }}>
+              {renderChart(activeId)}
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <ChartLibraryModal
@@ -205,6 +247,15 @@ const Dashboard = () => {
         activeCharts={chartOrder}
         onAddChart={handleAddChart}
       />
+    </div>
+  );
+};
+
+const GapDroppable = ({ id, children }: { id: string; children: React.ReactNode }) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={`col-span-1 transition-all ${isOver ? 'ring-2 ring-primary/60 rounded-xl' : ''}`}>
+      {children}
     </div>
   );
 };
