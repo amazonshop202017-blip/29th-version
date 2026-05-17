@@ -98,14 +98,13 @@ function fmt24(h: number): string {
   return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
 }
 
-// Volume curve — defined in NY local time (EDT=UTC-4), mapped to UTC 0-23
 const VOL_LDN=[
-  0.16,0.16,0.17,0.17, // UTC 0-3  = NY 8-11pm  red stable
-  0.18,0.26,0.34,0.65, // UTC 4-7  = NY 12am-3am rising red→yellow→green
-  0.70,0.74,0.72,0.68, // UTC 8-11 = NY 4-7am   green plateau/dip
-  0.76,0.83,0.88,0.93, // UTC 12-15= NY 8-11am  green steep rise
-  0.90,0.78,0.65,0.54, // UTC 16-19= NY 12-3pm  green/yellow falling
-  0.40,0.28,0.22,0.18, // UTC 20-23= NY 4-7pm   yellow/red falling
+  0.16,0.16,0.17,0.17,
+  0.18,0.26,0.34,0.65,
+  0.70,0.74,0.72,0.68,
+  0.76,0.83,0.88,0.93,
+  0.90,0.78,0.65,0.54,
+  0.40,0.28,0.22,0.18,
 ];
 
 function volLevel(utcH: number): "low"|"medium"|"high" {
@@ -117,7 +116,6 @@ function volAtUTC(utcH: number): number {
   const h=((utcH%24)+24)%24;
   const lo=Math.floor(h)%24, hi=(lo+1)%24;
   const base=VOL_LDN[lo]*(1-(h-lo))+VOL_LDN[hi]*(h-lo);
-  // Tokyo open bump: peaks UTC 0:20, sigma=0.35h
   const dist=Math.min(Math.abs(h-0.33),24-Math.abs(h-0.33));
   return Math.min(1, base+0.16*Math.exp(-0.5*(dist/0.35)**2));
 }
@@ -141,6 +139,60 @@ function detectLocalTZ(): string {
   return "America/New_York";
 }
 
+function useIsDark(): boolean {
+  const [dark, setDark] = useState(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
+  useEffect(() => {
+    const el = document.documentElement;
+    const obs = new MutationObserver(() => setDark(el.classList.contains("dark")));
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
+type Palette = {
+  pageBg: string; cardBg: string; topBar: string;
+  textPrimary: string; textSecondary: string; textTertiary: string; textMuted: string; textFaint: string;
+  borderSoft: string; borderMed: string; borderStrong: string;
+  rowAlt: string; rulerLeft: string; rulerRight: string; rulerDivider: string;
+  trackBg: string; trackDivider: string;
+  flagBg: string; flagBorder: string; flagShadow: string;
+  dropdownBg: string; dropdownHover: string; dropdownSelectedBg: string; dropdownSelectedText: string; dropdownBorder: string;
+  badgeBg: string;
+  toggleOff: string;
+  volBadgeBg: string; volBadgeStroke: string; volOffFill: string; volOffStroke: string;
+  cardShadow: string;
+};
+
+const LIGHT: Palette = {
+  pageBg: "#f0f0f0", cardBg: "#ffffff", topBar: "#7b2fbe",
+  textPrimary: "#222", textSecondary: "#555", textTertiary: "#444", textMuted: "#888", textFaint: "#aaa",
+  borderSoft: "#eee", borderMed: "#ddd", borderStrong: "#e0e0e0",
+  rowAlt: "#fafafa", rulerLeft: "#f8f8f8", rulerRight: "#f0f0f0", rulerDivider: "rgba(255,255,255,0.9)",
+  trackBg: "#eeeeee", trackDivider: "rgba(255,255,255,0.9)",
+  flagBg: "#ffffff", flagBorder: "#e0e0e0", flagShadow: "0 1px 4px rgba(0,0,0,0.12)",
+  dropdownBg: "#ffffff", dropdownHover: "#f9f9f9", dropdownSelectedBg: "#f0e6ff", dropdownSelectedText: "#7b2fbe", dropdownBorder: "#ddd",
+  badgeBg: "#ffffff",
+  toggleOff: "#ccc",
+  volBadgeBg: "#ffffff", volBadgeStroke: "#e0e0e0", volOffFill: "#e8e8e8", volOffStroke: "#ccc",
+  cardShadow: "0 2px 8px rgba(0,0,0,0.12)",
+};
+
+const DARK: Palette = {
+  pageBg: "#0a0a0a", cardBg: "#171717", topBar: "#7b2fbe",
+  textPrimary: "#f5f5f5", textSecondary: "#a3a3a3", textTertiary: "#d4d4d4", textMuted: "#737373", textFaint: "#525252",
+  borderSoft: "#262626", borderMed: "#333", borderStrong: "#404040",
+  rowAlt: "#1c1c1c", rulerLeft: "#1f1f1f", rulerRight: "#171717", rulerDivider: "rgba(0,0,0,0.5)",
+  trackBg: "#2a2a2a", trackDivider: "rgba(0,0,0,0.5)",
+  flagBg: "#262626", flagBorder: "#404040", flagShadow: "0 1px 4px rgba(0,0,0,0.4)",
+  dropdownBg: "#1f1f1f", dropdownHover: "#262626", dropdownSelectedBg: "#3a1f5a", dropdownSelectedText: "#d4b3ff", dropdownBorder: "#333",
+  badgeBg: "#262626",
+  toggleOff: "#404040",
+  volBadgeBg: "#171717", volBadgeStroke: "#333", volOffFill: "#404040", volOffStroke: "#525252",
+  cardShadow: "0 2px 8px rgba(0,0,0,0.5)",
+};
+
 export default function ForexClock() {
   const [selectedTZ, setSelectedTZ] = useState(detectLocalTZ);
   const [use24h, setUse24h]         = useState(false);
@@ -151,6 +203,8 @@ export default function ForexClock() {
   const barRef  = useRef<HTMLDivElement>(null);
   const snapRef = useRef<number>(0);
   const nowRef  = useRef(new Date());
+  const isDark = useIsDark();
+  const c = isDark ? DARK : LIGHT;
 
   useEffect(()=>{
     const tick=()=>{
@@ -239,28 +293,28 @@ export default function ForexClock() {
 
   return (
     <div onClick={()=>showDropdown&&setShowDropdown(false)}
-      style={{minHeight:"100vh",background:"#f0f0f0",display:"flex",alignItems:"flex-start",
+      style={{minHeight:"100vh",background:c.pageBg,display:"flex",alignItems:"flex-start",
               justifyContent:"center",padding:"24px 16px",
               fontFamily:"'Open Sans','Helvetica Neue',Arial,sans-serif"}}>
-      <div style={{width:"100%",maxWidth:"820px",background:"white",
-                   borderRadius:"8px",boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
+      <div style={{width:"100%",maxWidth:"820px",background:c.cardBg,
+                   borderRadius:"8px",boxShadow:c.cardShadow}}>
 
         {/* Purple top bar */}
-        <div style={{height:"6px",background:"#7b2fbe",borderRadius:"8px 8px 0 0"}}/>
+        <div style={{height:"6px",background:c.topBar,borderRadius:"8px 8px 0 0"}}/>
 
         {/* Header */}
         <div style={{padding:"20px 24px 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <h1 style={{fontSize:"26px",fontWeight:700,color:"#222",margin:0,lineHeight:1.2}}>
+            <h1 style={{fontSize:"26px",fontWeight:700,color:c.textPrimary,margin:0,lineHeight:1.2}}>
               Forex Market Time Zone Converter
             </h1>
             <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px"}}>
-              <span style={{fontSize:"13px",color:"#555",fontWeight:600}}>24 Hour Time</span>
+              <span style={{fontSize:"13px",color:c.textSecondary,fontWeight:600}}>24 Hour Time</span>
               <div onClick={()=>setUse24h(v=>!v)}
                 style={{width:"44px",height:"24px",borderRadius:"12px",
-                        background:use24h?"#7b2fbe":"#ccc",position:"relative",
+                        background:use24h?c.topBar:c.toggleOff,position:"relative",
                         cursor:"pointer",transition:"background 0.2s"}}>
-                <div style={{width:"18px",height:"18px",borderRadius:"50%",background:"white",
+                <div style={{width:"18px",height:"18px",borderRadius:"50%",background:"#fff",
                              position:"absolute",top:"3px",left:use24h?"23px":"3px",
                              transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.3)"}}/>
               </div>
@@ -279,16 +333,16 @@ export default function ForexClock() {
                          justifyContent:"flex-end",paddingBottom:"8px"}}>
               <div style={{display:"flex",justifyContent:"space-between",
                            alignItems:"center",marginBottom:"4px"}}>
-                <span style={{fontSize:"11px",fontWeight:700,color:"#888",
+                <span style={{fontSize:"11px",fontWeight:700,color:c.textMuted,
                               textTransform:"uppercase",letterSpacing:"0.5px"}}>Timezone</span>
                 <button onClick={e=>{e.stopPropagation();setSelectedTZ(detectLocalTZ());}}
-                  style={{fontSize:"11px",color:"#7b2fbe",background:"none",
+                  style={{fontSize:"11px",color:isDark?"#d4b3ff":"#7b2fbe",background:"none",
                           border:"none",cursor:"pointer",padding:0}}>(reset)</button>
               </div>
               <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
                 <button onClick={()=>setShowDropdown(v=>!v)}
-                  style={{width:"100%",background:"#7b2fbe",border:"none",borderRadius:"4px",
-                          padding:"8px 12px",color:"white",fontSize:"13px",fontWeight:600,
+                  style={{width:"100%",background:c.topBar,border:"none",borderRadius:"4px",
+                          padding:"8px 12px",color:"#fff",fontSize:"13px",fontWeight:600,
                           cursor:"pointer",display:"flex",alignItems:"center",
                           justifyContent:"space-between",textAlign:"left"}}>
                   <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
@@ -297,18 +351,18 @@ export default function ForexClock() {
                 </button>
                 {showDropdown&&(
                   <div style={{position:"absolute",top:"calc(100% + 2px)",left:0,width:"250px",
-                               background:"white",border:"1px solid #ddd",borderRadius:"4px",
+                               background:c.dropdownBg,border:`1px solid ${c.dropdownBorder}`,borderRadius:"4px",
                                zIndex:1000,maxHeight:"260px",overflowY:"auto",
-                               boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
+                               boxShadow:isDark?"0 4px 12px rgba(0,0,0,0.6)":"0 4px 12px rgba(0,0,0,0.15)"}}>
                     {tzLabels.map(tz=>(
                       <button key={tz.value+tz.city}
                         onClick={()=>{setSelectedTZ(tz.value);setShowDropdown(false);}}
                         style={{width:"100%",padding:"8px 12px",
-                                background:selectedTZ===tz.value?"#f0e6ff":"transparent",
-                                border:"none",borderBottom:"1px solid #f0f0f0",
-                                color:selectedTZ===tz.value?"#7b2fbe":"#333",
+                                background:selectedTZ===tz.value?c.dropdownSelectedBg:"transparent",
+                                border:"none",borderBottom:`1px solid ${c.borderSoft}`,
+                                color:selectedTZ===tz.value?c.dropdownSelectedText:c.textTertiary,
                                 fontSize:"13px",cursor:"pointer",textAlign:"left",display:"block"}}
-                        onMouseEnter={e=>{if(selectedTZ!==tz.value)(e.currentTarget as HTMLElement).style.background="#f9f9f9";}}
+                        onMouseEnter={e=>{if(selectedTZ!==tz.value)(e.currentTarget as HTMLElement).style.background=c.dropdownHover;}}
                         onMouseLeave={e=>{if(selectedTZ!==tz.value)(e.currentTarget as HTMLElement).style.background="transparent";}}>
                         {tz.label}
                       </button>
@@ -328,18 +382,18 @@ export default function ForexClock() {
               return (
                 <div key={session.name}
                   style={{height:`${H_SESSION}px`,display:"flex",alignItems:"center",gap:"12px",
-                          borderTop:"1px solid #eee",background:idx%2===0?"white":"#fafafa",
+                          borderTop:`1px solid ${c.borderSoft}`,background:idx%2===0?c.cardBg:c.rowAlt,
                           paddingRight:"12px"}}>
                   <div style={{width:"40px",height:"40px",borderRadius:"50%",flexShrink:0,
-                               border:"2px solid #e0e0e0",display:"flex",alignItems:"center",
+                               border:`2px solid ${c.flagBorder}`,display:"flex",alignItems:"center",
                                justifyContent:"center",fontSize:"24px",lineHeight:1,
-                               background:"white",boxShadow:"0 1px 4px rgba(0,0,0,0.12)",
+                               background:c.flagBg,boxShadow:c.flagShadow,
                                overflow:"hidden"}}>{session.flag}</div>
                   <div style={{minWidth:0}}>
-                    <div style={{fontWeight:700,fontSize:"15px",color:"#222",lineHeight:1.2}}>
+                    <div style={{fontWeight:700,fontSize:"15px",color:c.textPrimary,lineHeight:1.2}}>
                       {session.name}</div>
-                    <div style={{fontSize:"13px",color:"#444",fontWeight:600}}>{timeStr}</div>
-                    <div style={{fontSize:"10px",color:"#888",whiteSpace:"nowrap",
+                    <div style={{fontSize:"13px",color:c.textTertiary,fontWeight:600}}>{timeStr}</div>
+                    <div style={{fontSize:"10px",color:c.textMuted,whiteSpace:"nowrap",
                                  overflow:"hidden",textOverflow:"ellipsis"}}>
                       {info.dayShort} {info.month}. {info.dayNum}{info.suffix} {cityAbbr} (UTC {fmtOffset(cityOff)})
                     </div>
@@ -349,15 +403,15 @@ export default function ForexClock() {
             })}
 
             {/* Volume label */}
-            <div style={{height:`${H_CHART}px`,borderTop:"1px solid #eee",background:"#fafafa",
+            <div style={{height:`${H_CHART}px`,borderTop:`1px solid ${c.borderSoft}`,background:c.rowAlt,
                          display:"flex",flexDirection:"column",justifyContent:"center",
                          paddingRight:"12px",borderRadius:"0 0 0 8px"}}>
-              <div style={{fontSize:"13px",color:"#444",lineHeight:1.4,marginBottom:"8px"}}>
+              <div style={{fontSize:"13px",color:c.textTertiary,lineHeight:1.4,marginBottom:"8px"}}>
                 Trading Volume is usually <strong>{vLevel}</strong> at this time of day.
               </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"white",
-                           border:"1px solid #ddd",borderRadius:"20px",padding:"4px 12px",
-                           fontSize:"13px",fontWeight:600,color:"#333",alignSelf:"flex-start"}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:c.badgeBg,
+                           border:`1px solid ${c.borderMed}`,borderRadius:"20px",padding:"4px 12px",
+                           fontSize:"13px",fontWeight:600,color:c.textTertiary,alignSelf:"flex-start"}}>
                 <div style={{width:"10px",height:"10px",borderRadius:"50%",
                              background:vColor,boxShadow:`0 0 4px ${vColor}`}}/>
                 {vLevel.charAt(0).toUpperCase()+vLevel.slice(1)}
@@ -376,7 +430,7 @@ export default function ForexClock() {
                       flexDirection:"column",alignItems:"center",
                       cursor:isDragging?"grabbing":"grab",
                       filter:"drop-shadow(0 3px 8px rgba(123,47,190,0.35))",userSelect:"none"}}>
-              <div style={{background:"#7b2fbe",borderRadius:"36px",display:"flex",
+              <div style={{background:c.topBar,borderRadius:"36px",display:"flex",
                            flexDirection:"column",alignItems:"center",
                            padding:"10px 14px 12px",minWidth:"88px"}}>
                 <div style={{width:"42px",height:"42px",borderRadius:"50%",
@@ -395,12 +449,12 @@ export default function ForexClock() {
                   {bubbleInfo.dayFull}</div>
               </div>
               <div style={{width:0,height:0,borderLeft:"10px solid transparent",
-                           borderRight:"10px solid transparent",borderTop:"12px solid #7b2fbe"}}/>
+                           borderRight:"10px solid transparent",borderTop:`12px solid ${c.topBar}`}}/>
             </div>
 
             {/* Continuous vertical line */}
             <div style={{position:"absolute",top:0,bottom:0,left:`${linePercent}%`,
-                         transform:"translateX(-50%)",width:"2px",background:"#7b2fbe",
+                         transform:"translateX(-50%)",width:"2px",background:c.topBar,
                          zIndex:10,pointerEvents:"none"}}/>
 
             {/* Ruler row */}
@@ -420,11 +474,11 @@ export default function ForexClock() {
                 </div>
                 <div style={{position:"absolute",left:"95.8%",transform:"translateX(-50%)",
                              display:"flex",alignItems:"flex-end",gap:"1px"}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#999">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill={isDark?"#bbb":"#999"}>
                     <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
                   </svg>
-                  <span style={{fontSize:"8px",color:"#999",lineHeight:1}}>z</span>
-                  <span style={{fontSize:"6px",color:"#bbb",lineHeight:1}}>z</span>
+                  <span style={{fontSize:"8px",color:c.textMuted,lineHeight:1}}>z</span>
+                  <span style={{fontSize:"6px",color:c.textFaint,lineHeight:1}}>z</span>
                 </div>
               </div>
 
@@ -435,17 +489,17 @@ export default function ForexClock() {
                 style={{position:"relative",height:"28px",
                         cursor:isDragging?"grabbing":"col-resize",userSelect:"none"}}>
                 <div style={{position:"absolute",inset:0,display:"flex"}}>
-                  <div style={{width:"50%",height:"100%",background:"#f8f8f8",borderRight:"1px solid #ddd"}}/>
-                  <div style={{width:"50%",height:"100%",background:"#f0f0f0"}}/>
+                  <div style={{width:"50%",height:"100%",background:c.rulerLeft,borderRight:`1px solid ${c.borderMed}`}}/>
+                  <div style={{width:"50%",height:"100%",background:c.rulerRight}}/>
                 </div>
                 <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center"}}>
                   <div style={{position:"absolute",left:"0%",transform:"translateX(-50%)",
-                               fontSize:"12px",color:"#bbb",fontWeight:use24h?600:400}}>
+                               fontSize:"12px",color:c.textFaint,fontWeight:use24h?600:400}}>
                     {use24h?"0":"•"}
                   </div>
                   {Array.from({length:23},(_,i)=>i+1).map(h=>(
                     <div key={h} style={{position:"absolute",left:`${(h/24)*100}%`,
-                                         transform:"translateX(-50%)",fontSize:"12px",color:"#aaa",
+                                         transform:"translateX(-50%)",fontSize:"12px",color:c.textFaint,
                                          fontWeight:use24h?(h===6||h===12||h===18?600:400):(h===12?600:400),
                                          whiteSpace:"nowrap"}}>
                       {use24h?h:h<=12?h:h-12}
@@ -466,21 +520,21 @@ export default function ForexClock() {
               const nyseOpenPct= isNY?wrapH(nyseOpenUTC+userOffset)/24*100:0;
               return (
                 <div key={session.name}
-                  style={{height:`${H_SESSION}px`,borderTop:"1px solid #eee",
-                          background:idx%2===0?"white":"#fafafa",
+                  style={{height:`${H_SESSION}px`,borderTop:`1px solid ${c.borderSoft}`,
+                          background:idx%2===0?c.cardBg:c.rowAlt,
                           display:"flex",flexDirection:"column",justifyContent:"center",
                           padding:"0 4px"}}>
                   <div style={{fontSize:"10px",fontWeight:700,marginBottom:"4px",
-                               color:sessionOpen?session.color:"#aaa",
+                               color:sessionOpen?session.color:c.textFaint,
                                textTransform:"uppercase",letterSpacing:"0.5px"}}>
                     {session.name} session {sessionOpen?"open":"closed"}
                   </div>
-                  <div style={{position:"relative",height:"28px",background:"#eeeeee",
+                  <div style={{position:"relative",height:"28px",background:c.trackBg,
                                borderRadius:"3px",overflow:"visible"}}>
                     {Array.from({length:11},(_,i)=>(i+1)*2).map(h=>(
                       <div key={h} style={{position:"absolute",top:0,bottom:0,
                                            left:`${(h/24)*100}%`,width:"1px",
-                                           background:"rgba(255,255,255,0.9)",zIndex:1}}/>
+                                           background:c.trackDivider,zIndex:1}}/>
                     ))}
                     {segs.map((seg,si)=>(
                       <div key={si} style={{position:"absolute",top:"4px",bottom:"4px",
@@ -492,9 +546,9 @@ export default function ForexClock() {
                       <div style={{position:"absolute",left:`${nyseOpenPct}%`,top:0,bottom:0,
                                    zIndex:5,pointerEvents:"none"}}>
                         <div style={{position:"absolute",top:"2px",bottom:"2px",left:0,
-                                     width:"2px",background:"rgba(0,0,0,0.55)",borderRadius:"1px"}}/>
+                                     width:"2px",background:isDark?"rgba(255,255,255,0.65)":"rgba(0,0,0,0.55)",borderRadius:"1px"}}/>
                         <div style={{position:"absolute",bottom:"calc(100% + 2px)",left:"4px",
-                                     fontSize:"8px",fontWeight:700,color:"rgba(30,30,30,0.75)",
+                                     fontSize:"8px",fontWeight:700,color:isDark?"rgba(230,230,230,0.85)":"rgba(30,30,30,0.75)",
                                      whiteSpace:"nowrap",letterSpacing:"0.4px",
                                      textTransform:"uppercase",lineHeight:1}}>NYSE OPEN</div>
                       </div>
@@ -505,7 +559,7 @@ export default function ForexClock() {
             })}
 
             {/* Volume chart */}
-            <div style={{height:`${H_CHART}px`,borderTop:"1px solid #eee",background:"#fafafa",
+            <div style={{height:`${H_CHART}px`,borderTop:`1px solid ${c.borderSoft}`,background:c.rowAlt,
                          display:"flex",alignItems:"center",padding:"8px 0",
                          borderRadius:"0 0 8px 0"}}>
               <svg viewBox={`0 0 ${CW} ${CH}`} width="100%" height={CH}
@@ -514,8 +568,8 @@ export default function ForexClock() {
                   <linearGradient id="volGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     {localVolData.map((v,i)=>{
                       const pct=(i/(localVolData.length-1))*100;
-                      const c=v>=0.65?"#5cb85c":v>=0.34?"#f0a030":"#cc2e84";
-                      return <stop key={i} offset={`${pct}%`} stopColor={c}/>;
+                      const col=v>=0.65?"#5cb85c":v>=0.34?"#f0a030":"#cc2e84";
+                      return <stop key={i} offset={`${pct}%`} stopColor={col}/>;
                     })}
                   </linearGradient>
                 </defs>
@@ -530,13 +584,13 @@ export default function ForexClock() {
                     <g>
                       <rect x={cx-R-3} y={topY-R-3} width={(R+3)*2}
                         height={botY+R+3-(topY-R-3)} rx={R+3}
-                        fill="white" stroke="#e0e0e0" strokeWidth="1"/>
+                        fill={c.volBadgeBg} stroke={c.volBadgeStroke} strokeWidth="1"/>
                       <circle cx={cx} cy={topY} r={R}
-                        fill={high?"#5cb85c":"#e8e8e8"} stroke={high?"#4aaa4a":"#ccc"} strokeWidth="1.5"/>
+                        fill={high?"#5cb85c":c.volOffFill} stroke={high?"#4aaa4a":c.volOffStroke} strokeWidth="1.5"/>
                       <circle cx={cx} cy={cy} r={R}
-                        fill={med?"#f0a030":"#e8e8e8"} stroke={med?"#d8902a":"#ccc"} strokeWidth="1.5"/>
+                        fill={med?"#f0a030":c.volOffFill} stroke={med?"#d8902a":c.volOffStroke} strokeWidth="1.5"/>
                       <circle cx={cx} cy={botY} r={R}
-                        fill={low?"#cc2e84":"#e8e8e8"} stroke={low?"#aa2070":"#ccc"} strokeWidth="1.5"/>
+                        fill={low?"#cc2e84":c.volOffFill} stroke={low?"#aa2070":c.volOffStroke} strokeWidth="1.5"/>
                     </g>
                   );
                 })()}
