@@ -273,7 +273,7 @@ export function FilterPanel({ open, onClose }: FilterPanelProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-6 py-3 border-t border-border bg-muted/30">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t border-border bg-muted/30">
           <button
             type="button"
             onClick={handleReset}
