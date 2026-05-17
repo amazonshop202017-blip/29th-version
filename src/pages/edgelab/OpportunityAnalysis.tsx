@@ -71,7 +71,7 @@ function cellColor(expectancy: number): string {
   if (expectancy > 0.5) return 'hsl(142 76% 35%)';
   if (expectancy > 0.2) return 'hsl(142 76% 25%)';
   if (expectancy > 0) return 'hsl(142 76% 18%)';
-  if (expectancy === 0) return 'hsl(222 47% 14%)';
+  if (expectancy === 0) return 'hsl(0 0% 12%)';
   if (expectancy > -0.2) return 'hsl(0 84% 18%)';
   if (expectancy > -0.5) return 'hsl(0 84% 25%)';
   return 'hsl(0 84% 35%)';
