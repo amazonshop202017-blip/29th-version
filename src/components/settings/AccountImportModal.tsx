@@ -465,8 +465,9 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
                 href={SOURCE_BROKER_GUIDE[importSource].href}
                 target={SOURCE_BROKER_GUIDE[importSource].href === '#' ? undefined : '_blank'}
                 rel="noopener noreferrer"
-                className="inline-block text-xs text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-md hover:bg-amber-500/15 transition-colors"
               >
+                <Info className="w-3 h-3" />
                 How to import {SOURCE_BROKER_GUIDE[importSource].label} file
               </a>
             )}
