@@ -22,7 +22,7 @@ export function ForexCalendarPage({ config }: ForexCalendarPageProps) {
   } = useFilters(events);
 
   return (
-    <div className="min-h-screen bg-gray-50/80">
+    <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <CalendarHeader />
 
@@ -45,8 +45,8 @@ export function ForexCalendarPage({ config }: ForexCalendarPageProps) {
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
-              <p className="text-sm text-gray-500 font-medium">
+              <div className="h-8 w-8 border-2 border-border border-t-foreground rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground font-medium">
                 Loading economic events...
               </p>
             </div>
@@ -54,9 +54,9 @@ export function ForexCalendarPage({ config }: ForexCalendarPageProps) {
         )}
 
         {error && !isLoading && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-sm text-red-700 font-medium">{error}</p>
-            <p className="text-xs text-red-500 mt-1">
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 rounded-xl p-6 text-center">
+            <p className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-1">
               Please check your connection and try again.
             </p>
           </div>
@@ -66,7 +66,7 @@ export function ForexCalendarPage({ config }: ForexCalendarPageProps) {
           <>
             {filteredGroups.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-sm text-gray-400 font-medium">
+                <p className="text-sm text-muted-foreground font-medium">
                   No events match your current filters.
                 </p>
               </div>

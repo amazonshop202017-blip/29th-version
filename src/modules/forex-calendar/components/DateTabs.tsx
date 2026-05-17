@@ -27,8 +27,8 @@ export function DateTabs({
               className={cn(
                 "px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 border cursor-pointer",
                 isActive
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:bg-muted hover:border-border"
               )}
             >
               {label}
