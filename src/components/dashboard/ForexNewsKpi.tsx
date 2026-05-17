@@ -114,7 +114,7 @@ export const ForexNewsKpi = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.6 }}
-      className="glass-card rounded-xl p-6 h-full flex flex-col min-h-0"
+      className="glass-card rounded-xl p-6 h-[400px] flex flex-col min-h-0"
     >
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
