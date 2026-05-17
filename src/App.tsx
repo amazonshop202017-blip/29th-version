@@ -56,6 +56,7 @@ import TradeManagement from "./pages/chartroom/TradeManagement";
 import OpportunityAnalysis from "./pages/edgelab/OpportunityAnalysis";
 import MonteCarlo from "./pages/tools/MonteCarlo";
 import StreakAnalysis from "./pages/tools/StreakAnalysis";
+import ForexClock from "./pages/tools/ForexClock";
 import PropFirmLayout from "./pages/propfirm/PropFirmLayout";
 import PropFirmDashboard from "./pages/propfirm/PropFirmDashboard";
 import PropFirmAccountsPage from "./pages/propfirm/PropFirmAccountsPage";
@@ -135,6 +136,7 @@ const AuthenticatedApp = () => {
                                   <Route path="/exit-analyzer" element={<Navigate to="/edge-lab/opportunity-analysis" replace />} />
                                   <Route path="/tools/monte-carlo" element={<MonteCarlo />} />
                                   <Route path="/tools/streak-analysis" element={<StreakAnalysis />} />
+                                  <Route path="/tools/forex-clock" element={<ForexClock />} />
                                   <Route path="/forex-news" element={<ForexNews />} />
                                   <Route path="/prop-firm" element={<PropFirmLayout />}>
                                     <Route index element={<PropFirmDashboard />} />
