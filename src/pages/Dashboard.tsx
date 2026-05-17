@@ -83,6 +83,7 @@ const Dashboard = () => {
   const { isEditMode } = useDashboardEdit();
   const { getPreferences, updatePreferences, user } = useAuth();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [chartOrder, setChartOrder] = useState<string[]>(() => {
     const prefs = getPreferences();
     if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
