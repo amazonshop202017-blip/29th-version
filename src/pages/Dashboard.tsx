@@ -70,7 +70,7 @@ const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   instrumentDistribution: { component: InstrumentTradeDistribution, colSpan: 2, rowSpan: 1 },
   directionSplit: { component: DirectionSplit, colSpan: 2, rowSpan: 1 },
   yearlyCalendar: { component: YearlyCalendarWidget, colSpan: 2, rowSpan: 1 },
-  forexNewsKpi: { component: ForexNewsKpi, colSpan: 1, rowSpan: 2 },
+  forexNewsKpi: { component: ForexNewsKpi, colSpan: 1, rowSpan: 1 },
 };
 
 const Dashboard = () => {
