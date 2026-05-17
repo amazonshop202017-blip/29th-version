@@ -12,8 +12,8 @@ interface Broker {
 }
 
 const brokers: Broker[] = [
-  { name: 'MT5', fileImport: true, autoSync: false },
-  { name: 'Tradovate', fileImport: true, autoSync: false },
+  { name: 'MetaTrader 5 (MT5)', fileImport: true, autoSync: false },
+  { name: 'Tradovate / NinjaTrader', fileImport: true, autoSync: false },
   { name: 'Zerodha', fileImport: true, autoSync: true },
 ];
 
