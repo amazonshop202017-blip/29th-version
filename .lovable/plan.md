@@ -1,66 +1,64 @@
 ## Goal
 
-Replace the current "flow-pack" chart grid with a true cell-based layout so every empty slot shows a "Click to add widget" button, widgets can be dropped into any specific cell, and users can intentionally leave empty cells without the layout collapsing.
+Make widget drag-and-drop on the Dashboard feel smooth and predictable, fix the oversized drag preview, ensure widgets can be dropped into visually empty grid cells, and surface "click to add" placeholders in those empty cells while in edit mode.
 
-## Why the current layout fails
+## Problems observed
 
-Today the chart grid is a CSS flow grid: widgets are rendered in order with `col-span` 1 or 2 and the browser auto-packs them. When a 2-col widget follows a 1-col widget on a 3-col row, a 1-col gap appears at row end — and that gap is **unreachable** because no droppable lives there. Trailing "+ Add" tiles only land at the very end of the flow, never inside earlier gaps. There is no way for a user to say "put this chart in row 3, column 2".
+1. While dragging, the picked-up KPI/widget visually balloons (~5x) — caused by the sortable item using `CSS.Transform.toString(transform)` which combines translate with scaling on some browsers, plus no overlay being used. Dragged element also takes its grid cell sizing with it.
+2. Empty grid cells (where `col-span-2` widgets leave a gap, or when item count doesn't fill a row) cannot be dropped onto because no sortable target exists there.
+3. No way to click an empty grid gap to add a new widget while in edit mode.
+4. Drop animation/transition is jumpy: PointerSensor distance is 8px (fine) but no `DragOverlay` is used, so the original item stays in place and re-renders with `transform` causing the snap.
 
-## New model: positioned grid
+## Plan
 
-### Data shape
-Each chart entry becomes `{ id, row, col, colSpan, rowSpan }` instead of just an id string. Stored as `dashboardChartLayout` in user preferences (keep `dashboardChartOrder` as a fallback migrator — on first load with the old format, convert it by greedy-packing into the new grid, then save).
+### 1. Introduce a `DragOverlay` for both grids
+Files: `src/pages/Dashboard.tsx`, `src/components/dashboard/DashboardMetrics.tsx`
 
-### Grid rendering
-- Fixed column count per breakpoint: 1 (mobile), 2 (md), 3 (lg). Position uses lg as canonical; on smaller breakpoints we re-flow by sorting (row, col) and clamping `colSpan` to fit.
-- Compute total rows = `max(row + rowSpan)` for placed widgets, then add **one trailing empty row** while in edit mode (so users always have somewhere to extend).
-- Build a `Set<"row,col">` of occupied cells. For every cell in the grid that is NOT occupied, render an `AddWidgetPlaceholder` wrapped in a `useDroppable` keyed by `cell:<row>,<col>` — this is what fixes the screenshot's blank area.
-- Outside edit mode: hide empty cells entirely (use `grid-auto-rows` + explicit placement so empty cells just leave whitespace, matching today's visual when full).
+- Track `activeId` via `onDragStart` / `onDragEnd` / `onDragCancel`.
+- Wrap the grid in `<DragOverlay>` rendering a "ghost" copy of the dragged widget at its natural size (clamped to a max width so a `col-span-2` chart doesn't render huge — use the original cell's measured width via a ref map, or a sensible max like `w-[420px]`).
+- In `SortableMetric` / `DraggableChartWrapper`, hide the original (`opacity-0`) while it's the active item, so only the overlay is visible.
+- Use `CSS.Translate.toString(transform)` (translate-only) instead of `CSS.Transform.toString(transform)` on the sortable items themselves to stop accidental scaling on neighbors during reflow.
 
-### Drag behavior
-- Dragging a widget onto an empty cell `cell:r,c`: update that widget's `{row, col}` to `(r, c)`. If its `colSpan` would overflow the row, clamp it (or refuse the drop if the destination cell is occupied by another widget's span).
-- Dragging onto an occupied cell that belongs to another widget: swap their positions (preserve each widget's own span).
-- Use `DragOverlay` already added in the previous step; keep the smooth translate-only transforms.
-- Collision detection: switch from `closestCenter` to `pointerWithin` so the cell directly under the pointer wins — important for landing in a specific empty slot.
+### 2. Smoother sortable transitions
+- Pass an explicit `transition` from `useSortable` (already provided) but add `animateLayoutChanges: () => true` and `transition: { duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }` to each `useSortable` call so neighbors slide smoothly.
+- Keep `PointerSensor` distance at 8 and `TouchSensor` delay/tolerance as-is.
+- Use `rectSwappingStrategy` or keep `rectSortingStrategy` for charts (current) but switch metrics from `horizontalListSortingStrategy` to `rectSortingStrategy` so multi-row metric grids reorder correctly.
 
-### Adding widgets
-- Clicking any empty-cell placeholder opens the existing `ChartLibraryModal`, but remembers the clicked cell. When the user picks a chart, it is inserted at that cell (instead of being appended).
-- Removing a widget leaves its cell(s) empty (no auto-compaction), which is exactly the behavior the user asked for.
+### 3. Fillable empty cells in the charts grid
+File: `src/pages/Dashboard.tsx`
 
-### Resize (optional, scoped out unless requested)
-Keeping current `colSpan`/`rowSpan` defaults from `CHART_CONFIGS`. A future pass can add drag-handles on edges to resize; not part of this plan.
+The chart grid uses 3 columns with mixed `col-span` (1 or 2). When the running column total leaves a 1-col gap at row end, that gap is unreachable.
 
-## Responsive behavior
+- Compute "trailing gap slots" after the last widget based on the running col sum (mod 3 on lg, mod 2 on md).
+- In edit mode, render one `AddWidgetPlaceholder` per gap slot (already partially done with two hard-coded placeholders — replace with the computed count, capped so they don't push past one extra row).
+- Outside edit mode, render nothing for empty gaps (current behavior).
 
-- **lg (≥1024px):** 3-column positioned grid as described.
-- **md (768–1023px):** 2-column grid. Map each widget's `col` to `col % 2`, sort by `(row, col)`, render in order using `col-span` clamped to 2.
-- **mobile (<768px):** single column, sorted by `(row, col)`, all widgets full width.
+To allow dropping into those gaps, register the gap as a droppable using `useDroppable` with id `__gap_<index>__`; in `onDragEnd`, if `over.id` starts with `__gap_`, insert the active item at the position derived from the gap index (append to end or place before the next chart that would land there).
 
-Empty-cell placeholders only render at lg (where positioning is meaningful). At md/mobile, the trailing "+ add" tile already covers the "I want more widgets" case.
+### 4. Fillable empty cells in the metrics grid
+File: `src/components/dashboard/DashboardMetrics.tsx`
 
-## Migration
+- The metrics row already adds a single Add placeholder when `metricsOrder.length < MAX_METRICS` and applies a span class to the trailing odd item. Extend so when in edit mode and the count is odd at the current breakpoint, the Add placeholder fills the remaining slot rather than spanning full width.
+- No additional droppable needed — the existing Add tile already sits in the flow.
 
-On first render after this change:
-1. Read `prefs.dashboardChartLayout`. If present and valid, use it.
-2. Else read legacy `prefs.dashboardChartOrder`, greedy-pack into 3-col rows respecting each widget's `colSpan`/`rowSpan`, write the result back as `dashboardChartLayout`.
-3. Default layout for brand-new users derived from `DEFAULT_CHART_ORDER` the same way.
-
-## Files to change
-
-- `src/pages/Dashboard.tsx` — replace flow grid with positioned grid, add empty-cell droppables, swap collision strategy, plumb "clicked cell" through to `ChartLibraryModal`.
-- `src/components/dashboard/DraggableChartWrapper.tsx` — accept explicit `gridColumn`/`gridRow` style instead of `col-span` classes (keeps positioning exact).
-- `src/components/dashboard/AddWidgetPlaceholder.tsx` — already supports `size`; no change beyond passing through.
-- `src/contexts/AuthContext.tsx` (only the preferences type) — add `dashboardChartLayout?: Array<{id; row; col; colSpan; rowSpan}>`. Keep `dashboardChartOrder` for migration.
-
-## Out of scope
-
-- Metric KPI strip (top row) — keeps its current responsive grid; user only complained about the charts area in the screenshot.
-- Edge-drag resize handles.
-- Any backend/data changes; this is purely a frontend layout refactor.
+### 5. Visual polish for the drag ghost
+- Overlay item uses `glass-card` styling + slight `shadow-2xl` + `scale-[1.02]` (deliberate small lift) and the same border-radius. This replaces the current accidental 5x balloon with a tasteful lift.
+- Add `cursor: grabbing` on `<body>` while dragging via a `useEffect` toggling a class on document body in `onDragStart` / `onDragEnd`.
 
 ## Technical notes
 
-- Use CSS `grid-template-columns: repeat(3, minmax(0, 1fr))` and explicit `style={{ gridColumn: \`${col + 1} / span ${colSpan}\`, gridRow: \`${row + 1} / span ${rowSpan}\` }}` on each wrapper. This makes empty cells truly reachable because the grid no longer auto-packs.
-- `useDroppable` from `@dnd-kit/core` is already imported; reuse the existing `GapDroppable` pattern.
-- Swap logic: when `over.id` matches another widget's id, set `active.row,col = over.row,col` and vice versa.
-- Validate destination on drop: if the dragged widget's span would overlap a different widget at the target, fall back to swapping with the topmost-leftmost conflicting widget.
+- `DragOverlay` must be rendered inside `<DndContext>` but outside `<SortableContext>`.
+- To measure original cell size for the overlay, store refs per id in a `Map<string, HTMLElement>` and read `getBoundingClientRect()` on drag start; pass width to overlay style.
+- Keep all logic client-side; no schema/data changes.
+- No new dependencies — `@dnd-kit/core` already exports `DragOverlay`, `useDroppable`, and `CSS.Translate`.
+
+## Files to change
+
+- `src/pages/Dashboard.tsx` — DragOverlay, activeId state, gap droppables + AddWidgetPlaceholders, drop handler updates.
+- `src/components/dashboard/DraggableChartWrapper.tsx` — switch to translate-only transform, hide original when active, add layout-change transition.
+- `src/components/dashboard/DashboardMetrics.tsx` — same overlay/active-hide treatment, switch sorting strategy, drop handler tweaks.
+- `src/components/dashboard/AddWidgetPlaceholder.tsx` — accept optional `size="sm"` variant so gap placeholders match KPI height.
+
+## Out of scope
+
+- Backend/data, KPI computation, chart visuals, mobile-specific changes beyond what existing TouchSensor already covers.

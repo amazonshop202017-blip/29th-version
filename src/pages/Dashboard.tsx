@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DndContext,
-  pointerWithin,
+  closestCenter,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
@@ -14,6 +14,7 @@ import {
   useDroppable,
 } from '@dnd-kit/core';
 import {
+  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
@@ -36,25 +37,30 @@ import { ExternalLinksWidget } from '@/components/dashboard/ExternalLinksWidget'
 import { InstrumentTradeDistribution } from '@/components/dashboard/InstrumentTradeDistribution';
 import { DirectionSplit } from '@/components/dashboard/DirectionSplit';
 import { DraggableChartWrapper } from '@/components/dashboard/DraggableChartWrapper';
+import { useFilteredTrades } from '@/hooks/useFilteredTrades';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { motion } from 'framer-motion';
 
-interface ChartDef {
+interface ChartConfig {
+  id: string;
   component: React.ComponentType;
   colSpan: number;
   rowSpan: number;
 }
 
-interface LayoutItem {
-  id: string;
-  row: number;
-  col: number;
-  colSpan: number;
-  rowSpan: number;
-}
+const DEFAULT_CHART_ORDER = [
+  'recentTrades',
+  'dailyCumulativePnL',
+  'netDailyPnL',
+  'calendar',
+  'tradeTime',
+  'tradeDuration',
+  'symbolAnalysis',
+  'longShortAnalysis',
+];
 
-const GRID_COLS = 3;
-
-const CHART_CONFIGS: Record<string, ChartDef> = {
+const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   recentTrades: { component: RecentTrades, colSpan: 1, rowSpan: 1 },
   dailyCumulativePnL: { component: DailyCumulativePnLChart, colSpan: 1, rowSpan: 1 },
   netDailyPnL: { component: NetDailyPnLChart, colSpan: 1, rowSpan: 1 },
@@ -70,227 +76,110 @@ const CHART_CONFIGS: Record<string, ChartDef> = {
   forexNewsKpi: { component: ForexNewsKpi, colSpan: 1, rowSpan: 1 },
 };
 
-const DEFAULT_CHART_ORDER = [
-  'recentTrades',
-  'dailyCumulativePnL',
-  'netDailyPnL',
-  'calendar',
-  'tradeTime',
-  'tradeDuration',
-  'symbolAnalysis',
-  'longShortAnalysis',
-];
-
-/** Greedy-pack an ordered list of chart ids into the 3-column grid */
-function packLayout(ids: string[]): LayoutItem[] {
-  const items: LayoutItem[] = [];
-  const occupied = new Set<string>();
-  const cellKey = (r: number, c: number) => `${r},${c}`;
-  const fits = (r: number, c: number, cs: number, rs: number) => {
-    if (c + cs > GRID_COLS) return false;
-    for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) {
-      if (occupied.has(cellKey(r + dr, c + dc))) return false;
-    }
-    return true;
-  };
-  const place = (id: string, cs: number, rs: number) => {
-    for (let r = 0; r < 1000; r++) {
-      for (let c = 0; c <= GRID_COLS - cs; c++) {
-        if (fits(r, c, cs, rs)) {
-          for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) {
-            occupied.add(cellKey(r + dr, c + dc));
-          }
-          items.push({ id, row: r, col: c, colSpan: cs, rowSpan: rs });
-          return;
-        }
-      }
-    }
-  };
-  ids.forEach(id => {
-    const cfg = CHART_CONFIGS[id];
-    if (!cfg) return;
-    place(id, Math.min(cfg.colSpan, GRID_COLS), cfg.rowSpan);
-  });
-  return items;
-}
-
-function isValidLayout(layout: unknown): layout is LayoutItem[] {
-  return Array.isArray(layout) && layout.every(it =>
-    it && typeof it === 'object' &&
-    typeof (it as LayoutItem).id === 'string' && CHART_CONFIGS[(it as LayoutItem).id] &&
-    typeof (it as LayoutItem).row === 'number' && typeof (it as LayoutItem).col === 'number' &&
-    typeof (it as LayoutItem).colSpan === 'number' && typeof (it as LayoutItem).rowSpan === 'number'
-  );
-}
-
 const Dashboard = () => {
+  const { stats } = useFilteredTrades();
+  const { formatCurrency } = useGlobalFilters();
+  const { isPrivacyMode, maskCurrency } = usePrivacyMode();
   const { isEditMode } = useDashboardEdit();
   const { getPreferences, updatePreferences, user } = useAuth();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-  const [pendingCell, setPendingCell] = useState<{ row: number; col: number } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const skipNextPersist = useRef(true);
-
-  const [layout, setLayout] = useState<LayoutItem[]>(() => {
+  const [chartOrder, setChartOrder] = useState<string[]>(() => {
     const prefs = getPreferences();
-    if (isValidLayout(prefs.dashboardChartLayout)) return prefs.dashboardChartLayout;
-    const order = (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder))
-      ? prefs.dashboardChartOrder.filter(id => CHART_CONFIGS[id])
-      : DEFAULT_CHART_ORDER;
-    return packLayout(order);
+    if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
+      return prefs.dashboardChartOrder;
+    }
+    return DEFAULT_CHART_ORDER;
   });
 
+  // Reload when user changes
   useEffect(() => {
     const prefs = getPreferences();
-    skipNextPersist.current = true;
-    if (isValidLayout(prefs.dashboardChartLayout)) {
-      setLayout(prefs.dashboardChartLayout);
+    if (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder) && prefs.dashboardChartOrder.every(id => CHART_CONFIGS[id])) {
+      setChartOrder(prefs.dashboardChartOrder);
     } else {
-      const order = (prefs.dashboardChartOrder && Array.isArray(prefs.dashboardChartOrder))
-        ? prefs.dashboardChartOrder.filter(id => CHART_CONFIGS[id])
-        : DEFAULT_CHART_ORDER;
-      setLayout(packLayout(order));
+      setChartOrder(DEFAULT_CHART_ORDER);
     }
   }, [user, getPreferences]);
 
-  useEffect(() => {
-    if (skipNextPersist.current) {
-      skipNextPersist.current = false;
-      return;
-    }
-    updatePreferences({ dashboardChartLayout: layout });
-  }, [layout, updatePreferences]);
-
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
-  // ---------- Derived: occupancy + total rows + empty cells ----------
-  const { occupied, totalRows, emptyCells } = useMemo(() => {
-    const occ = new Map<string, string>(); // "r,c" -> widget id
-    let maxRow = 0;
-    layout.forEach(it => {
-      for (let dr = 0; dr < it.rowSpan; dr++) {
-        for (let dc = 0; dc < it.colSpan; dc++) {
-          occ.set(`${it.row + dr},${it.col + dc}`, it.id);
-        }
-      }
-      maxRow = Math.max(maxRow, it.row + it.rowSpan);
-    });
-    const rows = isEditMode ? maxRow + 1 : maxRow; // trailing empty row in edit mode
-    const empties: Array<{ row: number; col: number }> = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
-        if (!occ.has(`${r},${c}`)) empties.push({ row: r, col: c });
-      }
-    }
-    return { occupied: occ, totalRows: rows, emptyCells: empties };
-  }, [layout, isEditMode]);
+  useEffect(() => {
+    updatePreferences({ dashboardChartOrder: chartOrder });
+  }, [chartOrder, updatePreferences]);
 
-  // ---------- Handlers ----------
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
     document.body.style.cursor = 'grabbing';
-  };
-  const handleDragCancel = () => {
-    setActiveId(null);
-    document.body.style.cursor = '';
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     document.body.style.cursor = '';
-    if (!over) return;
-    const activeIdStr = active.id as string;
+
+    if (!over || active.id === over.id) return;
     const overId = over.id as string;
-    if (activeIdStr === overId) return;
+    const activeIdStr = active.id as string;
 
-    setLayout(prev => {
-      const dragged = prev.find(it => it.id === activeIdStr);
-      if (!dragged) return prev;
-
-      // Drop on empty cell
-      if (overId.startsWith('cell:')) {
-        const [r, c] = overId.slice(5).split(',').map(Number);
-        // Clamp colSpan if it overflows
-        const cs = Math.min(dragged.colSpan, GRID_COLS - c);
-        // Check destination is fully clear (other widgets)
-        const others = prev.filter(it => it.id !== activeIdStr);
-        const otherOcc = new Set<string>();
-        others.forEach(it => {
-          for (let dr = 0; dr < it.rowSpan; dr++) for (let dc = 0; dc < it.colSpan; dc++) {
-            otherOcc.add(`${it.row + dr},${it.col + dc}`);
-          }
-        });
-        for (let dr = 0; dr < dragged.rowSpan; dr++) {
-          for (let dc = 0; dc < cs; dc++) {
-            if (otherOcc.has(`${r + dr},${c + dc}`)) return prev; // conflict, ignore
-          }
-        }
-        return prev.map(it => it.id === activeIdStr ? { ...it, row: r, col: c, colSpan: cs } : it);
+    setChartOrder((items) => {
+      const oldIndex = items.indexOf(activeIdStr);
+      if (oldIndex < 0) return items;
+      if (overId.startsWith('__gap_')) {
+        // append to end
+        const next = [...items];
+        next.splice(oldIndex, 1);
+        next.push(activeIdStr);
+        return next;
       }
-
-      // Drop on another widget → swap positions (preserve each one's span)
-      const target = prev.find(it => it.id === overId);
-      if (!target) return prev;
-      return prev.map(it => {
-        if (it.id === activeIdStr) return { ...it, row: target.row, col: target.col };
-        if (it.id === overId) return { ...it, row: dragged.row, col: dragged.col };
-        return it;
-      });
+      const newIndex = items.indexOf(overId);
+      if (newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
     });
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    document.body.style.cursor = '';
   };
 
   const handleAddChart = (chartId: string) => {
-    const cfg = CHART_CONFIGS[chartId];
-    if (!cfg || layout.some(it => it.id === chartId)) return;
-    setLayout(prev => {
-      const cell = pendingCell;
-      setPendingCell(null);
-      if (cell) {
-        const cs = Math.min(cfg.colSpan, GRID_COLS - cell.col);
-        const others = prev;
-        const otherOcc = new Set<string>();
-        others.forEach(it => {
-          for (let dr = 0; dr < it.rowSpan; dr++) for (let dc = 0; dc < it.colSpan; dc++) {
-            otherOcc.add(`${it.row + dr},${it.col + dc}`);
-          }
-        });
-        let fits = true;
-        for (let dr = 0; dr < cfg.rowSpan; dr++) {
-          for (let dc = 0; dc < cs; dc++) {
-            if (otherOcc.has(`${cell.row + dr},${cell.col + dc}`)) { fits = false; break; }
-          }
-        }
-        if (fits) {
-          return [...prev, { id: chartId, row: cell.row, col: cell.col, colSpan: cs, rowSpan: cfg.rowSpan }];
-        }
-      }
-      // Append: re-pack everything plus the new id
-      return packLayout([...prev.map(i => i.id), chartId]);
-    });
+    if (!chartOrder.includes(chartId)) {
+      setChartOrder([...chartOrder, chartId]);
+    }
   };
 
   const handleRemoveChart = (chartId: string) => {
-    setLayout(prev => prev.filter(it => it.id !== chartId));
-  };
-
-  const openLibraryAtCell = (row: number, col: number) => {
-    setPendingCell({ row, col });
-    setIsLibraryOpen(true);
+    setChartOrder((items) => items.filter((id) => id !== chartId));
   };
 
   const renderChart = (chartId: string) => {
-    const cfg = CHART_CONFIGS[chartId];
-    if (!cfg) return null;
-    const C = cfg.component;
-    return <C />;
+    const config = CHART_CONFIGS[chartId];
+    if (!config) return null;
+    const ChartComponent = config.component;
+    return <ChartComponent />;
   };
 
-  const activeIds = useMemo(() => layout.map(it => it.id), [layout]);
+  // Compute trailing gap count at lg (3 col) breakpoint
+  const totalCols = chartOrder.reduce((acc, id) => acc + (CHART_CONFIGS[id]?.colSpan || 1), 0);
+  const lgGapCount = (3 - (totalCols % 3)) % 3;
+  // ensure at least 2 add placeholders visible in edit mode for the user to drop/click
+  const placeholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -301,75 +190,48 @@ const Dashboard = () => {
           className="flex items-center"
         >
           <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
-            Drag charts to reorder • Drop into any empty cell • Click + to add a widget
+            Drag charts to reorder
           </span>
         </motion.div>
       )}
 
+      {/* Top metrics - draggable in edit mode */}
       <DashboardMetrics isEditMode={isEditMode} />
 
+      {/* Draggable charts section */}
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <SortableContext items={activeIds} strategy={rectSortingStrategy}>
-          {/* lg+: true positioned 3-col grid. Below lg: simple flow. */}
-          <div className="hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`, gridAutoRows: 'minmax(220px, auto)' }}>
-            {layout.map(it => (
-              <DraggableChartWrapper
-                key={it.id}
-                id={it.id}
-                isEditMode={isEditMode}
-                onRemove={handleRemoveChart}
-                isActive={activeId === it.id}
-                placement={{
-                  gridColumn: `${it.col + 1} / span ${it.colSpan}`,
-                  gridRow: `${it.row + 1} / span ${it.rowSpan}`,
-                }}
-              >
-                {renderChart(it.id)}
-              </DraggableChartWrapper>
-            ))}
-            {isEditMode && emptyCells.map(({ row, col }) => (
-              <EmptyCellDroppable
-                key={`cell:${row},${col}`}
-                row={row}
-                col={col}
-                onClick={() => openLibraryAtCell(row, col)}
-              />
-            ))}
-          </div>
-
-          {/* md/mobile: flow layout, sorted by (row, col) */}
-          <div className="grid lg:hidden grid-cols-1 md:grid-cols-2 gap-3">
-            {[...layout]
-              .sort((a, b) => (a.row - b.row) || (a.col - b.col))
-              .map(it => (
+        <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2">
+            {chartOrder.map((chartId) => {
+              const config = CHART_CONFIGS[chartId];
+              if (!config) return null;
+              return (
                 <DraggableChartWrapper
-                  key={it.id}
-                  id={it.id}
+                  key={chartId}
+                  id={chartId}
                   isEditMode={isEditMode}
+                  colSpan={config.colSpan}
+                  rowSpan={config.rowSpan}
                   onRemove={handleRemoveChart}
-                  isActive={activeId === it.id}
-                  placement={{ gridColumn: it.colSpan >= 2 ? 'span 2 / span 2' : undefined }}
+                  isActive={activeId === chartId}
                 >
-                  {renderChart(it.id)}
+                  {renderChart(chartId)}
                 </DraggableChartWrapper>
-              ))}
-            {isEditMode && (
-              <button
-                onClick={() => { setPendingCell(null); setIsLibraryOpen(true); }}
-                className="min-h-[120px] rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 text-sm text-muted-foreground/70"
-              >
-                + Add widget
-              </button>
-            )}
+              );
+            })}
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <GapDroppable key={`__gap_${i}__`} id={`__gap_${i}__`}>
+                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
+              </GapDroppable>
+            ))}
           </div>
         </SortableContext>
-
         <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
           {activeId ? (
             <div className="rounded-xl shadow-2xl ring-2 ring-primary/40 bg-background/95 backdrop-blur-sm overflow-hidden opacity-95 pointer-events-none" style={{ transform: 'scale(1.02)' }}>
@@ -381,24 +243,19 @@ const Dashboard = () => {
 
       <ChartLibraryModal
         open={isLibraryOpen}
-        onOpenChange={(o) => { setIsLibraryOpen(o); if (!o) setPendingCell(null); }}
-        activeCharts={layout.map(it => it.id)}
+        onOpenChange={setIsLibraryOpen}
+        activeCharts={chartOrder}
         onAddChart={handleAddChart}
       />
     </div>
   );
 };
 
-const EmptyCellDroppable = ({ row, col, onClick }: { row: number; col: number; onClick: () => void }) => {
-  const id = `cell:${row},${col}`;
+const GapDroppable = ({ id, children }: { id: string; children: React.ReactNode }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div
-      ref={setNodeRef}
-      style={{ gridColumn: `${col + 1} / span 1`, gridRow: `${row + 1} / span 1` }}
-      className={`transition-all ${isOver ? 'ring-2 ring-primary/60 rounded-xl scale-[1.01]' : ''}`}
-    >
-      <AddWidgetPlaceholder onClick={onClick} />
+    <div ref={setNodeRef} className={`col-span-1 transition-all ${isOver ? 'ring-2 ring-primary/60 rounded-xl' : ''}`}>
+      {children}
     </div>
   );
 };
