@@ -293,10 +293,10 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
   const visibleSection: MenuSection = activeSection ?? 'basic';
 
   return (
-    <div className="flex w-full min-w-0 flex-col overflow-x-hidden md:w-[537px] md:max-w-[calc(100vw-2rem)]">
-      <div className="flex min-h-[336px] min-w-0 flex-1 overflow-hidden md:h-[336px]">
+    <div className="flex w-full min-w-0 flex-col overflow-x-hidden lg:w-[537px] lg:max-w-[calc(100vw-2rem)]">
+      <div className="flex min-h-[336px] min-w-0 flex-1 overflow-hidden lg:h-[336px]">
       {/* Left Menu */}
-      <div className="hidden w-[179px] shrink-0 flex-col gap-2 border-r border-border p-2 md:flex">
+      <div className="hidden w-[179px] shrink-0 flex-col gap-2 border-r border-border p-2 lg:flex">
         {menuItems.map((item) => {
           const isActive = selectedDesktopSection === item.key;
           return (
@@ -324,8 +324,8 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 min-w-0 w-full p-4 overflow-y-auto overflow-x-hidden md:w-[358px]">
-        <div className="space-y-2 md:hidden">
+      <div className="flex-1 min-w-0 w-full p-4 overflow-y-auto overflow-x-hidden lg:w-[358px]">
+        <div className="space-y-2 lg:hidden">
           {activeSection === null ? (
             menuItems.map((item) => (
               <button
@@ -354,7 +354,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
           )}
         </div>
 
-        <div className={cn("min-w-0 overflow-x-hidden", activeSection === null ? "hidden md:block" : "mt-4 md:mt-0")}>
+        <div className={cn("min-w-0 overflow-x-hidden", activeSection === null ? "hidden lg:block" : "mt-4 lg:mt-0")}>
         {visibleSection === 'basic' && (
           <AdvancedBasicFiltersSection />
         )}
@@ -480,7 +480,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
       </div>
       {/* Footer */}
-      <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background px-4 py-3 md:static md:bg-transparent">
+      <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background px-4 py-3 lg:static lg:bg-transparent">
         <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
           Reset all
         </Button>
