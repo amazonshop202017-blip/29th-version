@@ -320,40 +320,40 @@ export default function RiskToRuinSimulator() {
           <h2 className="panel-title">Risk Analysis Results</h2>
           
           <div className="results-grid-2">
-            <div className="panel" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1.25rem' }}>
               <div className="result-title">Risk of Ruin ({targetDrawdown}% Drawdown)</div>
               <div style={{ fontSize: '2rem', fontWeight: 700, color: getRiskLevel(results.riskOfRuin).color, marginBottom: '0.5rem' }}>
                 {formatPercent(results.riskOfRuin)}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#fff' }}>
+              <div style={{ fontSize: '0.875rem', color: 'hsl(var(--foreground))' }}>
                 {getRiskLevel(results.riskOfRuin).label}
               </div>
             </div>
-            
-            <div className="panel" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+
+            <div className="panel" style={{ padding: '1.25rem' }}>
               <div className="result-title">Survival Rate</div>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--warning)', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'hsl(38 92% 50%)', marginBottom: '0.5rem' }}>
                 {formatPercent(results.survivalRate)}
               </div>
             </div>
           </div>
 
           <div className="results-grid">
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Maximum Drawdown</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--danger)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--loss))' }}>
                 {formatPercent(results.maxDrawdown)}
               </div>
             </div>
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Average Drawdown</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
                 {formatPercent(results.avgDrawdown)}
               </div>
             </div>
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Avg. Trades Before Ruin</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
                 {results.avgTradesBeforeRuin}
               </div>
             </div>
