@@ -324,21 +324,51 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 p-4 w-[358px] overflow-y-auto">
-        {activeSection === 'basic' && (
+      <div className="flex-1 min-w-0 w-full p-4 overflow-y-auto overflow-x-hidden md:w-[358px]">
+        <div className="space-y-2 md:hidden">
+          {activeSection === null ? (
+            menuItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setActiveSection(item.key)}
+                className="flex w-full min-w-0 items-center gap-2.5 rounded-md border border-border bg-card px-2.5 py-2 text-left text-sm font-medium text-foreground transition-colors hover:bg-accent/40"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  {item.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </button>
+            ))
+          ) : (
+            <button
+              onClick={() => setActiveSection(null)}
+              className="flex w-full min-w-0 items-center gap-2.5 rounded-md border border-border bg-accent/60 px-2.5 py-2 text-left text-sm font-medium text-foreground"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                {menuItems.find((item) => item.key === activeSection)?.icon}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{menuItems.find((item) => item.key === activeSection)?.label}</span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        <div className={cn("min-w-0 overflow-x-hidden", activeSection === null ? "hidden md:block" : "mt-4 md:mt-0")}>
+        {visibleSection === 'basic' && (
           <AdvancedBasicFiltersSection />
         )}
 
-        {activeSection === 'strategy' && (
+        {visibleSection === 'strategy' && (
           <AdvancedStrategySection />
         )}
 
-        {activeSection === 'daytime' && (
+        {visibleSection === 'daytime' && (
           <AdvancedDayTimeSection />
         )}
 
-        {activeSection === 'tags' && (
-          <div className="space-y-2">
+        {visibleSection === 'tags' && (
+          <div className="space-y-2 min-w-0">
             {categories.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No categories created yet. Create categories in Settings → Custom Tags.
