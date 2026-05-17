@@ -1,26 +1,25 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X } from 'lucide-react';
-import { ReactNode } from 'react';
+import { CSSProperties, ReactNode } from 'react';
 
 interface DraggableChartWrapperProps {
   id: string;
   children: ReactNode;
   isEditMode: boolean;
-  colSpan?: number;
-  rowSpan?: number;
   onRemove?: (id: string) => void;
   isActive?: boolean;
+  /** Explicit grid placement style (gridColumn / gridRow) */
+  placement?: CSSProperties;
 }
 
-export const DraggableChartWrapper = ({ 
-  id, 
-  children, 
+export const DraggableChartWrapper = ({
+  id,
+  children,
   isEditMode,
-  colSpan = 1,
-  rowSpan = 1,
   onRemove,
   isActive = false,
+  placement,
 }: DraggableChartWrapperProps) => {
   const {
     attributes,
@@ -35,19 +34,17 @@ export const DraggableChartWrapper = ({
     transition: { duration: 220, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' },
   });
 
-  const style = {
+  const style: CSSProperties = {
     transform: CSS.Translate.toString(transform),
     transition,
+    ...placement,
   };
-
-  const colSpanClass = colSpan === 2 ? 'md:col-span-2 lg:col-span-2' : 'col-span-1';
-  const rowSpanClass = rowSpan === 2 ? 'md:row-span-2 lg:row-span-2' : '';
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`${colSpanClass} ${rowSpanClass} relative ${
+      className={`relative min-w-0 ${
         isDragging || isActive ? 'opacity-30' : ''
       } ${isEditMode ? 'ring-2 ring-primary/20 ring-dashed rounded-xl' : ''}`}
     >
@@ -72,3 +69,4 @@ export const DraggableChartWrapper = ({
     </div>
   );
 };
+
