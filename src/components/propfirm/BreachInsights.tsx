@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { FileX } from "lucide-react";
-import { useAccountsContext } from "@/contexts/AccountsContext";
-import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { useTradesContext } from "@/contexts/TradesContext";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 import { calculateTradeMetrics } from "@/types/trade";
 import { formatBreachReason } from "@/lib/breachReason";
 
@@ -40,8 +39,7 @@ function modeOf<T extends string | number>(arr: T[]): T | null {
 
 export function BreachInsights() {
   const [activeTab, setActiveTab] = useState<BreachTab>("evaluation");
-  const { accounts } = useAccountsContext();
-  const { challenges } = useChallengesContext();
+  const { accounts, challenges } = usePropFirmFiltered();
   const { trades } = useTradesContext();
 
   const { evaluation, funded } = useMemo(() => {

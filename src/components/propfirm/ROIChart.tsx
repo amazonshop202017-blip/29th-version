@@ -3,8 +3,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { useTransactionsContext } from "@/contexts/TransactionsContext";
 import { getNonIgnoredTxs } from "@/lib/propfirmDashboardStats";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 
 type Period = "1W" | "1M" | "1Y";
 
@@ -45,7 +45,7 @@ function formatTickShort(d: Date, period: Period): string {
 
 export function ROIChart() {
   const [period, setPeriod] = useState<Period>("1M");
-  const { transactions } = useTransactionsContext();
+  const { transactions } = usePropFirmFiltered();
 
   const data = useMemo<Point[]>(() => {
     const txs = getNonIgnoredTxs(transactions);

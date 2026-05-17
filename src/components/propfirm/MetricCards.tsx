@@ -1,18 +1,18 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, DollarSign, CircleDot, Trophy, Clock, Activity } from "lucide-react";
 import { useAccountsContext } from "@/contexts/AccountsContext";
-import { useTransactionsContext } from "@/contexts/TransactionsContext";
 import { useTradesContext } from "@/contexts/TradesContext";
 import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { calculateTradeMetrics } from "@/types/trade";
 import { getNonIgnoredTxs } from "@/lib/propfirmDashboardStats";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 
 const EXPENSE_CATS = new Set(["evaluation_fee", "activation_fee", "reset", "other_expense"]);
 const INCOME_CATS = new Set(["payout", "refund", "commission", "other_income"]);
 
 export function MetricCards() {
-  const { accounts, getAllAccountsWithStats } = useAccountsContext();
-  const { transactions } = useTransactionsContext();
+  const { getAllAccountsWithStats } = useAccountsContext();
+  const { accounts, transactions } = usePropFirmFiltered();
   const { trades } = useTradesContext();
   const { getChallengeById } = useChallengesContext();
 

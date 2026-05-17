@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { PieChart } from "lucide-react";
-import { useTransactionsContext, CATEGORY_LABELS } from "@/contexts/TransactionsContext";
-import { useChallengesContext } from "@/contexts/ChallengesContext";
+import { CATEGORY_LABELS } from "@/contexts/TransactionsContext";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 import {
   getNonIgnoredTxs,
   groupTransactions,
@@ -100,8 +100,7 @@ export function FinanceBreakdown() {
   const [activeTab, setActiveTab] = useState<FinanceTab>("By firm");
   const tabs: FinanceTab[] = ["By firm", "By account type", "By account size", "Expenses"];
 
-  const { transactions } = useTransactionsContext();
-  const { challenges } = useChallengesContext();
+  const { transactions, challenges } = usePropFirmFiltered();
 
   const items = useMemo<GroupItem[]>(() => {
     const txs = getNonIgnoredTxs(transactions);

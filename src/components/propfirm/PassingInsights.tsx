@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { BarChart3 } from "lucide-react";
-import { useAccountsContext } from "@/contexts/AccountsContext";
-import { useChallengesContext } from "@/contexts/ChallengesContext";
 import { formatSizeBucket, accountTypeLabel } from "@/lib/propfirmDashboardStats";
+import { usePropFirmFiltered } from "@/hooks/usePropFirmFiltered";
 
 type InsightTab = "By firm" | "By account type" | "By account size" | "By strategy";
 
@@ -17,8 +16,7 @@ export function PassingInsights() {
   const [activeTab, setActiveTab] = useState<InsightTab>("By firm");
   const tabs: InsightTab[] = ["By firm", "By account type", "By account size", "By strategy"];
 
-  const { accounts } = useAccountsContext();
-  const { challenges } = useChallengesContext();
+  const { accounts, challenges } = usePropFirmFiltered();
 
   const items = useMemo<InsightItem[]>(() => {
     const challengeMap = new Map(challenges.map(c => [c.challengeId, c]));
