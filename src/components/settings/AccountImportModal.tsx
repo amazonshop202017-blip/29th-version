@@ -55,6 +55,17 @@ const IMPORT_SOURCES = [
   { value: 'ZerodhaTradebook', label: 'Zerodha (Tradebook)' },
 ];
 
+// Maps an import source to its broker how-to guide.
+// Brokers without a dedicated page yet use '#'.
+const SOURCE_BROKER_GUIDE: Record<string, { label: string; href: string }> = {
+  TradeValley: { label: 'TradeValley', href: '#' },
+  MT5: { label: 'MT5', href: '/supported-brokers/mt5' },
+  MatchTrader: { label: 'MatchTrader', href: '#' },
+  Tradovate: { label: 'Tradovate', href: '/supported-brokers/tradovate' },
+  TradovateFills: { label: 'Tradovate', href: '/supported-brokers/tradovate' },
+  ZerodhaTradebook: { label: 'Zerodha', href: '#' },
+};
+
 interface AccountImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
