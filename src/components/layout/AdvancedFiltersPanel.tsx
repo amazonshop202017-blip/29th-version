@@ -294,7 +294,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
 
   return (
     <div className="flex w-full min-w-0 flex-col overflow-x-hidden md:w-[537px] md:max-w-[calc(100vw-2rem)]">
-      <div className="flex min-h-[336px] min-w-0 overflow-hidden md:h-[336px]">
+      <div className="flex min-h-[336px] min-w-0 flex-1 overflow-hidden md:h-[336px]">
       {/* Left Menu */}
       <div className="hidden w-[179px] shrink-0 flex-col gap-2 border-r border-border p-2 md:flex">
         {menuItems.map((item) => {
@@ -480,7 +480,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
       </div>
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
+      <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background px-4 py-3 md:static md:bg-transparent">
         <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
           Reset all
         </Button>
