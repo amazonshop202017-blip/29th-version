@@ -7,7 +7,7 @@ import { countryToCurrency, getDateKey } from "../utils/date.utils";
 import { normalizeImpact, generateEventId } from "../utils/format.utils";
 
 const DEFAULT_CONFIG: CalendarConfig = {
-  apiUrl: "/api/calendar/ff_calendar_thisweek.json",
+  apiUrl: "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://nfs.faireconomy.media/ff_calendar_thisweek.json"),
   refreshIntervalMs: 0,
   defaultCurrencies: [],
   defaultImpacts: [],
