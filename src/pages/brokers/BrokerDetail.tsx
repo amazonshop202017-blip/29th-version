@@ -11,15 +11,19 @@ interface BrokerEntry {
 }
 
 const brokers: BrokerEntry[] = [
-  { slug: 'mt5', name: 'MT5' },
-  { slug: 'tradovate', name: 'Tradovate' },
+  { slug: 'mt5', name: 'MetaTrader 5 (MT5)' },
+  { slug: 'tradovate', name: 'Tradovate / NinjaTrader' },
   { slug: 'zerodha', name: 'Zerodha' },
 ];
 
 const content: Record<string, { title: string; render: () => JSX.Element }> = {
   mt5: {
-    title: 'MT5 — Importing Trades via File Upload',
+    title: 'MetaTrader 5 (MT5) — Importing Trades via File Upload',
     render: () => <MT5Content />,
+  },
+  tradovate: {
+    title: 'Tradovate / NinjaTrader — Importing Trades via File Upload in TradeValley',
+    render: () => <TradovateContent />,
   },
 };
 
