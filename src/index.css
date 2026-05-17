@@ -81,17 +81,17 @@
     --card: 0 0% 9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 0 0% 9%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217 20% 18%;
     --primary-foreground: 210 40% 98%;
     --primary-active: 240 3% 23%;
 
-    --secondary: 222 47% 14%;
+    --secondary: 0 0% 12%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 47% 12%;
+    --muted: 0 0% 11%;
     --muted-foreground: 215 20% 55%;
 
     --accent: 217 20% 18%;
@@ -106,8 +106,8 @@
     --loss: 0 84% 60%;
     --loss-foreground: 0 84% 95%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 14%;
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
     --ring: 217 20% 18%;
 
     --sidebar-background: 0 0% 9%;
@@ -116,7 +116,7 @@
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 222 47% 15%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 217 20% 18%;
 
     --chart-1: 200 88% 48%;
@@ -129,7 +129,7 @@
     --propfirm-foreground: 0 0% 0%;
 
     --gradient-primary: linear-gradient(135deg, hsl(217 20% 18%) 0%, hsl(217 20% 12%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 10%) 0%, hsl(222 47% 7%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 9%) 0%, hsl(0 0% 6%) 100%);
     --gradient-profit: linear-gradient(135deg, hsl(142 76% 45%) 0%, hsl(142 76% 35%) 100%);
     --gradient-loss: linear-gradient(135deg, hsl(0 84% 60%) 0%, hsl(0 84% 50%) 100%);
     
