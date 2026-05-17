@@ -115,7 +115,12 @@ const SupportedBrokers = () => {
                     color: '#0F0F0F',
                   }}
                 >
-                  <div className="font-medium">{b.name}</div>
+                  <Link
+                    to={`/supported-brokers/${b.name.toLowerCase()}`}
+                    className="font-medium hover:underline"
+                  >
+                    {b.name}
+                  </Link>
                   <div className="flex justify-center">
                     <StatusIcon active={b.fileImport} />
                   </div>
