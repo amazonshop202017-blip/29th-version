@@ -481,7 +481,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
       {/* Footer */}
       <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background px-4 py-3 lg:static lg:bg-transparent">
-        <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-colors">
           Reset all
         </Button>
         <div className="flex items-center gap-2">
