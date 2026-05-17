@@ -1,56 +1,75 @@
 ## Goal
 
-Add a new dashboard widget — **Forex News KPI** — sourced from the Forex News calendar. It is opt-in (only via Widget Library), uses the same `forex-calendar-cache-v1` localStorage as the Forex News page, and triggers the same daily API fetch logic when the widget is mounted on the dashboard so the user doesn't need to open the news page.
+The sidebar already lists `Risk of Ruin` (`/tools/risk-of-ruin`) and `Kelly Criterion` (`/tools/kelly-criterion`) but the routes 404. Port the two calculators verbatim from the `risk/kelly` project and mount them on those routes.
 
-## Behavior
+## Steps
 
-- **Default filters (persisted to localStorage):**
-  - Currencies: `["USD"]` (multi-select editable)
-  - Impacts: `["High"]` (multi-select via 3 colored dots: High/Medium/Low)
-  - Stored under a new key, e.g. `forex-calendar-kpi-filters-v1`
-- **Columns shown per event:** Currency · Time · Impact (small dot/badge) · Title
-- **Grouping:** Events grouped under a sticky "Date" header (e.g. "Mon, May 18"), then events listed beneath, then next date header, etc.
-- **Sizing:** `colSpan: 1, rowSpan: 2` — same footprint as `TradeDurationPerformanceChart` (1 col × 2 rows). Scrollable inner body when content overflows.
-- **Not added by default** — only appears when user inserts it from Widget Library (like `yearlyCalendar`).
+1. **Add dependencies** (used by the source components, not currently in this project):
+   - `echarts` (`^6.0.0`)
+   - `echarts-for-react` (`^3.0.6`)
+   
+   `recharts` and `lucide-react` are already installed and compatible.
 
-## Caching & API call coordination
+2. **Copy component files 1:1** (no edits to logic, imports, styles, or markup):
+   - `risk/kelly:src/components/KellySimulator.tsx` → `src/components/tools/KellySimulator.tsx`
+   - `risk/kelly:src/components/RiskToRuinSimulator.tsx` → `src/components/tools/RiskToRuinSimulator.tsx`
 
-Today `calendar.service.ts` already:
-- Caches raw events to `localStorage["forex-calendar-cache-v1"]` keyed by today's local date.
-- Dedupes concurrent in-flight requests.
-- Only fetches once per local calendar day per browser.
+3. **Port styles 1:1**: append the entire contents of `risk/kelly:src/index.css` to our `src/index.css`. The class names (`.panel`, `.main-title`, `.form-input`, `.result-card`, `.app-container`, `.max-w-container`, etc.) and CSS variables (`--bg-dark`, `--accent`…) don't exist anywhere else in this codebase, so there are no collisions. The components stay visually identical (dark themed) inside their own pages.
 
-Plan:
-- The widget calls the **same** `getCalendarEvents()` service / `useCalendarData` hook → automatically reuses the cache and the in-flight dedupe. No duplicate requests whether or not the user opens the Forex News page.
-- If the widget is **not** added to the dashboard, nothing on the dashboard imports the service → no API call from dashboard load. (Existing Forex News page behavior unchanged.)
-- If the widget **is** added, mounting it on dashboard load triggers the existing daily-cache-check logic exactly once and stores result for both the widget and the Forex News page.
+4. **Create the two route pages** that reproduce the markup the source `App.tsx` renders for each calculator (heading + simulator), without the home/back button shell (the app already has a global header + sidebar):
 
-## Files to create
+   - `src/pages/tools/RiskOfRuin.tsx`
+     ```tsx
+     import RiskToRuinSimulator from '@/components/tools/RiskToRuinSimulator';
 
-- `src/components/dashboard/ForexNewsKpi.tsx` — new widget
-  - Uses `useCalendarData()` and filters events client-side by selected currencies + impacts
-  - 3 impact dots (red / orange / gray) at top, multi-currency popover/chips selector, both persisted via small `localStorage` helper
-  - Renders date-grouped scrollable list (Currency · Time · impact dot · Title)
-  - Card chrome matches other dashboard widgets (same header style as TradeDurationPerformanceChart)
+     export default function RiskOfRuin() {
+       return (
+         <div className="app-container">
+           <div className="max-w-container">
+             <h1 className="main-title">Risk of Ruin Calculator</h1>
+             <p style={{ color: '#a0a0a0', marginBottom: '2rem' }}>
+               This calculator helps traders understand the probability of losing a specific percentage of their account based on their win rate, risk/reward ratio, and position sizing strategy.
+             </p>
+             <RiskToRuinSimulator />
+           </div>
+         </div>
+       );
+     }
+     ```
 
-## Files to edit
+   - `src/pages/tools/KellyCriterion.tsx`
+     ```tsx
+     import KellySimulator from '@/components/tools/KellySimulator';
 
-- `src/pages/Dashboard.tsx`
-  - Register `forexNewsKpi` in `CHART_CONFIGS` with `colSpan: 1, rowSpan: 2`
-  - Do **not** add it to `DEFAULT_CHART_ORDER` (opt-in only)
-- `src/components/dashboard/ChartLibraryModal.tsx`
-  - Add `{ id: 'forexNewsKpi', name: 'Forex News', description: 'Upcoming high-impact economic events by currency' }`
+     export default function KellyCriterion() {
+       return (
+         <div className="app-container">
+           <div className="max-w-container">
+             <h1 className="main-title">Kelly Criterion Calculator</h1>
+             <KellySimulator />
+           </div>
+         </div>
+       );
+     }
+     ```
 
-## Technical details
+   These mirror the source `App.tsx` page sections exactly. (`AppLayout` already detects `/tools/*` and skips its padding wrapper, so the source's `.app-container` padding is honored.)
 
-- Filters state stored as `{ currencies: string[], impacts: ImpactLevel[] }` in `localStorage["forex-calendar-kpi-filters-v1"]`, with defaults `["USD"]` / `["High"]` on first run.
-- Reuse `useCalendarData()` directly — no new fetch logic, no new cache key, no service changes needed.
-- Date grouping: reuse `getDateKey` + `formatDateHeader` from existing utils for visual consistency.
-- Inner list uses `overflow-y-auto` with a fixed max-height matching the 2-row card body.
-- Impact dot legend (top of card): three clickable circles, filled when active, with tooltips "High / Medium / Low".
-- Currency selector: compact multi-select (popover with checkboxes for USD/EUR/GBP/JPY/CAD/AUD/NZD/CHF).
+5. **Register routes in `src/App.tsx`** next to the existing tools routes:
+   ```tsx
+   <Route path="/tools/risk-of-ruin" element={<RiskOfRuin />} />
+   <Route path="/tools/kelly-criterion" element={<KellyCriterion />} />
+   ```
+   Plus the two imports at the top.
 
 ## Out of scope
 
-- No changes to `calendar.service.ts`, the Forex News page, or the cache key format.
-- No server-side or cross-device sync (per-browser only, as requested).
+- No edits to the simulator component code itself (logic, charts, styling all stay byte-identical to the source).
+- No sidebar changes — the entries and paths already match.
+- No re-theming of the calculators to light mode; the source design uses its own dark palette and we are copying it as-is per the request.
+
+## Verification
+
+- Click `Risk of Ruin` and `Kelly Criterion` in the sidebar → both pages load with the source UI.
+- "Calculate" buttons produce charts (Recharts on Risk of Ruin, ECharts on Kelly) identical to the source app.
+- No console errors from missing deps.
