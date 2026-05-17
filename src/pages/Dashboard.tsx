@@ -175,6 +175,12 @@ const Dashboard = () => {
     return <ChartComponent />;
   };
 
+  // Compute trailing gap count at lg (3 col) breakpoint
+  const totalCols = chartOrder.reduce((acc, id) => acc + (CHART_CONFIGS[id]?.colSpan || 1), 0);
+  const lgGapCount = (3 - (totalCols % 3)) % 3;
+  // ensure at least 2 add placeholders visible in edit mode for the user to drop/click
+  const placeholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
+
   return (
     <div className="space-y-6 md:space-y-8">
       {isEditMode && (
@@ -196,7 +202,9 @@ const Dashboard = () => {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2">
@@ -211,19 +219,26 @@ const Dashboard = () => {
                   colSpan={config.colSpan}
                   rowSpan={config.rowSpan}
                   onRemove={handleRemoveChart}
+                  isActive={activeId === chartId}
                 >
                   {renderChart(chartId)}
                 </DraggableChartWrapper>
               );
             })}
-            {isEditMode && (
-              <>
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <GapDroppable key={`__gap_${i}__`} id={`__gap_${i}__`}>
                 <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
-                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
-              </>
-            )}
+              </GapDroppable>
+            ))}
           </div>
         </SortableContext>
+        <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
+          {activeId ? (
+            <div className="rounded-xl shadow-2xl ring-2 ring-primary/40 bg-background/95 backdrop-blur-sm overflow-hidden opacity-95 pointer-events-none" style={{ transform: 'scale(1.02)' }}>
+              {renderChart(activeId)}
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <ChartLibraryModal
@@ -232,6 +247,15 @@ const Dashboard = () => {
         activeCharts={chartOrder}
         onAddChart={handleAddChart}
       />
+    </div>
+  );
+};
+
+const GapDroppable = ({ id, children }: { id: string; children: React.ReactNode }) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={`col-span-1 transition-all ${isOver ? 'ring-2 ring-primary/60 rounded-xl' : ''}`}>
+      {children}
     </div>
   );
 };
