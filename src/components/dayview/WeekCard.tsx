@@ -107,7 +107,7 @@ export const WeekCard = ({ weekStart, weekEnd, trades }: WeekCardProps) => {
 
       <div className="px-3 sm:px-5 pb-4 sm:pb-5 space-y-4 sm:space-y-5">
         {/* 7-day pill row */}
-        <div className="grid grid-cols-7 gap-2 overflow-x-auto">
+        <div className="flex sm:grid sm:grid-cols-7 gap-2 overflow-x-auto -mx-1 px-1 snap-x">
           {dayBuckets.map((b) => {
             const hasTrades = b.trades.length > 0;
             const dayProfit = b.netPnl >= 0;
@@ -115,7 +115,7 @@ export const WeekCard = ({ weekStart, weekEnd, trades }: WeekCardProps) => {
               <div
                 key={b.date.toISOString()}
                 className={cn(
-                  'min-w-[88px] rounded-lg px-2 py-2 flex flex-col justify-between h-[78px]',
+                  'shrink-0 w-[88px] sm:w-auto sm:min-w-0 snap-start rounded-lg px-2 py-2 flex flex-col justify-between h-[78px]',
                   !hasTrades && 'bg-muted/40',
                   hasTrades && dayProfit && 'bg-profit/10 border border-profit/30',
                   hasTrades && !dayProfit && 'bg-loss/10 border border-loss/30'

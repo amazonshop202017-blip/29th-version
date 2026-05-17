@@ -420,9 +420,9 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
     });
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 pt-4 pb-0 gap-2">
-        <div className="flex items-center">
+    <div className="bg-card rounded-xl border border-border shadow-sm min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-5 pt-4 pb-0 gap-2">
+        <div className="flex items-center overflow-x-auto -mx-1 px-1">
           {accountTabs.map((tab) => (
             <button key={tab.label} onClick={() => setActiveTab(tab.label)}
               className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.label ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
@@ -430,13 +430,13 @@ export default function PropFirmAccounts({ onSelectAccount }: { onSelectAccount:
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1 border border-border rounded-lg p-1">
+        <div className="flex items-center gap-1 border border-border rounded-lg p-1 self-start sm:self-auto">
           <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-foreground text-background dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutList className="w-4 h-4" /></button>
           <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-foreground text-background dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground"}`}><LayoutGrid className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="border-b border-border" />
-      <div className="p-5">
+      <div className="p-3 sm:p-5">
         {activeTab === "Breached" && tableRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
