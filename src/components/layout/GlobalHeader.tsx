@@ -477,14 +477,14 @@ export const GlobalHeader = () => {
 
       {/* Advanced Filters Sheet */}
       <Sheet open={mobileAdvancedSheetOpen} onOpenChange={setMobileAdvancedSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-auto p-0">
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto overflow-x-hidden p-0">
           <SheetHeader className="flex flex-row items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-background z-10">
             <SheetTitle className="text-base font-semibold">Filters</SheetTitle>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileAdvancedSheetOpen(false)}>
               <X className="w-4 h-4" />
             </Button>
           </SheetHeader>
-          <div className="p-0">
+          <div className="min-w-0 p-0 overflow-x-hidden">
             <AdvancedFiltersPanel onClose={() => setMobileAdvancedSheetOpen(false)} />
           </div>
         </SheetContent>
