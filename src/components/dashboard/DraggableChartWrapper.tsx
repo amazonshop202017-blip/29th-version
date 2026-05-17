@@ -50,7 +50,7 @@ export const DraggableChartWrapper = ({
           <div
             {...attributes}
             {...listeners}
-            className="absolute -top-2 -left-2 z-10 p-1.5 bg-primary text-primary-foreground rounded-md cursor-grab active:cursor-grabbing shadow-lg hover:bg-primary/90 transition-colors"
+            className="absolute -top-2 -left-2 z-10 p-1.5 bg-primary text-primary-foreground rounded-md cursor-grab active:cursor-grabbing touch-none shadow-lg hover:bg-primary/90 transition-colors"
           >
             <GripVertical className="h-4 w-4" />
           </div>

@@ -1512,7 +1512,7 @@ export const GlobalHeader = () => {
         <button
           onClick={toggleEditMode}
           className={cn(
-            "h-9 gap-1.5 px-3 flex-shrink-0 hidden lg:flex items-center justify-center rounded-lg border border-border/40 text-sm font-medium transition-colors",
+            "h-9 gap-1.5 px-3 ml-1 flex-shrink-0 flex items-center justify-center rounded-lg border border-border/40 text-sm font-medium transition-colors",
             isEditMode
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "bg-muted/60 dark:bg-[#151515] text-muted-foreground hover:bg-muted hover:text-foreground"
