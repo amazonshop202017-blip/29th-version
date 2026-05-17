@@ -293,7 +293,7 @@ export function AdvancedBasicFiltersSection() {
           () => { setRMultipleMin(null); setRMultipleMax(null); },
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           <Input
             type="number"
             step="0.1"
@@ -303,7 +303,7 @@ export function AdvancedBasicFiltersSection() {
               const v = e.target.value;
               setRMultipleMin(v === '' ? null : Number(v));
             }}
-            className="h-9 bg-background border-border"
+            className="h-9 min-w-0 bg-background border-border"
           />
           <Input
             type="number"
@@ -314,7 +314,7 @@ export function AdvancedBasicFiltersSection() {
               const v = e.target.value;
               setRMultipleMax(v === '' ? null : Number(v));
             }}
-            className="h-9 bg-background border-border"
+            className="h-9 min-w-0 bg-background border-border"
           />
         </div>
       </FilterRow>
@@ -331,7 +331,7 @@ export function AdvancedBasicFiltersSection() {
           () => { setPositionSizeMin(null); setPositionSizeMax(null); },
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           <Input
             type="number"
             step="any"
@@ -342,7 +342,7 @@ export function AdvancedBasicFiltersSection() {
               const v = e.target.value;
               setPositionSizeMin(v === '' ? null : Number(v));
             }}
-            className="h-9 bg-background border-border"
+            className="h-9 min-w-0 bg-background border-border"
           />
           <Input
             type="number"
@@ -354,7 +354,7 @@ export function AdvancedBasicFiltersSection() {
               const v = e.target.value;
               setPositionSizeMax(v === '' ? null : Number(v));
             }}
-            className="h-9 bg-background border-border"
+            className="h-9 min-w-0 bg-background border-border"
           />
         </div>
       </FilterRow>
