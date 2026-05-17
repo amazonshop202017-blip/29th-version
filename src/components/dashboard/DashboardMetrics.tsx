@@ -280,7 +280,7 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
   return (
     <>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleMetricDragEnd}>
-        <SortableContext items={metricsOrder} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={metricsOrder} strategy={rectSortingStrategy}>
           <div className={`grid ${gridColsClass} gap-3 auto-rows-fr`}>
             {allItems.map((item, i) => {
               const isLast = i === allItems.length - 1;
