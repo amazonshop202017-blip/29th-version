@@ -7,14 +7,15 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 
 interface Broker {
   name: string;
+  slug: string;
   fileImport: boolean;
   autoSync: boolean;
 }
 
 const brokers: Broker[] = [
-  { name: 'MetaTrader 5 (MT5)', fileImport: true, autoSync: false },
-  { name: 'Tradovate / NinjaTrader', fileImport: true, autoSync: false },
-  { name: 'Zerodha', fileImport: true, autoSync: true },
+  { name: 'MetaTrader 5 (MT5)', slug: 'mt5', fileImport: true, autoSync: false },
+  { name: 'Tradovate / NinjaTrader', slug: 'tradovate', fileImport: true, autoSync: false },
+  { name: 'Zerodha', slug: 'zerodha', fileImport: true, autoSync: true },
 ];
 
 const SupportedBrokers = () => {
