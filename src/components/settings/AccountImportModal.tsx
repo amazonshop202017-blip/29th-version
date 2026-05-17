@@ -55,6 +55,17 @@ const IMPORT_SOURCES = [
   { value: 'ZerodhaTradebook', label: 'Zerodha (Tradebook)' },
 ];
 
+// Maps an import source to its broker how-to guide.
+// Brokers without a dedicated page yet use '#'.
+const SOURCE_BROKER_GUIDE: Record<string, { label: string; href: string }> = {
+  TradeValley: { label: 'TradeValley', href: '#' },
+  MT5: { label: 'MT5', href: '/supported-brokers/mt5' },
+  MatchTrader: { label: 'MatchTrader', href: '#' },
+  Tradovate: { label: 'Tradovate', href: '/supported-brokers/tradovate' },
+  TradovateFills: { label: 'Tradovate', href: '/supported-brokers/tradovate' },
+  ZerodhaTradebook: { label: 'Zerodha', href: '#' },
+};
+
 interface AccountImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,6 +80,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const { reconcileCategoriesForImport } = useCategoriesContext();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [importType, setImportType] = useState<'auto' | 'file'>('file');
   const [importSource, setImportSource] = useState<string>('');
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -126,6 +138,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   
   const resetForm = () => {
     setSelectedAccountId('');
+    setImportType('file');
     setImportSource('');
     setSelectedFile(null);
     setApplyFeeRules(false);
@@ -362,7 +375,41 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
             </Select>
           </div>
           
+          {/* Import Type Selection */}
+          <div className="space-y-2">
+            <Label>Import Type</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled
+                className={cn(
+                  "relative flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors",
+                  "border-border bg-muted/40 opacity-60 cursor-not-allowed"
+                )}
+              >
+                <span className="text-sm font-medium">Auto Sync</span>
+                <span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
+                  Coming Soon
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportType('file')}
+                className={cn(
+                  "flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors",
+                  importType === 'file'
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-background hover:bg-accent"
+                )}
+              >
+                <span className="text-sm font-medium">File Import</span>
+                <span className="text-xs text-muted-foreground">Upload an exported file</span>
+              </button>
+            </div>
+          </div>
+
           {/* Import Source Selection - Searchable Combobox */}
+          {importType === 'file' && (
           <div className="space-y-2">
             <Label>Import Source</Label>
             <Popover open={sourcePopoverOpen} onOpenChange={setSourcePopoverOpen}>
@@ -413,7 +460,18 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
                 </Command>
               </PopoverContent>
             </Popover>
+            {importSource && SOURCE_BROKER_GUIDE[importSource] && (
+              <a
+                href={SOURCE_BROKER_GUIDE[importSource].href}
+                target={SOURCE_BROKER_GUIDE[importSource].href === '#' ? undefined : '_blank'}
+                rel="noopener noreferrer"
+                className="inline-block text-xs text-primary hover:underline"
+              >
+                How to import {SOURCE_BROKER_GUIDE[importSource].label} file
+              </a>
+            )}
           </div>
+          )}
 
           {/* Apply Fee Rules toggle */}
           <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
