@@ -15,29 +15,32 @@ interface DisplayOption {
   label: string;
   icon: React.ReactNode;
   description?: string;
+  disabled?: boolean;
 }
 
 const DISPLAY_OPTIONS: DisplayOption[] = [
-  { 
-    value: 'dollar', 
-    label: 'Dollar', 
+  {
+    value: 'dollar',
+    label: 'Dollar',
     icon: <DollarSign className="w-4 h-4" />
   },
-  { 
-    value: 'percentage', 
-    label: 'Percentage', 
-    icon: <Percent className="w-4 h-4" />
-  },
-  { 
-    value: 'privacy', 
-    label: 'Privacy', 
+  {
+    value: 'privacy',
+    label: 'Privacy',
     icon: <Eye className="w-4 h-4" />
   },
-  { 
-    value: 'tickpip', 
-    label: 'Tick / Pip', 
+  {
+    value: 'percentage',
+    label: 'Percentage',
+    icon: <Percent className="w-4 h-4" />,
+    disabled: true,
+  },
+  {
+    value: 'tickpip',
+    label: 'Tick / Pip',
     icon: <span className="w-4 h-4 flex items-center justify-center text-xs font-semibold">T</span>,
-    description: 'Edit in settings'
+    description: 'Edit in settings',
+    disabled: true,
   },
 ];
 
@@ -49,6 +52,7 @@ export const DisplayModeSelector = () => {
   const selectedOption = DISPLAY_OPTIONS.find(opt => opt.value === displayMode) || DISPLAY_OPTIONS[0];
 
   const handleSelect = (option: DisplayOption) => {
+    if (option.disabled) return;
     setDisplayMode(option.value);
     setOpen(false);
   };
@@ -83,10 +87,13 @@ export const DisplayModeSelector = () => {
               key={option.value}
               onClick={() => handleSelect(option)}
               className={cn(
-                "flex items-start gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
-                displayMode === option.value 
-                  ? "bg-accent text-accent-foreground" 
-                  : "hover:bg-accent/50 hover:text-accent-foreground"
+                "flex items-start gap-3 px-3 py-2.5 rounded-md transition-colors",
+                option.disabled
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer",
+                !option.disabled && displayMode === option.value
+                  ? "bg-accent text-accent-foreground"
+                  : !option.disabled && "hover:bg-accent/50 hover:text-accent-foreground"
               )}
             >
               {/* Icon Circle */}
