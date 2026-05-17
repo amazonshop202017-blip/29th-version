@@ -87,7 +87,16 @@ const BacktestSession = () => {
   const handleSaveTrade = () => {
     if (!isFormValid) return;
     addRow(form);
-    setForm({});
+    // Persist quick-entry fields in memory so the next trade can reuse them.
+    // Cleared on tab/route change or reload (no localStorage).
+    const PERSIST = new Set(['date', 'exit_date', 'symbol', 'setup', 'quantity', 'rr']);
+    setForm(prev => {
+      const kept: Record<string, string | number | null> = {};
+      for (const k of Object.keys(prev)) {
+        if (PERSIST.has(k)) kept[k] = prev[k];
+      }
+      return kept;
+    });
     toast.success('Trade saved');
   };
 
