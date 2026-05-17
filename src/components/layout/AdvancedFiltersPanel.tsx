@@ -31,7 +31,7 @@ interface AdvancedFiltersPanelProps {
 }
 
 export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}) => {
-  const [activeSection, setActiveSection] = useState<MenuSection>('basic');
+  const [activeSection, setActiveSection] = useState<MenuSection | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [expandedCommentCategories, setExpandedCommentCategories] = useState<Set<TradeCommentCategory>>(new Set());
@@ -289,13 +289,16 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
     },
   ];
 
+  const selectedDesktopSection: MenuSection = activeSection ?? 'basic';
+  const visibleSection: MenuSection = activeSection ?? 'basic';
+
   return (
-    <div className="flex flex-col w-[537px]">
-      <div className="flex h-[336px]">
+    <div className="flex w-full min-w-0 flex-col overflow-x-hidden md:w-[537px] md:max-w-[calc(100vw-2rem)]">
+      <div className="flex min-h-[336px] min-w-0 flex-1 overflow-hidden md:h-[336px]">
       {/* Left Menu */}
-      <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-2">
+      <div className="hidden w-[179px] shrink-0 flex-col gap-2 border-r border-border p-2 md:flex">
         {menuItems.map((item) => {
-          const isActive = activeSection === item.key;
+          const isActive = selectedDesktopSection === item.key;
           return (
             <button
               key={item.key}
@@ -321,23 +324,53 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 p-4 w-[358px] overflow-y-auto">
-        {activeSection === 'basic' && (
+      <div className="flex-1 min-w-0 w-full p-4 overflow-y-auto overflow-x-hidden md:w-[358px]">
+        <div className="space-y-2 md:hidden">
+          {activeSection === null ? (
+            menuItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setActiveSection(item.key)}
+                className="flex w-full min-w-0 items-center gap-2.5 rounded-md border border-border bg-card px-2.5 py-2 text-left text-sm font-medium text-foreground transition-colors hover:bg-accent/40"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  {item.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </button>
+            ))
+          ) : (
+            <button
+              onClick={() => setActiveSection(null)}
+              className="flex w-full min-w-0 items-center gap-2.5 rounded-md border border-border bg-accent/60 px-2.5 py-2 text-left text-sm font-medium text-foreground"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                {menuItems.find((item) => item.key === activeSection)?.icon}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{menuItems.find((item) => item.key === activeSection)?.label}</span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        <div className={cn("min-w-0 overflow-x-hidden", activeSection === null ? "hidden md:block" : "mt-4 md:mt-0")}>
+        {visibleSection === 'basic' && (
           <AdvancedBasicFiltersSection />
         )}
 
-        {activeSection === 'strategy' && (
+        {visibleSection === 'strategy' && (
           <AdvancedStrategySection />
         )}
 
-        {activeSection === 'daytime' && (
+        {visibleSection === 'daytime' && (
           <AdvancedDayTimeSection />
         )}
 
-        {activeSection === 'tags' && (
-          <div className="space-y-2">
+        {visibleSection === 'tags' && (
+          <div className="space-y-2 min-w-0">
             {categories.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground break-words">
                 No categories created yet. Create categories in Settings → Custom Tags.
               </p>
             ) : (
@@ -347,24 +380,24 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                 const isSelectAllMode = isCategorySelectAllMode(category.id);
                 
                 return (
-                  <div key={category.id} className="space-y-2">
+                  <div key={category.id} className="space-y-2 min-w-0">
                     {/* Category Row */}
                     <div 
-                      className="flex items-center gap-3 cursor-pointer select-none py-1.5"
+                      className="flex min-w-0 items-center gap-3 cursor-pointer select-none py-1.5"
                       onClick={() => handleCategoryCheckToggle(category.id)}
                     >
                       <Checkbox 
-                        className="rounded-[4px] h-3.5 w-3.5 [&_svg]:h-3 [&_svg]:w-3"
+                        className="rounded-[4px] h-3.5 w-3.5 shrink-0 [&_svg]:h-3 [&_svg]:w-3"
                         checked={isCategoryChecked(category.id)}
                         onClick={(e) => e.stopPropagation()}
                         onCheckedChange={() => handleCategoryCheckToggle(category.id)}
                       />
-                      <span className="text-sm">{category.name}</span>
+                      <span className="min-w-0 truncate text-sm">{category.name}</span>
                     </div>
 
                     {/* Expanded Tag Selector */}
                     {isExpanded && categoryTags.length > 0 && (
-                      <div className="ml-6 space-y-2">
+                      <div className="ml-6 min-w-0 space-y-2">
                         <Popover 
                           open={openPopovers[category.id] || false}
                           onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [category.id]: open }))}
@@ -373,13 +406,13 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                             <Button
                               variant="outline"
                               role="combobox"
-                              className="w-full justify-between h-9 text-sm bg-background border-border"
+                              className="w-full min-w-0 justify-between h-9 text-sm bg-background border-border"
                             >
-                              {getSelectedTagsLabel(category.id)}
+                              <span className="min-w-0 truncate">{getSelectedTagsLabel(category.id)}</span>
                               <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[220px] p-0 bg-popover border-border z-[100]" align="start">
+                          <PopoverContent className="w-[min(220px,calc(100vw-4rem))] p-0 bg-popover border-border z-[100]" align="start">
                             <Command>
                               <CommandInput placeholder="Search tags..." className="h-9" />
                               <CommandList>
@@ -391,7 +424,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                     className="cursor-pointer gap-3 py-2"
                                   >
                                     <div className={cn(
-                                      "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
+                                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-primary",
                                       isSelectAllMode
                                         ? "bg-primary text-primary-foreground"
                                         : "opacity-50"
@@ -400,7 +433,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                         <Check className="h-3 w-3" />
                                       )}
                                     </div>
-                                    <span className="font-medium">Select All</span>
+                                    <span className="min-w-0 truncate font-medium">Select All</span>
                                   </CommandItem>
                                 </CommandGroup>
                                 <CommandSeparator />
@@ -412,7 +445,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                       className="cursor-pointer gap-3 py-2"
                                     >
                                       <div className={cn(
-                                        "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
+                                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-primary",
                                         isTagVisuallySelected(category.id, tag.id)
                                           ? "bg-primary text-primary-foreground"
                                           : "opacity-50"
@@ -421,7 +454,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                           <Check className="h-3 w-3" />
                                         )}
                                       </div>
-                                      <span>{tag.name}</span>
+                                      <span className="min-w-0 truncate">{tag.name}</span>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -433,7 +466,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                     )}
                     
                     {isExpanded && categoryTags.length === 0 && (
-                      <p className="ml-6 text-xs text-muted-foreground">
+                      <p className="ml-6 text-xs text-muted-foreground break-words">
                         No tags in this category
                       </p>
                     )}
@@ -445,8 +478,9 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
         )}
       </div>
       </div>
+      </div>
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
+      <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-background px-4 py-3 md:static md:bg-transparent">
         <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
           Reset all
         </Button>
