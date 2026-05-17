@@ -209,7 +209,7 @@ const Dashboard = () => {
         onDragCancel={handleDragCancel}
       >
         <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-flow-row-dense gap-3 md:gap-2">
             {chartOrder.map((chartId) => {
               const config = CHART_CONFIGS[chartId];
               if (!config) return null;
@@ -227,11 +227,16 @@ const Dashboard = () => {
                 </DraggableChartWrapper>
               );
             })}
-            {Array.from({ length: placeholderCount }).map((_, i) => (
+            {Array.from({ length: editPlaceholderCount }).map((_, i) => (
               <GapDroppable key={`__gap_${i}__`} id={`__gap_${i}__`}>
-                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
+                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} variant="edit" />
               </GapDroppable>
             ))}
+            {showTrailingAddTile && (
+              <div className="col-span-1">
+                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} variant="subtle" size="sm" />
+              </div>
+            )}
           </div>
         </SortableContext>
         <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
