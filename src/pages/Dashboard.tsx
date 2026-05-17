@@ -27,6 +27,7 @@ import { TradeTimePerformanceChart } from '@/components/dashboard/TradeTimePerfo
 import { TradeDurationPerformanceChart } from '@/components/dashboard/TradeDurationPerformanceChart';
 import { MonthlyPerformanceCalendar } from '@/components/dashboard/MonthlyPerformanceCalendar';
 import { YearlyCalendarWidget } from '@/components/dashboard/YearlyCalendarWidget';
+import { ForexNewsKpi } from '@/components/dashboard/ForexNewsKpi';
 import { SymbolAnalysisChart } from '@/components/dashboard/InstrumentAnalysisChart';
 import { LongShortAnalysisChart } from '@/components/dashboard/LongShortAnalysisChart';
 import { ExternalLinksWidget } from '@/components/dashboard/ExternalLinksWidget';
@@ -69,6 +70,7 @@ const CHART_CONFIGS: Record<string, Omit<ChartConfig, 'id'>> = {
   instrumentDistribution: { component: InstrumentTradeDistribution, colSpan: 2, rowSpan: 1 },
   directionSplit: { component: DirectionSplit, colSpan: 2, rowSpan: 1 },
   yearlyCalendar: { component: YearlyCalendarWidget, colSpan: 2, rowSpan: 1 },
+  forexNewsKpi: { component: ForexNewsKpi, colSpan: 1, rowSpan: 2 },
 };
 
 const Dashboard = () => {

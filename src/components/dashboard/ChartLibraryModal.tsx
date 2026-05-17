@@ -15,6 +15,7 @@ const WIDGET_LIST = [
   { id: 'instrumentDistribution', name: 'Instrument Trade Distribution', description: 'Donut chart showing trade distribution across symbols' },
   { id: 'directionSplit', name: 'Direction Split', description: 'Long vs Short breakdown with profit factor, R, expectancy and best/worst' },
   { id: 'yearlyCalendar', name: 'Yearly Calendar', description: '12-month overview with P&L, trades and R per month' },
+  { id: 'forexNewsKpi', name: 'Forex News', description: 'Upcoming economic events filtered by currency & impact' },
 ];
 
 interface ChartLibraryModalProps {
