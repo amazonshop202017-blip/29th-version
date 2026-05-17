@@ -977,7 +977,7 @@ const OpportunityAnalysis = () => {
               />
               <RechartsTooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(222 47% 10%)',
+                  backgroundColor: 'hsl(0 0% 9%)',
                   border: '1px solid hsl(222 47% 18%)',
                   borderRadius: '8px',
                   color: 'hsl(210 40% 98%)',
