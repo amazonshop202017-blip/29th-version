@@ -370,7 +370,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
         {visibleSection === 'tags' && (
           <div className="space-y-2 min-w-0">
             {categories.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground break-words">
                 No categories created yet. Create categories in Settings → Custom Tags.
               </p>
             ) : (
@@ -380,24 +380,24 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                 const isSelectAllMode = isCategorySelectAllMode(category.id);
                 
                 return (
-                  <div key={category.id} className="space-y-2">
+                  <div key={category.id} className="space-y-2 min-w-0">
                     {/* Category Row */}
                     <div 
-                      className="flex items-center gap-3 cursor-pointer select-none py-1.5"
+                      className="flex min-w-0 items-center gap-3 cursor-pointer select-none py-1.5"
                       onClick={() => handleCategoryCheckToggle(category.id)}
                     >
                       <Checkbox 
-                        className="rounded-[4px] h-3.5 w-3.5 [&_svg]:h-3 [&_svg]:w-3"
+                        className="rounded-[4px] h-3.5 w-3.5 shrink-0 [&_svg]:h-3 [&_svg]:w-3"
                         checked={isCategoryChecked(category.id)}
                         onClick={(e) => e.stopPropagation()}
                         onCheckedChange={() => handleCategoryCheckToggle(category.id)}
                       />
-                      <span className="text-sm">{category.name}</span>
+                      <span className="min-w-0 truncate text-sm">{category.name}</span>
                     </div>
 
                     {/* Expanded Tag Selector */}
                     {isExpanded && categoryTags.length > 0 && (
-                      <div className="ml-6 space-y-2">
+                      <div className="ml-6 min-w-0 space-y-2">
                         <Popover 
                           open={openPopovers[category.id] || false}
                           onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [category.id]: open }))}
@@ -406,13 +406,13 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                             <Button
                               variant="outline"
                               role="combobox"
-                              className="w-full justify-between h-9 text-sm bg-background border-border"
+                              className="w-full min-w-0 justify-between h-9 text-sm bg-background border-border"
                             >
-                              {getSelectedTagsLabel(category.id)}
+                              <span className="min-w-0 truncate">{getSelectedTagsLabel(category.id)}</span>
                               <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[220px] p-0 bg-popover border-border z-[100]" align="start">
+                          <PopoverContent className="w-[min(220px,calc(100vw-4rem))] p-0 bg-popover border-border z-[100]" align="start">
                             <Command>
                               <CommandInput placeholder="Search tags..." className="h-9" />
                               <CommandList>
@@ -424,7 +424,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                     className="cursor-pointer gap-3 py-2"
                                   >
                                     <div className={cn(
-                                      "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
+                                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-primary",
                                       isSelectAllMode
                                         ? "bg-primary text-primary-foreground"
                                         : "opacity-50"
@@ -433,7 +433,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                         <Check className="h-3 w-3" />
                                       )}
                                     </div>
-                                    <span className="font-medium">Select All</span>
+                                    <span className="min-w-0 truncate font-medium">Select All</span>
                                   </CommandItem>
                                 </CommandGroup>
                                 <CommandSeparator />
@@ -445,7 +445,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                       className="cursor-pointer gap-3 py-2"
                                     >
                                       <div className={cn(
-                                        "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-primary",
+                                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-primary",
                                         isTagVisuallySelected(category.id, tag.id)
                                           ? "bg-primary text-primary-foreground"
                                           : "opacity-50"
@@ -454,7 +454,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                                           <Check className="h-3 w-3" />
                                         )}
                                       </div>
-                                      <span>{tag.name}</span>
+                                      <span className="min-w-0 truncate">{tag.name}</span>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -466,7 +466,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
                     )}
                     
                     {isExpanded && categoryTags.length === 0 && (
-                      <p className="ml-6 text-xs text-muted-foreground">
+                      <p className="ml-6 text-xs text-muted-foreground break-words">
                         No tags in this category
                       </p>
                     )}
@@ -476,6 +476,7 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
             )}
           </div>
         )}
+      </div>
       </div>
       </div>
       {/* Footer */}
