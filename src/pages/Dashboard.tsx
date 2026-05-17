@@ -179,7 +179,9 @@ const Dashboard = () => {
   const totalCols = chartOrder.reduce((acc, id) => acc + (CHART_CONFIGS[id]?.colSpan || 1), 0);
   const lgGapCount = (3 - (totalCols % 3)) % 3;
   // ensure at least 2 add placeholders visible in edit mode for the user to drop/click
-  const placeholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
+  const editPlaceholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
+  const allChartsAdded = Object.keys(CHART_CONFIGS).every((id) => chartOrder.includes(id));
+  const showTrailingAddTile = !isEditMode && !allChartsAdded;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -207,7 +209,7 @@ const Dashboard = () => {
         onDragCancel={handleDragCancel}
       >
         <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-flow-row-dense gap-3 md:gap-2">
             {chartOrder.map((chartId) => {
               const config = CHART_CONFIGS[chartId];
               if (!config) return null;
@@ -225,11 +227,16 @@ const Dashboard = () => {
                 </DraggableChartWrapper>
               );
             })}
-            {Array.from({ length: placeholderCount }).map((_, i) => (
+            {Array.from({ length: editPlaceholderCount }).map((_, i) => (
               <GapDroppable key={`__gap_${i}__`} id={`__gap_${i}__`}>
-                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} />
+                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} variant="edit" />
               </GapDroppable>
             ))}
+            {showTrailingAddTile && (
+              <div className="col-span-1">
+                <AddWidgetPlaceholder onClick={() => setIsLibraryOpen(true)} variant="subtle" size="sm" />
+              </div>
+            )}
           </div>
         </SortableContext>
         <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
