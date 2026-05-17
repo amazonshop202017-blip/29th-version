@@ -359,9 +359,9 @@ export default function RiskToRuinSimulator() {
             </div>
           </div>
 
-          <div className="panel" style={{ marginBottom: '2rem', border: '1px solid var(--border)' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>Interpretation</h3>
-            <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+          <div className="panel" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ marginTop: 0, fontSize: '1rem', color: 'hsl(var(--foreground))', marginBottom: '1rem' }}>Interpretation</h3>
+            <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1rem' }}>
               With a {winRate}% win rate, risking {riskPerTrade}% per trade, and a {rewardRisk}:1 reward-to-risk ratio, your probability of experiencing a {targetDrawdown}% drawdown is <strong>{formatPercent(results.riskOfRuin)}</strong>.
             </p>
             <p style={{ color: getRiskLevel(results.riskOfRuin).color, fontSize: '0.9rem', fontWeight: 500 }}>
