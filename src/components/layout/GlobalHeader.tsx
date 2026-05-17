@@ -1376,7 +1376,7 @@ export const GlobalHeader = () => {
         {/* Advanced Filters Dropdown */}
         <Popover open={advancedFiltersOpen} onOpenChange={setAdvancedFiltersOpen}>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <button className="flex items-center gap-1.5 h-full px-3 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded-l-[calc(0.375rem-1px)]">
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
               <span>Filters</span>
               {hasActiveTagFilters && (
