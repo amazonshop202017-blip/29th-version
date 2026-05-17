@@ -127,6 +127,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   
   const resetForm = () => {
     setSelectedAccountId('');
+    setImportType('file');
     setImportSource('');
     setSelectedFile(null);
     setApplyFeeRules(false);
