@@ -42,7 +42,8 @@ const BacktestSession = () => {
 
   const stats = useMemo(() => computeStats(rows), [rows]);
 
-  const entryFields = fields;
+  // No fields are required in backtesting quick-entry — strip required flag.
+  const entryFields = fields.map(f => ({ ...f, required: false }));
 
   // Derived column ids that aren't in `fields` but appear on at least one row.
   const derivedColumnIds = useMemo(() => {
