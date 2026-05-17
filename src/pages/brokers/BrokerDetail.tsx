@@ -285,4 +285,92 @@ const Step = ({
   </div>
 );
 
+const TradovateContent = () => (
+  <div className="space-y-6" style={{ color: '#2E2E2E' }}>
+    <p className="text-base leading-relaxed">
+      Import your Tradovate or NinjaTrader trading history into TradeValley using the file upload
+      method. Follow the steps below to export your trade data and keep your journal accurate and
+      up to date.
+    </p>
+
+    <Section title="Exporting Trade Data from Tradovate / NinjaTrader" />
+
+    <Step
+      number={1}
+      title="Open Tradovate"
+      body={
+        <p>
+          Log in to the{' '}
+          <a
+            href="https://trader.tradovate.com/welcome"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-medium"
+            style={{ color: '#0F0F0F' }}
+          >
+            Tradovate Platform
+          </a>{' '}
+          using your Tradovate or NinjaTrader credentials.
+        </p>
+      }
+    />
+
+    <Step
+      number={2}
+      title="Navigate to Accounts"
+      body={
+        <>
+          <p>From the top menu, click on the <strong>Accounts</strong> tab.</p>
+          <p className="mt-2">Select the account you want to export trades from.</p>
+        </>
+      }
+    />
+
+    <Step
+      number={3}
+      title="Open Account Settings"
+      body={<p>Click the <strong>Settings/Gear</strong> icon next to your selected account.</p>}
+    />
+
+    <Step
+      number={4}
+      title="Select Export Type"
+      body={
+        <>
+          <p>Inside the account settings page, choose one of the following tabs:</p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li><strong>Fills</strong> — export individual fill executions</li>
+            <li><strong>Position History</strong> — export completed position history</li>
+          </ul>
+          <p className="mt-3">Select the option that matches the import method supported in TradeValley.</p>
+        </>
+      }
+    />
+
+    <Step
+      number={5}
+      title="Choose the Date Range"
+      body={
+        <>
+          <p>Enter the desired start and end dates for the trade history you want to export.</p>
+          <p className="mt-2">Then click <strong>Go</strong> to generate the report.</p>
+        </>
+      }
+    />
+
+    <Step
+      number={6}
+      title="Download the Report"
+      body={
+        <>
+          <p>Click <strong>Download Report</strong> to save the export file to your computer.</p>
+          <p className="mt-2">
+            Once downloaded, upload the file into TradeValley to successfully import your trades.
+          </p>
+        </>
+      }
+    />
+  </div>
+);
+
 export default BrokerDetail;
