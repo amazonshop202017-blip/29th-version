@@ -13,9 +13,31 @@ const DEFAULT_CONFIG: CalendarConfig = {
   defaultImpacts: [],
 };
 
-// Per-tab in-flight dedupe (prevents duplicate fetches on rapid re-renders).
-// Shared 24h caching is handled by the Cloudflare Worker.
+const CACHE_KEY = "forex-calendar-cache-v2";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
 let inFlightRequest: Promise<CalendarEventRaw[]> | null = null;
+
+function readCache(): CalendarEventRaw[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; data: CalendarEventRaw[] };
+    if (!parsed?.ts || !Array.isArray(parsed.data)) return null;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(data: CalendarEventRaw[]): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // ignore quota/serialization errors
+  }
+}
 
 async function fetchRawEvents(apiUrl: string): Promise<CalendarEventRaw[]> {
   const response = await fetch(apiUrl);
@@ -57,10 +79,19 @@ export async function getCalendarEvents(
   config: Partial<CalendarConfig> = {}
 ): Promise<CalendarEvent[]> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+  const cached = readCache();
+  if (cached) {
+    return transformEvents(cached);
+  }
   if (!inFlightRequest) {
-    inFlightRequest = fetchRawEvents(mergedConfig.apiUrl).finally(() => {
-      inFlightRequest = null;
-    });
+    inFlightRequest = fetchRawEvents(mergedConfig.apiUrl)
+      .then((raw) => {
+        writeCache(raw);
+        return raw;
+      })
+      .finally(() => {
+        inFlightRequest = null;
+      });
   }
   const raw = await inFlightRequest;
   return transformEvents(raw);
