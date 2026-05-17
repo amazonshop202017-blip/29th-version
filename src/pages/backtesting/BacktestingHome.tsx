@@ -68,6 +68,9 @@ const BacktestingHome = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fastest Manual Backtesting</h2>
+      </div>
       <div className="flex items-center justify-between mb-6">
         <div className="text-sm text-muted-foreground">
           {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
