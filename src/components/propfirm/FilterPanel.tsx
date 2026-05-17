@@ -178,15 +178,15 @@ export function FilterPanel({ open, onClose }: FilterPanelProps) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40" onClick={handleCancel} />
-      <div className="fixed left-3 right-3 top-20 z-50 w-auto sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[460px] sm:max-w-[calc(100vw-2rem)] bg-card rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="fixed inset-0 z-40 bg-background/40 lg:bg-transparent" onClick={handleCancel} />
+      <div className="fixed left-3 right-3 top-16 z-50 w-auto max-w-[calc(100vw-1.5rem)] mx-auto lg:absolute lg:left-auto lg:right-0 lg:top-full lg:mt-2 lg:w-[460px] lg:max-w-[calc(100vw-2rem)] lg:mx-0 bg-card rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-foreground">Filters</h2>
           <button onClick={handleCancel} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 sm:px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto overflow-x-hidden">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Firm</label>
             <MultiSelectDropdown
