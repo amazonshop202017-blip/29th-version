@@ -370,49 +370,48 @@ export default function RiskToRuinSimulator() {
           </div>
           
           <div className="results-grid" style={{ gridTemplateColumns: '1fr', gap: '2rem' }}>
-            {/* CSS hack for responsive grid inline */}
             <style>{`
               .charts-wrapper { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem; }
               @media (min-width: 768px) { .charts-wrapper { grid-template-columns: 1fr 1fr; } }
-              .recharts-cartesian-axis-tick-value { fill: #a0a0a0; font-size: 10px; }
+              .recharts-cartesian-axis-tick-value { fill: hsl(var(--muted-foreground)); font-size: 10px; }
             `}</style>
-            
+
             <div className="charts-wrapper">
               <div>
-                <h3 style={{ fontSize: '1rem', color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>Worst Case Drawdown Sequence</h3>
-                <div style={{ height: '250px', width: '100%', backgroundColor: 'var(--bg-dark)', padding: '1rem', borderRadius: '0.25rem' }}>
+                <h3 style={{ fontSize: '1rem', color: 'hsl(var(--foreground))', textAlign: 'center', marginBottom: '1rem' }}>Worst Case Drawdown Sequence</h3>
+                <div style={{ height: '250px', width: '100%', backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1rem', borderRadius: '0.25rem' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartSequence} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis 
-                        dataKey="trade" 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="trade"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => val}
                         axisLine={false}
                         tickLine={false}
                         minTickGap={30}
                       />
-                      <YAxis 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <YAxis
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => `${val}%`}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border)', color: '#fff' }}
-                        itemStyle={{ color: '#ef4444' }}
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--loss))' }}
                         formatter={(val: any) => {
                           if (val === undefined || val === null) return ['', 'Drawdown %'];
                           return [`${Number(val).toFixed(2)}%`, 'Drawdown %'];
                         }}
                         labelFormatter={(label) => `Trade ${label}`}
                       />
-                      <Area 
-                        type="monotone" 
-                        dataKey="drawdown" 
-                        stroke="#ef4444" 
-                        fill="#ef4444" 
-                        fillOpacity={0.8}
+                      <Area
+                        type="monotone"
+                        dataKey="drawdown"
+                        stroke="hsl(var(--loss))"
+                        fill="hsl(var(--loss))"
+                        fillOpacity={0.7}
                         name="Drawdown %"
                       />
                     </AreaChart>
@@ -421,37 +420,37 @@ export default function RiskToRuinSimulator() {
               </div>
 
               <div>
-                <h3 style={{ fontSize: '1rem', color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>Drawdown Probability Distribution</h3>
-                <div style={{ height: '250px', width: '100%', backgroundColor: 'var(--bg-dark)', padding: '1rem', borderRadius: '0.25rem' }}>
+                <h3 style={{ fontSize: '1rem', color: 'hsl(var(--foreground))', textAlign: 'center', marginBottom: '1rem' }}>Drawdown Probability Distribution</h3>
+                <div style={{ height: '250px', width: '100%', backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1rem', borderRadius: '0.25rem' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={results.distribution} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis 
-                        dataKey="level" 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="level"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <YAxis 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <YAxis
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => `${val}%`}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border)', color: '#fff' }}
-                        itemStyle={{ color: '#f59e0b' }}
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(38 92% 50%)' }}
                         formatter={(val: any) => {
                           if (val === undefined || val === null) return ['', 'Probability %'];
                           return [`${Number(val).toFixed(2)}%`, 'Probability %'];
                         }}
-                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        cursor={{ fill: 'hsl(var(--muted-foreground) / 0.1)' }}
                       />
-                      <ReferenceLine y={5} stroke="var(--success)" strokeDasharray="3 3" label={{ value: 'Low Risk (5%)', fill: 'var(--success)', position: 'insideBottomLeft', fontSize: 10 }} />
-                      <ReferenceLine y={20} stroke="var(--danger)" strokeDasharray="3 3" label={{ value: 'High Risk (20%)', fill: 'var(--danger)', position: 'insideBottomLeft', fontSize: 10 }} />
-                      <Bar 
-                        dataKey="probability" 
-                        fill="#f59e0b" 
+                      <ReferenceLine y={5} stroke="hsl(var(--profit))" strokeDasharray="3 3" label={{ value: 'Low Risk (5%)', fill: 'hsl(var(--profit))', position: 'insideBottomLeft', fontSize: 10 }} />
+                      <ReferenceLine y={20} stroke="hsl(var(--loss))" strokeDasharray="3 3" label={{ value: 'High Risk (20%)', fill: 'hsl(var(--loss))', position: 'insideBottomLeft', fontSize: 10 }} />
+                      <Bar
+                        dataKey="probability"
+                        fill="hsl(38 92% 50%)"
                         name="Probability %"
                         radius={[2, 2, 0, 0]}
                       />
@@ -463,8 +462,8 @@ export default function RiskToRuinSimulator() {
           </div>
 
           <div className="article-text" style={{ marginTop: '2rem' }}>
-            <h3 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem' }}>How to Reduce Your Risk of Ruin</h3>
-            <ul style={{ paddingLeft: '1.5rem', color: '#d1d5db', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h3 style={{ fontSize: '1.125rem', color: 'hsl(var(--foreground))', marginBottom: '1rem' }}>How to Reduce Your Risk of Ruin</h3>
+            <ul style={{ paddingLeft: '1.5rem', color: 'hsl(var(--muted-foreground))', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li><strong>Reduce position size:</strong> Decreasing your risk per trade from {riskPerTrade}% to {(Number(riskPerTrade) / 2).toFixed(1)}% could significantly lower your risk of ruin.</li>
               <li><strong>Improve win rate:</strong> Working to increase your win rate through better trade selection.</li>
               <li><strong>Increase reward/risk ratio:</strong> Targeting larger profits relative to your risk can compensate for a lower win rate.</li>
