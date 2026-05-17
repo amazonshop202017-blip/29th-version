@@ -162,13 +162,19 @@ const MT5Content = () => (
         <Lightbulb className="w-4.5 h-4.5" style={{ color: '#059669' }} />
       </div>
       <div>
-        <div className="font-semibold text-sm mb-1" style={{ color: '#065F46' }}>
-          Pro Tip: Want an easier way to import your trades?
+        <div className="font-semibold text-sm mb-1 flex items-center gap-2 flex-wrap" style={{ color: '#065F46' }}>
+          <span>Pro Tip: Want an easier way to import your trades?</span>
+          <span
+            className="text-[10px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(245,158,11,0.15)', color: '#B45309' }}
+          >
+            Coming Soon
+          </span>
         </div>
         <p className="text-sm leading-relaxed" style={{ color: '#2E2E2E' }}>
-          TradeValley supports direct MetaTrader 5 syncing. Simply head to the broker sync section
-          in TradeValley, connect your MT5 account, and your trades will be imported automatically —
-          no manual uploads required.
+          TradeValley will soon support direct MetaTrader 5 syncing. You'll be able to connect your
+          MT5 account from the broker sync section and have your trades imported automatically — no
+          manual uploads required.
         </p>
       </div>
     </div>
