@@ -31,7 +31,7 @@ interface AdvancedFiltersPanelProps {
 }
 
 export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}) => {
-  const [activeSection, setActiveSection] = useState<MenuSection>('basic');
+  const [activeSection, setActiveSection] = useState<MenuSection | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [expandedCommentCategories, setExpandedCommentCategories] = useState<Set<TradeCommentCategory>>(new Set());
@@ -289,13 +289,16 @@ export const AdvancedFiltersPanel = ({ onClose }: AdvancedFiltersPanelProps = {}
     },
   ];
 
+  const selectedDesktopSection: MenuSection = activeSection ?? 'basic';
+  const visibleSection: MenuSection = activeSection ?? 'basic';
+
   return (
-    <div className="flex flex-col w-[537px]">
-      <div className="flex h-[336px]">
+    <div className="flex w-full min-w-0 flex-col overflow-x-hidden md:w-[537px] md:max-w-[calc(100vw-2rem)]">
+      <div className="flex min-h-[336px] min-w-0 overflow-hidden md:h-[336px]">
       {/* Left Menu */}
-      <div className="w-[179px] shrink-0 border-r border-border p-2 flex flex-col gap-2">
+      <div className="hidden w-[179px] shrink-0 flex-col gap-2 border-r border-border p-2 md:flex">
         {menuItems.map((item) => {
-          const isActive = activeSection === item.key;
+          const isActive = selectedDesktopSection === item.key;
           return (
             <button
               key={item.key}
