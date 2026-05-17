@@ -152,8 +152,17 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
     updatePreferences({ dashboardMetricsOrder: metricsOrder });
   }, [metricsOrder, updatePreferences]);
 
+  const [activeMetricId, setActiveMetricId] = useState<string | null>(null);
+
+  const handleMetricDragStart = (event: DragStartEvent) => {
+    setActiveMetricId(event.active.id as string);
+    document.body.style.cursor = 'grabbing';
+  };
+
   const handleMetricDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveMetricId(null);
+    document.body.style.cursor = '';
     if (over && active.id !== over.id) {
       setMetricsOrder((items) => {
         const oldIndex = items.indexOf(active.id as string);
@@ -161,6 +170,11 @@ export const DashboardMetrics = ({ isEditMode }: DashboardMetricsProps) => {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  const handleMetricDragCancel = () => {
+    setActiveMetricId(null);
+    document.body.style.cursor = '';
   };
 
   const handleAddMetric = (metricId: string) => {
