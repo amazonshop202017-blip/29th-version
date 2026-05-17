@@ -310,8 +310,8 @@ export default function RiskToRuinSimulator() {
           {isCalculating ? 'CALCULATING...' : 'CALCULATE RISK'}
         </button>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          Need a better trading strategy? <a href="#" style={{ color: '#fff', textDecoration: 'underline' }}>Take our quiz</a> to compare 75K+ trading strategies & learn with AI
+        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
+          Need a better trading strategy? <a href="#" style={{ color: 'hsl(var(--foreground))', textDecoration: 'underline' }}>Take our quiz</a> to compare 75K+ trading strategies & learn with AI
         </div>
       </div>
 
