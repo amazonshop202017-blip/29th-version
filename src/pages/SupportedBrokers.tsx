@@ -117,7 +117,7 @@ const SupportedBrokers = () => {
                   }}
                 >
                   <Link
-                    to={`/supported-brokers/${b.name.toLowerCase()}`}
+                    to={`/supported-brokers/${b.slug}`}
                     className="font-medium hover:underline"
                   >
                     {b.name}
