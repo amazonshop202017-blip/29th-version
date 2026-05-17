@@ -179,7 +179,7 @@ export function FilterPanel({ open, onClose }: FilterPanelProps) {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={handleCancel} />
-      <div className="absolute right-0 top-full mt-2 z-50 w-[460px] max-w-[calc(100vw-2rem)] bg-card rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
+      <div className="fixed left-3 right-3 top-20 z-50 w-auto sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[460px] sm:max-w-[calc(100vw-2rem)] bg-card rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-border overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-foreground">Filters</h2>
           <button onClick={handleCancel} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
