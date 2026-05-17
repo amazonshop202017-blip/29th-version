@@ -63,17 +63,17 @@ function MultiSelectDropdown({
     : placeholder;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex items-center justify-between w-full border border-border rounded-lg px-3 py-2.5 bg-card hover:border-foreground/30 transition-colors"
+        className="flex items-center justify-between w-full min-w-0 border border-border rounded-lg px-3 py-2.5 bg-card hover:border-foreground/30 transition-colors gap-2"
       >
-        <span className={`text-sm ${selected.length ? "text-foreground" : "text-muted-foreground"}`}>{display}</span>
+        <span className={`text-sm truncate ${selected.length ? "text-foreground" : "text-muted-foreground"}`}>{display}</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full min-w-0 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
           <div className="relative border-b border-border">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
@@ -96,10 +96,10 @@ function MultiSelectDropdown({
                     key={opt.value}
                     type="button"
                     onClick={() => onToggle(opt.value)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex items-center justify-between"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex items-center justify-between gap-2"
                   >
-                    <span className="text-foreground">{opt.label}</span>
-                    {isSelected && <Check className="w-4 h-4 text-primary" />}
+                    <span className="text-foreground truncate">{opt.label}</span>
+                    {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                   </button>
                 );
               })
