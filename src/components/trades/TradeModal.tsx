@@ -1238,16 +1238,6 @@ export const TradeModal = () => {
                 </div>
               </div>
 
-              {/* Personal Notes Section */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Personal Notes</h4>
-                <Textarea
-                  placeholder="Add notes about this trade..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[100px] bg-input border-border resize-none"
-                />
-              </div>
             </div>
           )}
 
