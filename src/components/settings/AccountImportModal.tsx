@@ -69,6 +69,7 @@ export function AccountImportModal({ open, onOpenChange }: AccountImportModalPro
   const { reconcileCategoriesForImport } = useCategoriesContext();
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [importType, setImportType] = useState<'auto' | 'file'>('file');
   const [importSource, setImportSource] = useState<string>('');
   const [sourcePopoverOpen, setSourcePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
