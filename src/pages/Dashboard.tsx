@@ -179,7 +179,9 @@ const Dashboard = () => {
   const totalCols = chartOrder.reduce((acc, id) => acc + (CHART_CONFIGS[id]?.colSpan || 1), 0);
   const lgGapCount = (3 - (totalCols % 3)) % 3;
   // ensure at least 2 add placeholders visible in edit mode for the user to drop/click
-  const placeholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
+  const editPlaceholderCount = isEditMode ? Math.max(lgGapCount, 2) : 0;
+  const allChartsAdded = Object.keys(CHART_CONFIGS).every((id) => chartOrder.includes(id));
+  const showTrailingAddTile = !isEditMode && !allChartsAdded;
 
   return (
     <div className="space-y-6 md:space-y-8">
