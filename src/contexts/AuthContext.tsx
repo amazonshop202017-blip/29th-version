@@ -9,6 +9,7 @@ export interface UserPreferences {
   };
   favoriteMetrics?: string[];
   dashboardChartOrder?: string[];
+  dashboardChartLayout?: Array<{ id: string; row: number; col: number; colSpan: number; rowSpan: number }>;
   dashboardMetricsOrder?: string[];
   [key: string]: unknown; // JSONB-like: allows future keys without schema changes
 }
