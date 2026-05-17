@@ -90,6 +90,7 @@ const AuthenticatedApp = () => {
         
         <Route path="/supported-platforms" element={<SupportedPlatforms />} />
         <Route path="/supported-brokers" element={<SupportedBrokers />} />
+        <Route path="/supported-brokers/:slug" element={<BrokerDetail />} />
         <Route path="/entering" element={<Entering />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
