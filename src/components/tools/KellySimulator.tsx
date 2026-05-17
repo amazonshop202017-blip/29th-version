@@ -15,6 +15,11 @@ const formatPercent = (value: number) => {
   return (value * 100).toFixed(2) + '%';
 };
 
+const cssVar = (name: string) => {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v ? `hsl(${v})` : '#888';
+};
+
 interface SimulationResult {
   fraction: number;
   label: string;
@@ -30,10 +35,10 @@ export default function KellySimulator() {
   const [startingCapital, setStartingCapital] = useState<number | string>(10000);
   const [numTrades, setNumTrades] = useState<number | string>(100);
   const [sliderMultiplier, setSliderMultiplier] = useState<number>(1);
-  
+  const [themeTick, setThemeTick] = useState(0);
+
   const [results, setResults] = useState<SimulationResult[]>([]);
-  
-  // Calculate Kelly Percentage
+
   const kellyPct = useMemo(() => {
     const w = (Number(winRate) || 0) / 100;
     const l = 1 - w;
@@ -42,38 +47,37 @@ export default function KellySimulator() {
     return Math.max(0, k);
   }, [winRate, riskReward]);
 
+  // Re-render chart when light/dark mode toggles
+  useEffect(() => {
+    const obs = new MutationObserver(() => setThemeTick(t => t + 1));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
   const runSimulation = () => {
     const wr = Number(winRate) || 0;
     const rr = Number(riskReward) || 1;
     const sc = Number(startingCapital) || 1000;
     const nt = Number(numTrades) || 100;
-    
-    // Generate a sequence of random trades
+
     const w = wr / 100;
     const trades = Array.from({ length: nt }, () => Math.random() < w);
-    
+
     const chartMultipliers = [0.25, 0.5, 0.75, 1, 1.5, 2];
 
     const newResults: SimulationResult[] = chartMultipliers.map(m => {
       let currentCapital = sc;
       const equityCurve = [currentCapital];
-      
       const riskFraction = kellyPct * m;
 
       for (let i = 0; i < nt; i++) {
         const isWin = trades[i];
-        
-        // Cap the position size at 25% if that is what they meant, but wait, 
-        // to mimic their varying numbers we DO NOT cap it strictly, 
-        // or we use it without caps.
-        const risk = riskFraction; 
-
+        const risk = riskFraction;
         if (isWin) {
           currentCapital += currentCapital * risk * rr;
         } else {
           currentCapital -= currentCapital * risk;
         }
-        
         if (currentCapital < 0) currentCapital = 0;
         equityCurve.push(currentCapital);
       }
@@ -102,16 +106,29 @@ export default function KellySimulator() {
   const getChartOptions = () => {
     if (results.length === 0) return {};
 
-    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#78716c'];
-    
+    const muted = cssVar('--muted-foreground');
+    const border = cssVar('--border');
+    const card = cssVar('--card');
+    const fg = cssVar('--foreground');
+
+    const colors = [
+      cssVar('--profit'),
+      cssVar('--chart-1'),
+      cssVar('--chart-5'),
+      cssVar('--chart-4'),
+      cssVar('--loss'),
+      muted,
+    ];
+
     return {
       backgroundColor: 'transparent',
       tooltip: {
         trigger: 'axis',
-        axisPointer: {
-          type: 'line'
-        },
-        formatter: function(params: any) {
+        backgroundColor: card,
+        borderColor: border,
+        textStyle: { color: fg },
+        axisPointer: { type: 'line' },
+        formatter: function (params: any) {
           let result = `Trade ${params[0].axisValue}<br/>`;
           params.forEach((param: any) => {
             result += `${param.marker} ${param.seriesName}: ${formatCurrency(param.value)}<br/>`;
@@ -121,42 +138,31 @@ export default function KellySimulator() {
       },
       legend: {
         data: results.map(r => r.label),
-        textStyle: { color: '#a0a0a0' },
+        textStyle: { color: muted },
         top: 0
       },
-      grid: {
-        left: '2%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      },
+      grid: { left: '2%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
         boundaryGap: false,
         data: Array.from({ length: (Number(numTrades) || 100) + 1 }, (_, i) => i),
-        axisLine: { lineStyle: { color: '#333333' } },
-        axisLabel: { color: '#a0a0a0' }
+        axisLine: { lineStyle: { color: border } },
+        axisLabel: { color: muted }
       },
       yAxis: {
         type: 'log',
-        min: (value: any) => {
-          if (value.min <= 0) return 1;
-          return Math.pow(10, Math.floor(Math.log10(value.min)));
-        },
-        max: (value: any) => {
-          if (value.max <= 0) return 10;
-          return Math.pow(10, Math.ceil(Math.log10(value.max)));
-        },
+        min: (value: any) => value.min <= 0 ? 1 : Math.pow(10, Math.floor(Math.log10(value.min))),
+        max: (value: any) => value.max <= 0 ? 10 : Math.pow(10, Math.ceil(Math.log10(value.max))),
         axisLine: { show: false },
-        axisLabel: { 
-          color: '#a0a0a0',
+        axisLabel: {
+          color: muted,
           formatter: (value: number) => {
             if (value >= 1000000) return '$' + (value / 1000000) + 'M';
             if (value >= 1000) return '$' + (value / 1000) + 'k';
             return '$' + value;
           }
         },
-        splitLine: { lineStyle: { color: '#2d2d2d' } }
+        splitLine: { lineStyle: { color: border } }
       },
       series: results.map((r, i) => ({
         name: r.label,
@@ -173,24 +179,24 @@ export default function KellySimulator() {
     <div className="layout-grid">
       <div className="panel">
         <h2 className="panel-title">Parameters</h2>
-        
+
         <div className="form-group">
           <label className="form-label">Win Rate %</label>
-          <input 
-            type="number" 
-            className="form-input" 
-            value={winRate} 
-            onChange={e => setWinRate(e.target.value === '' ? '' : e.target.value)} 
+          <input
+            type="number"
+            className="form-input"
+            value={winRate}
+            onChange={e => setWinRate(e.target.value === '' ? '' : e.target.value)}
             step="any" min="1" max="99"
           />
         </div>
 
         <div className="form-group">
           <label className="form-label">Risk/Reward Ratio</label>
-          <input 
-            type="number" 
-            className="form-input" 
-            value={riskReward} 
+          <input
+            type="number"
+            className="form-input"
+            value={riskReward}
             onChange={e => setRiskReward(e.target.value === '' ? '' : e.target.value)}
             step="any" min="0.1"
           />
@@ -199,10 +205,10 @@ export default function KellySimulator() {
 
         <div className="form-group">
           <label className="form-label">Starting Capital USD</label>
-          <input 
-            type="number" 
-            className="form-input" 
-            value={startingCapital} 
+          <input
+            type="number"
+            className="form-input"
+            value={startingCapital}
             onChange={e => setStartingCapital(e.target.value === '' ? '' : e.target.value)}
             step="any" min="100"
           />
@@ -210,10 +216,10 @@ export default function KellySimulator() {
 
         <div className="form-group">
           <label className="form-label">Number of Trades to Simulate</label>
-          <input 
-            type="number" 
-            className="form-input" 
-            value={numTrades} 
+          <input
+            type="number"
+            className="form-input"
+            value={numTrades}
             onChange={e => setNumTrades(e.target.value === '' ? '' : e.target.value)}
             step="any" min="10" max="1000"
           />
@@ -221,12 +227,12 @@ export default function KellySimulator() {
 
         <div className="slider-container">
           <label className="form-label">Kelly Fraction Multiplier</label>
-          <input 
-            type="range" 
-            min="0.1" 
-            max="2" 
-            step="0.1" 
-            value={sliderMultiplier} 
+          <input
+            type="range"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value={sliderMultiplier}
             onChange={e => setSliderMultiplier(Number(e.target.value))}
           />
           <div className="slider-labels">
@@ -246,15 +252,11 @@ export default function KellySimulator() {
             <strong>Kelly Criterion</strong> helps determine the optimal position size to maximize long-term capital growth, based on your edge and risk/reward ratio.
           </div>
         </div>
-        
-        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          Need a better trading strategy? <a href="#" style={{ color: '#fff', textDecoration: 'underline' }}>Take our quiz</a> and compare 75K+ trading strategies backtested & learn with AI
-        </div>
       </div>
 
       <div>
         <h2 className="panel-title">Kelly Criterion Results</h2>
-        
+
         <div className="results-grid">
           <div className="result-card">
             <div className="result-title">Full Kelly (Optimal)</div>
@@ -280,19 +282,20 @@ export default function KellySimulator() {
           </div>
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '0.5rem', color: '#fff', fontSize: '1.125rem' }}>Capital Growth Simulation</h3>
-        <p style={{ fontSize: '0.75rem', color: '#a0a0a0', textAlign: 'center', marginBottom: '1rem' }}>Capital Growth with Different Kelly Fractions</p>
-        
+        <h3 style={{ marginTop: '2rem', marginBottom: '0.5rem', color: 'hsl(var(--foreground))', fontSize: '1.125rem' }}>Capital Growth Simulation</h3>
+        <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', marginBottom: '1rem' }}>Capital Growth with Different Kelly Fractions</p>
+
         <div className="chart-container">
-          <ReactECharts 
-            option={getChartOptions()} 
+          <ReactECharts
+            key={themeTick}
+            option={getChartOptions()}
             style={{ height: '100%', width: '100%' }}
             opts={{ renderer: 'svg' }}
           />
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '0.5rem', color: '#fff', fontSize: '1.125rem' }}>Simulation Results</h3>
-        
+        <h3 style={{ marginTop: '2rem', marginBottom: '0.5rem', color: 'hsl(var(--foreground))', fontSize: '1.125rem' }}>Simulation Results</h3>
+
         <div className="table-container">
           <table>
             <thead>
@@ -335,9 +338,9 @@ export default function KellySimulator() {
             <strong>Quarter Kelly</strong> is extremely conservative, capturing ~50% of the optimal growth rate but with much lower volatility.
           </p>
           <p>
-            The formula used: <strong>Kelly % = Win Rate - [(1 - Win Rate) / Risk:Reward Ratio]</strong>
+            The formula used: <strong>Kelly % = Win Rate − [(1 − Win Rate) / Risk:Reward Ratio]</strong>
           </p>
-          <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '1.5rem' }}>
+          <p style={{ fontSize: '0.75rem', marginTop: '1.5rem' }}>
             <strong>Note on the simulation:</strong> This calculator includes market friction factors like slippage and transaction costs that increase with position size, as well as position size limits. In real markets, larger positions typically face greater execution challenges and costs. The simulation caps position sizes at 25% of capital regardless of the Kelly calculation, reflecting real-world constraints.
           </p>
         </div>

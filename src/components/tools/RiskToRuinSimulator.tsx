@@ -171,9 +171,9 @@ export default function RiskToRuinSimulator() {
   }, []);
 
   const getRiskLevel = (ror: number) => {
-    if (ror < 5) return { label: 'Well / Low Risk', color: 'var(--success)' };
-    if (ror <= 20) return { label: 'Acceptable Risk', color: 'var(--warning)' };
-    return { label: 'High Risk', color: 'var(--danger)' };
+    if (ror < 5) return { label: 'Well / Low Risk', color: 'hsl(var(--profit))' };
+    if (ror <= 20) return { label: 'Acceptable Risk', color: 'hsl(38 92% 50%)' };
+    return { label: 'High Risk', color: 'hsl(var(--loss))' };
   };
 
   const getInterpretationText = (ror: number) => {
@@ -310,8 +310,8 @@ export default function RiskToRuinSimulator() {
           {isCalculating ? 'CALCULATING...' : 'CALCULATE RISK'}
         </button>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          Need a better trading strategy? <a href="#" style={{ color: '#fff', textDecoration: 'underline' }}>Take our quiz</a> to compare 75K+ trading strategies & learn with AI
+        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
+          Need a better trading strategy? <a href="#" style={{ color: 'hsl(var(--foreground))', textDecoration: 'underline' }}>Take our quiz</a> to compare 75K+ trading strategies & learn with AI
         </div>
       </div>
 
@@ -320,48 +320,48 @@ export default function RiskToRuinSimulator() {
           <h2 className="panel-title">Risk Analysis Results</h2>
           
           <div className="results-grid-2">
-            <div className="panel" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1.25rem' }}>
               <div className="result-title">Risk of Ruin ({targetDrawdown}% Drawdown)</div>
               <div style={{ fontSize: '2rem', fontWeight: 700, color: getRiskLevel(results.riskOfRuin).color, marginBottom: '0.5rem' }}>
                 {formatPercent(results.riskOfRuin)}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#fff' }}>
+              <div style={{ fontSize: '0.875rem', color: 'hsl(var(--foreground))' }}>
                 {getRiskLevel(results.riskOfRuin).label}
               </div>
             </div>
-            
-            <div className="panel" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+
+            <div className="panel" style={{ padding: '1.25rem' }}>
               <div className="result-title">Survival Rate</div>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--warning)', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'hsl(38 92% 50%)', marginBottom: '0.5rem' }}>
                 {formatPercent(results.survivalRate)}
               </div>
             </div>
           </div>
 
           <div className="results-grid">
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Maximum Drawdown</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--danger)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--loss))' }}>
                 {formatPercent(results.maxDrawdown)}
               </div>
             </div>
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Average Drawdown</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
                 {formatPercent(results.avgDrawdown)}
               </div>
             </div>
-            <div className="panel" style={{ padding: '1rem', border: '1px solid var(--border)' }}>
+            <div className="panel" style={{ padding: '1rem' }}>
               <div className="result-title">Avg. Trades Before Ruin</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
                 {results.avgTradesBeforeRuin}
               </div>
             </div>
           </div>
 
-          <div className="panel" style={{ marginBottom: '2rem', border: '1px solid var(--border)' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>Interpretation</h3>
-            <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+          <div className="panel" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ marginTop: 0, fontSize: '1rem', color: 'hsl(var(--foreground))', marginBottom: '1rem' }}>Interpretation</h3>
+            <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1rem' }}>
               With a {winRate}% win rate, risking {riskPerTrade}% per trade, and a {rewardRisk}:1 reward-to-risk ratio, your probability of experiencing a {targetDrawdown}% drawdown is <strong>{formatPercent(results.riskOfRuin)}</strong>.
             </p>
             <p style={{ color: getRiskLevel(results.riskOfRuin).color, fontSize: '0.9rem', fontWeight: 500 }}>
@@ -370,49 +370,48 @@ export default function RiskToRuinSimulator() {
           </div>
           
           <div className="results-grid" style={{ gridTemplateColumns: '1fr', gap: '2rem' }}>
-            {/* CSS hack for responsive grid inline */}
             <style>{`
               .charts-wrapper { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem; }
               @media (min-width: 768px) { .charts-wrapper { grid-template-columns: 1fr 1fr; } }
-              .recharts-cartesian-axis-tick-value { fill: #a0a0a0; font-size: 10px; }
+              .recharts-cartesian-axis-tick-value { fill: hsl(var(--muted-foreground)); font-size: 10px; }
             `}</style>
-            
+
             <div className="charts-wrapper">
               <div>
-                <h3 style={{ fontSize: '1rem', color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>Worst Case Drawdown Sequence</h3>
-                <div style={{ height: '250px', width: '100%', backgroundColor: 'var(--bg-dark)', padding: '1rem', borderRadius: '0.25rem' }}>
+                <h3 style={{ fontSize: '1rem', color: 'hsl(var(--foreground))', textAlign: 'center', marginBottom: '1rem' }}>Worst Case Drawdown Sequence</h3>
+                <div style={{ height: '250px', width: '100%', backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1rem', borderRadius: '0.25rem' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartSequence} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis 
-                        dataKey="trade" 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="trade"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => val}
                         axisLine={false}
                         tickLine={false}
                         minTickGap={30}
                       />
-                      <YAxis 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <YAxis
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => `${val}%`}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border)', color: '#fff' }}
-                        itemStyle={{ color: '#ef4444' }}
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--loss))' }}
                         formatter={(val: any) => {
                           if (val === undefined || val === null) return ['', 'Drawdown %'];
                           return [`${Number(val).toFixed(2)}%`, 'Drawdown %'];
                         }}
                         labelFormatter={(label) => `Trade ${label}`}
                       />
-                      <Area 
-                        type="monotone" 
-                        dataKey="drawdown" 
-                        stroke="#ef4444" 
-                        fill="#ef4444" 
-                        fillOpacity={0.8}
+                      <Area
+                        type="monotone"
+                        dataKey="drawdown"
+                        stroke="hsl(var(--loss))"
+                        fill="hsl(var(--loss))"
+                        fillOpacity={0.7}
                         name="Drawdown %"
                       />
                     </AreaChart>
@@ -421,37 +420,37 @@ export default function RiskToRuinSimulator() {
               </div>
 
               <div>
-                <h3 style={{ fontSize: '1rem', color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>Drawdown Probability Distribution</h3>
-                <div style={{ height: '250px', width: '100%', backgroundColor: 'var(--bg-dark)', padding: '1rem', borderRadius: '0.25rem' }}>
+                <h3 style={{ fontSize: '1rem', color: 'hsl(var(--foreground))', textAlign: 'center', marginBottom: '1rem' }}>Drawdown Probability Distribution</h3>
+                <div style={{ height: '250px', width: '100%', backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1rem', borderRadius: '0.25rem' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={results.distribution} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis 
-                        dataKey="level" 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="level"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <YAxis 
-                        tick={{ fill: '#a0a0a0', fontSize: 10 }}
+                      <YAxis
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                         tickFormatter={(val) => `${val}%`}
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border)', color: '#fff' }}
-                        itemStyle={{ color: '#f59e0b' }}
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(38 92% 50%)' }}
                         formatter={(val: any) => {
                           if (val === undefined || val === null) return ['', 'Probability %'];
                           return [`${Number(val).toFixed(2)}%`, 'Probability %'];
                         }}
-                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        cursor={{ fill: 'hsl(var(--muted-foreground) / 0.1)' }}
                       />
-                      <ReferenceLine y={5} stroke="var(--success)" strokeDasharray="3 3" label={{ value: 'Low Risk (5%)', fill: 'var(--success)', position: 'insideBottomLeft', fontSize: 10 }} />
-                      <ReferenceLine y={20} stroke="var(--danger)" strokeDasharray="3 3" label={{ value: 'High Risk (20%)', fill: 'var(--danger)', position: 'insideBottomLeft', fontSize: 10 }} />
-                      <Bar 
-                        dataKey="probability" 
-                        fill="#f59e0b" 
+                      <ReferenceLine y={5} stroke="hsl(var(--profit))" strokeDasharray="3 3" label={{ value: 'Low Risk (5%)', fill: 'hsl(var(--profit))', position: 'insideBottomLeft', fontSize: 10 }} />
+                      <ReferenceLine y={20} stroke="hsl(var(--loss))" strokeDasharray="3 3" label={{ value: 'High Risk (20%)', fill: 'hsl(var(--loss))', position: 'insideBottomLeft', fontSize: 10 }} />
+                      <Bar
+                        dataKey="probability"
+                        fill="hsl(38 92% 50%)"
                         name="Probability %"
                         radius={[2, 2, 0, 0]}
                       />
@@ -463,8 +462,8 @@ export default function RiskToRuinSimulator() {
           </div>
 
           <div className="article-text" style={{ marginTop: '2rem' }}>
-            <h3 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem' }}>How to Reduce Your Risk of Ruin</h3>
-            <ul style={{ paddingLeft: '1.5rem', color: '#d1d5db', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h3 style={{ fontSize: '1.125rem', color: 'hsl(var(--foreground))', marginBottom: '1rem' }}>How to Reduce Your Risk of Ruin</h3>
+            <ul style={{ paddingLeft: '1.5rem', color: 'hsl(var(--muted-foreground))', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li><strong>Reduce position size:</strong> Decreasing your risk per trade from {riskPerTrade}% to {(Number(riskPerTrade) / 2).toFixed(1)}% could significantly lower your risk of ruin.</li>
               <li><strong>Improve win rate:</strong> Working to increase your win rate through better trade selection.</li>
               <li><strong>Increase reward/risk ratio:</strong> Targeting larger profits relative to your risk can compensate for a lower win rate.</li>

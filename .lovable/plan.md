@@ -1,75 +1,55 @@
+# Theme Risk of Ruin & Kelly Criterion for Light + Dark Mode
+
+Currently the two ported tool pages use hardcoded dark colors (`#121212`, `#1e1e1e`, `#fff`, `#a0a0a0`, etc.) via custom CSS classes (`.app-container`, `.panel`, `.form-input`, etc.) and inline styles. They look broken in light mode and don't match the rest of the app's dark theme either.
+
 ## Goal
 
-The sidebar already lists `Risk of Ruin` (`/tools/risk-of-ruin`) and `Kelly Criterion` (`/tools/kelly-criterion`) but the routes 404. Port the two calculators verbatim from the `risk/kelly` project and mount them on those routes.
+Both pages should:
+- Look correct in light mode (matching cards, inputs, text colors used elsewhere in the app)
+- In dark mode, use the app's dark palette (`hsl(var(--card))`, `hsl(var(--background))`, `hsl(var(--border))`, etc.) instead of the imported `#1e1e1e` / `#121212`
+- Keep the exact same layout, behavior, charts, and calculations — only colors/surfaces change
 
-## Steps
+## Approach
 
-1. **Add dependencies** (used by the source components, not currently in this project):
-   - `echarts` (`^6.0.0`)
-   - `echarts-for-react` (`^3.0.6`)
-   
-   `recharts` and `lucide-react` are already installed and compatible.
+Rewrite the ported CSS block in `src/index.css` so all `.app-container`, `.panel`, `.form-input`, `.btn-primary`, `.result-card`, `.info-box`, `.article-text`, table, slider, etc. styles reference semantic HSL tokens (`--background`, `--card`, `--muted`, `--foreground`, `--muted-foreground`, `--border`, `--primary`, `--primary-foreground`, `--profit`, `--loss`, etc.).
 
-2. **Copy component files 1:1** (no edits to logic, imports, styles, or markup):
-   - `risk/kelly:src/components/KellySimulator.tsx` → `src/components/tools/KellySimulator.tsx`
-   - `risk/kelly:src/components/RiskToRuinSimulator.tsx` → `src/components/tools/RiskToRuinSimulator.tsx`
+Then fix the two component files where colors are inline / hardcoded:
 
-3. **Port styles 1:1**: append the entire contents of `risk/kelly:src/index.css` to our `src/index.css`. The class names (`.panel`, `.main-title`, `.form-input`, `.result-card`, `.app-container`, `.max-w-container`, etc.) and CSS variables (`--bg-dark`, `--accent`…) don't exist anywhere else in this codebase, so there are no collisions. The components stay visually identical (dark themed) inside their own pages.
+### `src/index.css`
+- Remove the hardcoded `:root` block (`--bg-dark`, `--bg-panel`, etc.) that overrode our design tokens.
+- Re-map the ported classes to use semantic tokens:
+  - `.app-container` → `bg-background text-foreground`, remove forced `min-height`/dark color
+  - `.panel`, `.result-card` → `bg-card border-border`
+  - `.form-input`, `select.form-input` → `bg-background border-border text-foreground`, focus ring `--ring`
+  - `.form-label`, `.form-help`, `.result-title`, `.result-desc` → `text-muted-foreground`
+  - `.main-title`, `.panel-title`, `.result-value` → `text-foreground`
+  - `.btn-primary` → `bg-primary text-primary-foreground hover:bg-primary-active`
+  - `.info-box` → muted/secondary surface with subtle accent
+  - `.text-success` / `.text-danger` → `hsl(var(--profit))` / `hsl(var(--loss))`
+  - Table borders → `border-border`, header text → `text-muted-foreground`
+  - Slider track/thumb → use `--border` track and `--primary` thumb
+  - `.article-text` body/headings → `text-foreground` / `text-muted-foreground`
 
-4. **Create the two route pages** that reproduce the markup the source `App.tsx` renders for each calculator (heading + simulator), without the home/back button shell (the app already has a global header + sidebar):
+### `src/components/tools/RiskToRuinSimulator.tsx`
+Replace inline hardcoded colors with theme tokens:
+- `color: '#fff'` / `'#d1d5db'` → use `color: 'hsl(var(--foreground))'` or `'hsl(var(--muted-foreground))'`
+- Chart axis tick fills `#a0a0a0`, grid stroke `#333`, tooltip `var(--bg-panel)` → `hsl(var(--muted-foreground))`, `hsl(var(--border))`, `hsl(var(--card))`
+- Drawdown area / bars `#ef4444` → `hsl(var(--loss))`
+- Risk-level helper `var(--success|warning|danger)` → `hsl(var(--profit))` / amber / `hsl(var(--loss))`
+- "Take our quiz" link `#fff` → `hsl(var(--foreground))`
 
-   - `src/pages/tools/RiskOfRuin.tsx`
-     ```tsx
-     import RiskToRuinSimulator from '@/components/tools/RiskToRuinSimulator';
-
-     export default function RiskOfRuin() {
-       return (
-         <div className="app-container">
-           <div className="max-w-container">
-             <h1 className="main-title">Risk of Ruin Calculator</h1>
-             <p style={{ color: '#a0a0a0', marginBottom: '2rem' }}>
-               This calculator helps traders understand the probability of losing a specific percentage of their account based on their win rate, risk/reward ratio, and position sizing strategy.
-             </p>
-             <RiskToRuinSimulator />
-           </div>
-         </div>
-       );
-     }
-     ```
-
-   - `src/pages/tools/KellyCriterion.tsx`
-     ```tsx
-     import KellySimulator from '@/components/tools/KellySimulator';
-
-     export default function KellyCriterion() {
-       return (
-         <div className="app-container">
-           <div className="max-w-container">
-             <h1 className="main-title">Kelly Criterion Calculator</h1>
-             <KellySimulator />
-           </div>
-         </div>
-       );
-     }
-     ```
-
-   These mirror the source `App.tsx` page sections exactly. (`AppLayout` already detects `/tools/*` and skips its padding wrapper, so the source's `.app-container` padding is honored.)
-
-5. **Register routes in `src/App.tsx`** next to the existing tools routes:
-   ```tsx
-   <Route path="/tools/risk-of-ruin" element={<RiskOfRuin />} />
-   <Route path="/tools/kelly-criterion" element={<KellyCriterion />} />
-   ```
-   Plus the two imports at the top.
+### `src/components/tools/KellySimulator.tsx`
+- ECharts options: axis label color `#a0a0a0` → CSS var read at runtime via `getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground')` wrapped in `hsl(...)`; axis line `#333` → `--border`; splitLine `#2d2d2d` → `--border`; legend text `--muted-foreground`; background stays transparent
+- Chart series palette: keep distinct colors but swap red `#ef4444` for `hsl(var(--loss))` and green `#22c55e` for `hsl(var(--profit))` so wins/losses match app theme; other Kelly fractions can keep distinct chart colors (`--chart-1..5`)
+- Re-call `setOption` (or rebuild options) when theme class changes — add a small `useEffect` MutationObserver on `<html>` class to trigger re-render, mirroring the pattern in `InterfaceThemeContext`
+- Replace inline `'#fff'` / `'#9ca3af'` heading & note colors with `hsl(var(--foreground))` / `hsl(var(--muted-foreground))`
+- "Take our quiz" link color → `hsl(var(--foreground))`
 
 ## Out of scope
 
-- No edits to the simulator component code itself (logic, charts, styling all stay byte-identical to the source).
-- No sidebar changes — the entries and paths already match.
-- No re-theming of the calculators to light mode; the source design uses its own dark palette and we are copying it as-is per the request.
+- No changes to calculation logic, layout grid, component structure, or libraries (Recharts + ECharts stay).
+- No changes to page wrappers `RiskOfRuin.tsx` / `KellyCriterion.tsx` beyond what's needed (likely none — the `.app-container` re-style handles the page bg).
 
 ## Verification
 
-- Click `Risk of Ruin` and `Kelly Criterion` in the sidebar → both pages load with the source UI.
-- "Calculate" buttons produce charts (Recharts on Risk of Ruin, ECharts on Kelly) identical to the source app.
-- No console errors from missing deps.
+- Toggle light/dark mode and confirm both pages: backgrounds, panel surfaces, inputs, buttons, tables, info boxes, charts (axes, tooltips, gridlines), and text all adapt and remain readable with proper contrast.
