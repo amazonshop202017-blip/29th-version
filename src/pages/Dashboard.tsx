@@ -123,16 +123,39 @@ const Dashboard = () => {
     updatePreferences({ dashboardChartOrder: chartOrder });
   }, [chartOrder, updatePreferences]);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    document.body.style.cursor = 'grabbing';
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
+    document.body.style.cursor = '';
 
-    if (over && active.id !== over.id) {
-      setChartOrder((items) => {
-        const oldIndex = items.indexOf(active.id as string);
-        const newIndex = items.indexOf(over.id as string);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+    if (!over || active.id === over.id) return;
+    const overId = over.id as string;
+    const activeIdStr = active.id as string;
+
+    setChartOrder((items) => {
+      const oldIndex = items.indexOf(activeIdStr);
+      if (oldIndex < 0) return items;
+      if (overId.startsWith('__gap_')) {
+        // append to end
+        const next = [...items];
+        next.splice(oldIndex, 1);
+        next.push(activeIdStr);
+        return next;
+      }
+      const newIndex = items.indexOf(overId);
+      if (newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    document.body.style.cursor = '';
   };
 
   const handleAddChart = (chartId: string) => {
